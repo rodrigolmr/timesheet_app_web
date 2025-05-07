@@ -1,0 +1,157 @@
+# Timesheet App - Instruções Detalhadas (Hive, Firestore, Riverpod)
+
+✅ Última atualização: Maio 2025
+
+----------------------------------------
+📦 1️⃣ Hive (Armazenamento Local)
+
+O que foi feito:
+- Cada modelo (Card, Receipt, Timesheet, User, Worker) foi criado no diretório /models.
+- Os modelos usam @HiveType e @HiveField para gerar adapters automáticos via build_runner.
+- O arquivo /core/hive/hive_init.dart inicializa o Hive e abre todas as boxes.
+
+Como usar em uma página:
+1️⃣ Importar o repositório:
+  import '../repositories/card_repository.dart';
+
+2️⃣ Obter instância (com ou sem Riverpod):
+  final cardRepo = CardRepository();
+  OU
+  final cardRepo = ref.read(cardRepositoryProvider);  // com Riverpod
+
+3️⃣ Consumir dados locais:
+  final cards = cardRepo.getLocalCards();
+
+4️⃣ Gravar dados locais:
+  await cardRepo.saveCard(cardModel);
+
+5️⃣ Deletar dados locais:
+  await cardRepo.deleteCard(cardId);
+
+----------------------------------------
+📦 2️⃣ SyncService (Sincronização Firestore ↔ Hive)
+
+O que foi feito:
+- SyncService conecta repositórios locais com os dados remotos Firestore.
+- No main.dart, usamos:
+  await syncService.syncAll(remoteCards: ..., remoteReceipts: ..., etc);
+- Os dados são baixados uma vez no startup, ou sob demanda manual.
+
+Como usar em uma página:
+1️⃣ Importar:
+  import '../services/sync_service.dart';
+
+2️⃣ Obter instância:
+  final syncService = ref.read(syncServiceProvider);
+
+3️⃣ Chamar sincronização:
+  await syncService.syncAll(
+    remoteCards: await fetchCardsFromFirestore(),
+    remoteReceipts: await fetchReceiptsFromFirestore(),
+    remoteDrafts: await fetchDraftsFromFirestore(),
+    remoteTimesheets: await fetchTimesheetsFromFirestore(),
+    remoteUsers: await fetchUsersFromFirestore(),
+    remoteWorkers: await fetchWorkersFromFirestore(),
+  );
+
+Observação:
+✅ O sync sobrescreve dados locais com dados remotos.
+✅ Recomendado usar no app startup ou quando o usuário apertar "Atualizar".
+
+----------------------------------------
+📦 3️⃣ FirestoreWriteService (Gravação Firestore + Hive)
+
+O que foi feito:
+- Criado serviço centralizado para salvar, atualizar e deletar dados.
+- Quando chama saveXXX, ele salva no Firestore e no Hive.
+- Quando chama deleteXXX, ele apaga no Firestore e no Hive.
+
+Como usar em uma página:
+1️⃣ Importar:
+  import '../services/firestore_write_service.dart';
+
+2️⃣ Obter instância:
+  final firestoreService = ref.read(firestoreWriteServiceProvider);
+
+3️⃣ Salvar novo item:
+  await firestoreService.saveCard(cardModel);
+
+4️⃣ Atualizar item existente:
+  await firestoreService.saveCard(updatedCardModel);  // mesmo método
+
+5️⃣ Deletar item:
+  await firestoreService.deleteCard(cardId);
+
+Observação:
+✅ O Firestore é considerado o master → dados locais sempre sincronizados após operação.
+
+----------------------------------------
+📦 4️⃣ Riverpod (Injeção de Dependência)
+
+O que foi feito:
+- Criado arquivo /providers.dart centralizando todos os providers.
+- main.dart usa ProviderScope.
+- Cada página pode acessar os providers a qualquer momento.
+
+Como usar em uma página:
+1️⃣ Transformar widget:
+  de: class MyPage extends StatelessWidget
+  para: class MyPage extends ConsumerWidget
+
+2️⃣ Importar providers:
+  import 'package:flutter_riverpod/flutter_riverpod.dart';
+  import '../providers.dart';
+
+3️⃣ Obter repositório:
+  final cardRepo = ref.read(cardRepositoryProvider);
+
+4️⃣ Obter serviço:
+  final syncService = ref.read(syncServiceProvider);
+
+5️⃣ Obter dados reativos (se quiser reconstruir UI automaticamente):
+  final cards = ref.watch(cardRepositoryProvider).getLocalCards();
+
+----------------------------------------
+📥 Como criar novas páginas (passo a passo)
+
+✅ Passo 1: Crie a página normalmente.
+✅ Passo 2: Transforme em ConsumerWidget se precisar usar providers.
+✅ Passo 3: Importe os providers.
+✅ Passo 4: Use ref.read() ou ref.watch() para acessar os serviços/repositórios.
+✅ Passo 5: Para salvar dados → use firestoreWriteServiceProvider.
+✅ Passo 6: Para sincronizar dados → use syncServiceProvider.
+
+Exemplo mínimo:
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers.dart';
+
+class MyPage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repo = ref.read(cardRepositoryProvider);
+    final cards = repo.getLocalCards();
+
+    return Scaffold(
+      appBar: AppBar(title: Text('My Page')),
+      body: ListView.builder(
+        itemCount: cards.length,
+        itemBuilder: (context, index) {
+          final card = cards[index];
+          return ListTile(
+            title: Text(card.cardholderName),
+          );
+        },
+      ),
+    );
+  }
+}
+
+----------------------------------------
+✅ Dicas finais
+
+- Use ref.read(...) para chamadas únicas (ex: salvar, sincronizar).
+- Use ref.watch(...) quando quiser atualizar a UI automaticamente ao mudar.
+- Mantenha as telas simples → jogue lógica para os serviços e repositórios.
+- Se precisar criar providers novos (StateProvider, FutureProvider, Notifier), peça ao ChatGPT Flutter para preparar o esqueleto.
+
+----------------------------------------

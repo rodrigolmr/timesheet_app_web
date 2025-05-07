@@ -39,4 +39,8 @@ class CardRepository {
   CardModel? getCard(String id) {
     return _box.get(id);
   }
+
+  Future<void> deleteCard(String id) async {
+    await _box.delete(id);
+  }
 }
