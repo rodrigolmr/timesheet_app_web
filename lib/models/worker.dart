@@ -37,8 +37,8 @@ class WorkerModel extends HiveObject {
       firstName: map['firstName'],
       lastName: map['lastName'],
       status: map['status'],
-      createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: DateTime.parse(map['updatedAt']),
+      createdAt: _parseDate(map['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(map['updatedAt']) ?? DateTime.now(),
     );
   }
 
@@ -51,5 +51,13 @@ class WorkerModel extends HiveObject {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    throw Exception('Unsupported date type: ${value.runtimeType}');
   }
 }

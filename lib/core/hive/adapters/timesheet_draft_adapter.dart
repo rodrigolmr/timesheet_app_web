@@ -10,7 +10,7 @@ class TimesheetDraftModelAdapter extends TypeAdapter<TimesheetDraftModel> {
     return TimesheetDraftModel(
       userId: reader.readString(),
       jobName: reader.readString(),
-      date: reader.readDateTime(),
+      date: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
       tm: reader.readString(),
       foreman: reader.readString(),
       jobDesc: reader.readString(),
@@ -19,8 +19,8 @@ class TimesheetDraftModelAdapter extends TypeAdapter<TimesheetDraftModel> {
       notes: reader.readString(),
       vehicle: reader.readString(),
       workers: List<Map<String, dynamic>>.from(reader.readList()),
-      lastUpdated: reader.readDateTime(),
-      updatedAt: reader.readDateTime(),
+      lastUpdated: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
     );
   }
 
@@ -28,7 +28,7 @@ class TimesheetDraftModelAdapter extends TypeAdapter<TimesheetDraftModel> {
   void write(BinaryWriter writer, TimesheetDraftModel obj) {
     writer.writeString(obj.userId);
     writer.writeString(obj.jobName);
-    writer.writeDateTime(obj.date);
+    writer.writeInt(obj.date.millisecondsSinceEpoch);
     writer.writeString(obj.tm);
     writer.writeString(obj.foreman);
     writer.writeString(obj.jobDesc);
@@ -37,7 +37,7 @@ class TimesheetDraftModelAdapter extends TypeAdapter<TimesheetDraftModel> {
     writer.writeString(obj.notes);
     writer.writeString(obj.vehicle);
     writer.writeList(obj.workers);
-    writer.writeDateTime(obj.lastUpdated);
-    writer.writeDateTime(obj.updatedAt);
+    writer.writeInt(obj.lastUpdated.millisecondsSinceEpoch);
+    writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 }

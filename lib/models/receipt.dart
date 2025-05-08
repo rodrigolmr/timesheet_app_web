@@ -44,11 +44,11 @@ class ReceiptModel extends HiveObject {
       userId: map['userId'],
       cardLast4: map['cardLast4'],
       amount: map['amount'],
-      date: DateTime.parse(map['date']),
+      date: _parseDate(map['date']) ?? DateTime.now(),
       description: map['description'],
       imageUrl: map['imageUrl'],
-      timestamp: DateTime.parse(map['timestamp']),
-      updatedAt: DateTime.parse(map['updatedAt']),
+      timestamp: _parseDate(map['timestamp']) ?? DateTime.now(),
+      updatedAt: _parseDate(map['updatedAt']) ?? DateTime.now(),
     );
   }
 
@@ -63,5 +63,13 @@ class ReceiptModel extends HiveObject {
       'timestamp': timestamp.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    throw Exception('Unsupported date type: ${value.runtimeType}');
   }
 }

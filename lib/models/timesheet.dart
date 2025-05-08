@@ -63,7 +63,7 @@ class TimesheetModel extends HiveObject {
     return TimesheetModel(
       userId: map['userId'],
       jobName: map['jobName'],
-      date: DateTime.parse(map['date']),
+      date: _parseDate(map['date']) ?? DateTime.now(),
       tm: map['tm'],
       foreman: map['foreman'],
       jobDesc: map['jobDesc'],
@@ -72,8 +72,8 @@ class TimesheetModel extends HiveObject {
       notes: map['notes'],
       vehicle: map['vehicle'],
       workers: List<Map<String, dynamic>>.from(map['workers']),
-      timestamp: DateTime.parse(map['timestamp']),
-      updatedAt: DateTime.parse(map['updatedAt']),
+      timestamp: _parseDate(map['timestamp']) ?? DateTime.now(),
+      updatedAt: _parseDate(map['updatedAt']) ?? DateTime.now(),
     );
   }
 
@@ -93,5 +93,13 @@ class TimesheetModel extends HiveObject {
       'timestamp': timestamp.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+    throw Exception('Unsupported date type: ${value.runtimeType}');
   }
 }

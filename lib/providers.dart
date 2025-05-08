@@ -10,6 +10,7 @@ import 'repositories/prefs_repository.dart';
 
 import 'services/sync_service.dart';
 import 'services/firestore_write_service.dart';
+import 'services/firestore_live_sync_service.dart';
 
 // Repositórios
 final cardRepositoryProvider = Provider((ref) => CardRepository());
@@ -21,20 +22,28 @@ final workerRepositoryProvider = Provider((ref) => WorkerRepository());
 final prefsRepositoryProvider = Provider((ref) => PrefsRepository());
 
 // Serviços
-final syncServiceProvider = Provider((ref) => SyncService(
-  cardRepository: ref.read(cardRepositoryProvider),
-  receiptRepository: ref.read(receiptRepositoryProvider),
-  draftRepository: ref.read(draftRepositoryProvider),
-  timesheetRepository: ref.read(timesheetRepositoryProvider),
-  userRepository: ref.read(userRepositoryProvider),
-  workerRepository: ref.read(workerRepositoryProvider),
-));
+final syncServiceProvider = Provider(
+  (ref) => SyncService(
+    cardRepository: ref.read(cardRepositoryProvider),
+    receiptRepository: ref.read(receiptRepositoryProvider),
+    draftRepository: ref.read(draftRepositoryProvider),
+    timesheetRepository: ref.read(timesheetRepositoryProvider),
+    userRepository: ref.read(userRepositoryProvider),
+    workerRepository: ref.read(workerRepositoryProvider),
+  ),
+);
 
-final firestoreWriteServiceProvider = Provider((ref) => FirestoreWriteService(
-  cardRepository: ref.read(cardRepositoryProvider),
-  workerRepository: ref.read(workerRepositoryProvider),
-  timesheetRepository: ref.read(timesheetRepositoryProvider),
-  draftRepository: ref.read(draftRepositoryProvider),
-  receiptRepository: ref.read(receiptRepositoryProvider),
-  userRepository: ref.read(userRepositoryProvider),
-));
+final firestoreWriteServiceProvider = Provider(
+  (ref) => FirestoreWriteService(
+    cardRepository: ref.read(cardRepositoryProvider),
+    workerRepository: ref.read(workerRepositoryProvider),
+    timesheetRepository: ref.read(timesheetRepositoryProvider),
+    draftRepository: ref.read(draftRepositoryProvider),
+    receiptRepository: ref.read(receiptRepositoryProvider),
+    userRepository: ref.read(userRepositoryProvider),
+  ),
+);
+
+final firestoreLiveSyncServiceProvider = Provider(
+  (ref) => FirestoreLiveSyncService(),
+);

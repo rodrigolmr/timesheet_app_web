@@ -14,8 +14,8 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       lastName: reader.readString(),
       role: reader.readString(),
       status: reader.readString(),
-      createdAt: reader.readDateTime(),
-      updatedAt: reader.readDateTime(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
     );
   }
 
@@ -27,7 +27,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
     writer.writeString(obj.lastName);
     writer.writeString(obj.role);
     writer.writeString(obj.status);
-    writer.writeDateTime(obj.createdAt);
-    writer.writeDateTime(obj.updatedAt);
+    writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
+    writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 }

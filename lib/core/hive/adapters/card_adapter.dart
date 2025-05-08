@@ -12,8 +12,8 @@ class CardModelAdapter extends TypeAdapter<CardModel> {
       cardholderName: reader.readString(),
       last4Digits: reader.readString(),
       status: reader.readString(),
-      createdAt: reader.readDateTime(),
-      updatedAt: reader.readDateTime(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
     );
   }
 
@@ -23,7 +23,7 @@ class CardModelAdapter extends TypeAdapter<CardModel> {
     writer.writeString(obj.cardholderName);
     writer.writeString(obj.last4Digits);
     writer.writeString(obj.status);
-    writer.writeDateTime(obj.createdAt);
-    writer.writeDateTime(obj.updatedAt);
+    writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
+    writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 }

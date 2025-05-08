@@ -12,8 +12,8 @@ class WorkerModelAdapter extends TypeAdapter<WorkerModel> {
       firstName: reader.readString(),
       lastName: reader.readString(),
       status: reader.readString(),
-      createdAt: reader.readDateTime(),
-      updatedAt: reader.readDateTime(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(reader.readInt()),
     );
   }
 
@@ -23,7 +23,7 @@ class WorkerModelAdapter extends TypeAdapter<WorkerModel> {
     writer.writeString(obj.firstName);
     writer.writeString(obj.lastName);
     writer.writeString(obj.status);
-    writer.writeDateTime(obj.createdAt);
-    writer.writeDateTime(obj.updatedAt);
+    writer.writeInt(obj.createdAt.millisecondsSinceEpoch);
+    writer.writeInt(obj.updatedAt.millisecondsSinceEpoch);
   }
 }
