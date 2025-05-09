@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/hive/hive_init.dart';
 import 'core/routes/app_router.dart';
+import 'core/theme/app_theme.dart';
 import 'services/firestore_live_sync_service.dart';
 
 void main() async {
@@ -42,7 +43,8 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'Timesheet App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: AppTheme.lightTheme(),
+      debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
     );
   }

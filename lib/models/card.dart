@@ -52,6 +52,9 @@ class CardModel extends HiveObject {
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
+  
+  // Getter for id to satisfy debug_page references
+  String get id => uniqueId;
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;

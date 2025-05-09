@@ -4,7 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../pages/home_page.dart';
 import '../../pages/login_page.dart';
-import '../../pages/debug_page.dart'; // <-- Import da DebugPage
+import '../../pages/debug_page.dart';
+import '../../pages/timesheet_list_page.dart'; // <-- Import da nova página
 import 'app_routes.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -53,7 +54,12 @@ final appRouter = GoRouter(
       path: '/debug',
       name: 'debug',
       builder: (context, state) => const DebugPage(),
-    ), // <-- Nova rota para DebugPage
+    ),
+    GoRoute(
+      path: '/timesheets',
+      name: 'timesheets',
+      builder: (context, state) => const TimesheetListPage(),
+    ), // <-- Nova rota para TimesheetListPage
   ],
   errorBuilder:
       (context, state) => Scaffold(

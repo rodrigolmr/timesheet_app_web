@@ -94,6 +94,12 @@ class TimesheetModel extends HiveObject {
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
+  
+  // Field for Hive object ID
+  String get uniqueId => key.toString();
+  
+  // Getter for id to satisfy debug_page references
+  String get id => uniqueId;
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
