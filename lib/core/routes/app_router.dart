@@ -5,7 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../pages/home_page.dart';
 import '../../pages/login_page.dart';
 import '../../pages/debug_page.dart';
-import '../../pages/timesheet_list_page.dart'; // <-- Import da nova página
+import '../../pages/timesheet_list_page.dart';
+import '../../pages/test_page.dart'; // <-- Import da página de teste
 import 'app_routes.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -15,6 +16,11 @@ final appRouter = GoRouter(
   initialLocation: '/',
   redirect: (context, state) {
     bool isLoggedIn = false;
+
+    // Não requer autenticação para a página de teste
+    if (state.matchedLocation == '/test') {
+      return null;
+    }
 
     try {
       isLoggedIn = FirebaseAuth.instance.currentUser != null;
@@ -59,7 +65,12 @@ final appRouter = GoRouter(
       path: '/timesheets',
       name: 'timesheets',
       builder: (context, state) => const TimesheetListPage(),
-    ), // <-- Nova rota para TimesheetListPage
+    ),
+    GoRoute(
+      path: '/test',
+      name: 'test',
+      builder: (context, state) => const TestPage(),
+    ),
   ],
   errorBuilder:
       (context, state) => Scaffold(

@@ -188,7 +188,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       
                       const SizedBox(height: 12),
-                      
+
                       _buildMenuCard(
                         context,
                         title: 'Gerenciar Cartões',
@@ -200,6 +200,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const SnackBar(content: Text('Funcionalidade em desenvolvimento'))
                           );
                         },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      _buildMenuCard(
+                        context,
+                        title: 'Página de Teste de Widgets',
+                        icon: Icons.science,
+                        color: Colors.teal,
+                        onTap: () => context.go('/test'),
                       ),
                     ],
                   ),

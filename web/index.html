@@ -19,6 +19,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,8 +32,30 @@
 
   <title>timesheet_app_web</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    /* Os estilos são aplicados dinamicamente pelo Flutter para modo de desenvolvimento */
+  </style>
+
+  <script>
+    // Este script ajuda a fornecer um sinal extra para o Flutter verificar se estamos em desenvolvimento
+    window.addEventListener('load', function() {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        var devModeMarker = document.createElement('div');
+        devModeMarker.id = 'dev-mode-marker';
+        devModeMarker.style.display = 'none';
+        document.body.appendChild(devModeMarker);
+      }
+    });
+  </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="flutter-app">
+    <script src="flutter_bootstrap.js" async></script>
+  </div>
 </body>
 </html>
