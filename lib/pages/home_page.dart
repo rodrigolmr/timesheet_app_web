@@ -1,10 +1,20 @@
+// lib/pages/home_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/routes/app_routes.dart';
+import '../core/theme/app_theme.dart';
+import '../core/responsive/responsive.dart';
 import '../providers.dart';
 import '../core/network/firestore_fetch.dart';
+import '../widgets/base_layout.dart';
+import '../widgets/logo_text.dart';
+import '../widgets/app_button.dart';
+import '../widgets/loading_button.dart';
+import '../widgets/toast_message.dart';
+import '../widgets/feedback_overlay.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -14,204 +24,247 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  String _fullName = '';
+  bool _isLoading = true;
   bool _isSyncing = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _syncData();
-  }
-  
-  Widget _buildMenuCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Icon(Icons.arrow_forward_ios, color: Colors.grey[400]),
-            ],
-          ),
-        ),
-      ),
-    );
+    _loadUserData();
   }
 
-  Future<void> _syncData() async {
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Não realizar sincronização durante o carregamento inicial
+      // await _syncData();
+
+      // Obter o usuário atual logado
+      final auth = ref.read(authServiceProvider);
+      final currentUserId = auth.currentUser?.uid;
+      print("ID do usuário atual: $currentUserId");
+
+      if (currentUserId != null) {
+        final userRepository = ref.read(userRepositoryProvider);
+
+        // Verificar todos os usuários no repositório
+        final allUsers = userRepository.getLocalUsers();
+        print("Total de usuários no repositório: ${allUsers.length}");
+        for (var user in allUsers) {
+          print("Usuário cadastrado: ${user.id} - ${user.firstName} ${user.lastName} - ${user.email}");
+        }
+
+        final currentUser = await userRepository.getUser(currentUserId);
+
+        if (currentUser != null) {
+          print("Usuário encontrado: ${currentUser.firstName} ${currentUser.lastName}");
+          setState(() {
+            _fullName = '${currentUser.firstName} ${currentUser.lastName}'.trim();
+            if (_fullName.isEmpty) {
+              _fullName = currentUser.email.split('@').first;
+            }
+          });
+          print("Nome completo definido: $_fullName");
+        } else {
+          print("Usuário não encontrado no repositório: $currentUserId");
+
+          // Tentar encontrar manualmente na lista
+          final matchingUsers = allUsers.where((u) => u.id == currentUserId).toList();
+          if (matchingUsers.isNotEmpty) {
+            final user = matchingUsers.first;
+            print("Usuário encontrado manualmente: ${user.firstName} ${user.lastName}");
+            setState(() {
+              _fullName = '${user.firstName} ${user.lastName}'.trim();
+              if (_fullName.isEmpty) {
+                _fullName = user.email.split('@').first;
+              }
+            });
+          }
+        }
+      } else {
+        print("Nenhum usuário autenticado encontrado");
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error loading data: $e';
+      });
+      print("Erro ao carregar dados do usuário: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<bool> _syncData() async {
+    if (!mounted) return false;
+
     setState(() {
       _isSyncing = true;
       _error = null;
     });
 
     try {
-      final syncService = ref.read(syncServiceProvider);
-      await syncService.syncAll(
-        remoteCards: await fetchCardsFromFirestore(),
-        remoteReceipts: await fetchReceiptsFromFirestore(),
-        remoteDrafts: await fetchDraftsFromFirestore(),
-        remoteTimesheets: await fetchTimesheetsFromFirestore(),
-        remoteUsers: await fetchUsersFromFirestore(),
-        remoteWorkers: await fetchWorkersFromFirestore(),
-      );
-      print('✅ Sincronização concluída');
+      // Utilizaremos o SyncManager para gerenciar a sincronização silenciosa
+      final syncManager = ref.read(syncManagerProvider);
+      // Não passamos o contexto para evitar feedback visual
+      final success = await syncManager.forceSyncAll();
+
+      // Não mostramos mensagens de sincronização bem-sucedida
+      return success;
     } catch (e) {
-      setState(() {
-        _error = 'Erro na sincronização: $e';
-      });
-      print('❌ Erro na sincronização: $e');
+      // Apenas registramos o erro no console, sem mostrar ao usuário
+      print('Erro ao atualizar dados: ${e.toString()}');
+      return false;
     } finally {
-      setState(() {
-        _isSyncing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    // Inicializar responsividade
+    final responsive = ResponsiveSizing(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Home - ${user?.email ?? ''}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.build), // 🔧 botão para debug
-            onPressed: () {
-              context.go('/debug');
-            },
-            tooltip: 'Abrir Debug Page',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-            },
-            tooltip: 'Sair',
-          ),
-        ],
-      ),
-      body: _isSyncing
+    return BaseLayout(
+      title: 'Central Island Floors',
+      showTitleBox: false, // Desabilita TitleBox conforme referência
+      child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Welcome Section
-                      Card(
-                        elevation: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              const Icon(Icons.check_circle, color: Colors.green, size: 48),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Bem-vindo ao Timesheet App!',
-                                style: Theme.of(context).textTheme.titleLarge,
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Sincronização concluída com sucesso',
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+              ? Center(
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                )
+              : ResponsiveContainer(
+                  mobileMaxWidth: double.infinity,
+                  tabletMaxWidth: 800,
+                  desktopMaxWidth: 1000,
+                  padding: responsive.screenPadding,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: responsive.responsiveValue(
+                          mobile: 16.0,
+                          tablet: 24.0,
+                          desktop: 32.0,
+                        )),
+                        const LogoText(),
+                        SizedBox(height: responsive.responsiveValue(
+                          mobile: 16.0,
+                          tablet: 20.0,
+                          desktop: 24.0,
+                        )),
+                        if (_fullName.isNotEmpty)
+                          Text(
+                            'Welcome, $_fullName',
+                            style: Theme.of(context).textTheme.titleLarge,
+                            textAlign: TextAlign.center,
                           ),
+                        SizedBox(height: responsive.responsiveValue(
+                          mobile: 32.0,
+                          tablet: 40.0,
+                          desktop: 48.0,
+                        )),
+                        Wrap(
+                          spacing: responsive.spacing,
+                          runSpacing: responsive.responsiveValue(
+                            mobile: 16.0,
+                            tablet: 20.0,
+                            desktop: 24.0,
+                          ),
+                          alignment: WrapAlignment.center,
+                          children: [
+                            AppButton(
+                              config: ButtonType.sheetsButton.config,
+                              onPressed: () => context.goNamed(AppRoutes.timesheetsName),
+                            ),
+                            StateButton.fromType(
+                              type: ButtonType.settingsButton,
+                              onPressed: () async {
+                                ToastMessage.showInfo(
+                                  context,
+                                  "Settings module coming soon!",
+                                );
+                                await Future.delayed(const Duration(milliseconds: 500));
+                                return true;
+                              },
+                            ),
+                            LoadingButton.fromType(
+                              type: ButtonType.workersButton,
+                              onPressed: () async {
+                                await Future.delayed(const Duration(seconds: 1));
+                                if (context.mounted) {
+                                  ToastMessage.showInfo(
+                                    context,
+                                    "Workers module coming soon!",
+                                  );
+                                }
+                              },
+                              loadingText: 'Loading...',
+                            ),
+                            StateButton.fromType(
+                              type: ButtonType.usersButton,
+                              onPressed: () async {
+                                // Realizar uma atualização de dados
+                                return await _syncData();
+                              },
+                              loadingText: 'Loading...',
+                              successText: 'Success!',
+                              errorText: 'Failed!',
+                            ),
+
+                            // Removida a exibição da data da última sincronização
+                          ],
                         ),
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Menu Options
-                      const Text(
-                        'O que você gostaria de fazer?',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(height: responsive.responsiveValue(
+                          mobile: 32.0,
+                          tablet: 40.0,
+                          desktop: 48.0,
+                        )),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppButton.fromType(
+                              type: ButtonType.newButton,
+                              buttonStyle: AppButtonStyle.outline,
+                              onPressed: () {
+                                // Usar addPostFrameCallback para evitar problemas durante build
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (mounted) {
+                                    FeedbackController.showInfo(
+                                      context,
+                                      message: 'Opening showcase...',
+                                      position: FeedbackPosition.bottom,
+                                    );
+                                  }
+                                });
+                                // Navegar para a página de showcase
+                                context.go('/feedback-showcase');
+                              },
+                            ),
+                            const SizedBox(width: 16),
+                            AppButton.fromType(
+                              type: ButtonType.editButton,
+                              onPressed: () => context.push('/debug'),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Timesheets Card
-                      _buildMenuCard(
-                        context,
-                        title: 'Visualizar Timesheets',
-                        icon: Icons.assignment,
-                        color: Colors.blue,
-                        onTap: () => context.go('/timesheets'),
-                      ),
-                      
-                      const SizedBox(height: 12),
-                      
-                      // Other Menu Options (to be implemented later)
-                      _buildMenuCard(
-                        context,
-                        title: 'Gerenciar Trabalhadores',
-                        icon: Icons.people,
-                        color: Colors.orange,
-                        onTap: () {
-                          // Implementar navegação futura
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Funcionalidade em desenvolvimento'))
-                          );
-                        },
-                      ),
-                      
-                      const SizedBox(height: 12),
-
-                      _buildMenuCard(
-                        context,
-                        title: 'Gerenciar Cartões',
-                        icon: Icons.credit_card,
-                        color: Colors.purple,
-                        onTap: () {
-                          // Implementar navegação futura
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Funcionalidade em desenvolvimento'))
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _buildMenuCard(
-                        context,
-                        title: 'Página de Teste de Widgets',
-                        icon: Icons.science,
-                        color: Colors.teal,
-                        onTap: () => context.go('/test'),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
     );

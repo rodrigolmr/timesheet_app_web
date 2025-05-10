@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -16,6 +17,8 @@ import '../models/receipt.dart';
 import '../models/user.dart';
 import '../core/hive/sync_metadata.dart';
 import '../core/network/firestore_fetch.dart';
+import '../core/routes/app_routes.dart';
+import '../core/responsive/responsive.dart';
 
 class DebugPage extends ConsumerStatefulWidget {
   const DebugPage({super.key});
@@ -628,6 +631,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveSizing(context);
+    
     // Contar itens nas boxes
     final cardsCount = Hive.box<CardModel>('cardsBox').length;
     final workersCount = Hive.box<WorkerModel>('workersBox').length;
@@ -653,501 +658,319 @@ class _DebugPageState extends ConsumerState<DebugPage> {
               tooltip: 'Voltar para Home',
             ),
           ],
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            tabs: const [
               Tab(text: '📊 Status'),
               Tab(text: '🔍 Inspeção'),
               Tab(text: '🔧 Ferramentas'),
             ],
+            labelStyle: TextStyle(
+              fontSize: responsive.responsiveValue(
+                mobile: 12.0, 
+                tablet: 14.0, 
+                desktop: 16.0
+              ),
+            ),
           ),
         ),
         body: TabBarView(
           children: [
             // TAB 1: Status & Syncronização
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Status das caixas de dados
-                  Text('📊 Status do banco de dados local:', 
-                    style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  
-                  // Grid de estatísticas
-                  GridView.count(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: 3,
-                    children: [
-                      _buildStatCard(context, 'Cards', cardsCount),
-                      _buildStatCard(context, 'Workers', workersCount),
-                      _buildStatCard(context, 'Timesheets', timesheetsCount),
-                      _buildStatCard(context, 'Drafts', draftsCount),
-                      _buildStatCard(context, 'Receipts', receiptsCount),
-                      _buildStatCard(context, 'Users', usersCount),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  Text('🕒 Última sincronização:', 
-                    style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  
-                  // Informações de sincronização
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Cards: ${_formatDateTime(lastCardSync)}'),
-                          const SizedBox(height: 4),
-                          Text('Workers: ${_formatDateTime(lastWorkerSync)}'),
-                          const SizedBox(height: 4),
-                          Text('Timesheets: ${_formatDateTime(lastTimesheetSync)}'),
-                          const SizedBox(height: 4),
-                          Text('Receipts: ${_formatDateTime(SyncMetadata.getLastSync('receipts'))}'),
-                          const SizedBox(height: 4),
-                          Text('Drafts: ${_formatDateTime(SyncMetadata.getLastSync('timesheet_drafts'))}'),
-                          const SizedBox(height: 4),
-                          Text('Users: ${_formatDateTime(SyncMetadata.getLastSync('users'))}'),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Progress bar de sincronização
-                  if (_isSyncing) ...[
-                    Text('Sincronizando $_currentCollection...', 
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(value: _syncProgress),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // Botões de ação
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.sync),
-                          label: const Text('Sincronizar'),
-                          onPressed: _isSyncing ? null : _forceSyncDetailed,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: const Text('Dados de Teste'),
-                          onPressed: _isSyncing ? null : _addTestData,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.delete),
-                          label: const Text('Limpar Hive'),
-                          onPressed: _isSyncing ? null : _clearHive,
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('📋 Log de operações:', 
-                        style: Theme.of(context).textTheme.titleLarge),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.delete),
-                        label: const Text('Limpar Log'),
-                        onPressed: _clearLogs,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.red[400],
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Controles de busca e filtro do log
-                  Row(
-                    children: [
-                      // Campo de busca
-                      Expanded(
-                        child: TextField(
-                          controller: _logSearchController,
-                          decoration: InputDecoration(
-                            labelText: 'Buscar no log',
-                            hintText: 'Digite para filtrar mensagens...',
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.search),
-                              onPressed: _filterLogMessages,
-                              tooltip: 'Buscar',
-                              iconSize: 20,
-                            ),
-                          ),
-                          onSubmitted: (_) => _filterLogMessages(),
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 8),
-                      
-                      // Filtros rápidos
-                      ChoiceChip(
-                        label: const Text('❌ Erros'),
-                        selected: _showErrorsOnly,
-                        onSelected: (selected) {
-                          setState(() {
-                            _showErrorsOnly = selected;
-                            if (selected) {
-                              _showSuccessOnly = false;
-                            }
-                            _filterLogMessages();
-                          });
-                        },
-                      ),
-                      
-                      const SizedBox(width: 8),
-                      
-                      ChoiceChip(
-                        label: const Text('✅ Sucesso'),
-                        selected: _showSuccessOnly,
-                        onSelected: (selected) {
-                          setState(() {
-                            _showSuccessOnly = selected;
-                            if (selected) {
-                              _showErrorsOnly = false;
-                            }
-                            _filterLogMessages();
-                          });
-                        },
-                      ),
-                      
-                      const SizedBox(width: 8),
-                      
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Limpar filtros',
-                        onPressed: () {
-                          setState(() {
-                            _showErrorsOnly = false;
-                            _showSuccessOnly = false;
-                            _logSearchController.clear();
-                            _isLogSearchActive = false;
-                            _filteredLogMessages.clear();
-                            _filteredLogMessages.addAll(_logMessages);
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Log de mensagens
-                  Container(
-                    height: 250,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[400]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Cabeçalho com estatísticas
-                        if (_isLogSearchActive)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Text(
-                              'Mostrando ${_filteredLogMessages.length} de ${_logMessages.length} mensagens',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ),
-                        
-                        // Lista de mensagens
-                        Expanded(
-                          child: _filteredLogMessages.isEmpty
-                              ? const Center(child: Text('Nenhuma operação realizada'))
-                              : ListView.builder(
-                                  controller: _logScrollController,
-                                  itemCount: _filteredLogMessages.length,
-                                  itemBuilder: (context, index) {
-                                    final message = _filteredLogMessages[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 2),
-                                      child: SelectableText(
-                                        message,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontFamily: 'monospace',
-                                          color: message.contains('❌')
-                                              ? Colors.red
-                                              : message.contains('✅')
-                                                  ? Colors.green[700]
-                                                  : message.contains('⚠️')
-                                                      ? Colors.orange[800]
-                                                      : Colors.black,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildStatusTab(context, responsive, cardsCount, workersCount, 
+                timesheetsCount, draftsCount, receiptsCount, usersCount, 
+                lastCardSync, lastWorkerSync, lastTimesheetSync),
             
             // TAB 2: Inspeção de Banco de Dados
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('🔍 Inspeção de Dados', 
-                    style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  
-                  // Seletor de tipo de dados e busca
-                  Row(
-                    children: [
-                      // Seletor de tipo
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Tipo de Dados',
-                            border: OutlineInputBorder(),
-                          ),
-                          value: _selectedBoxType,
-                          items: const [
-                            DropdownMenuItem(value: 'cards', child: Text('Cards')),
-                            DropdownMenuItem(value: 'workers', child: Text('Workers')),
-                            DropdownMenuItem(value: 'timesheets', child: Text('Timesheets')),
-                            DropdownMenuItem(value: 'drafts', child: Text('Drafts')),
-                            DropdownMenuItem(value: 'receipts', child: Text('Receipts')),
-                            DropdownMenuItem(value: 'users', child: Text('Users')),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedBoxType = value;
-                                _selectedItem = null;
-                              });
-                              _updateFilteredItems();
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      
-                      // Campo de busca
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            labelText: 'Buscar',
-                            hintText: 'Nome, ID...',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.search),
-                              onPressed: _updateFilteredItems,
-                            ),
-                          ),
-                          onSubmitted: (_) => _updateFilteredItems(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Exibição de registros
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Lista de itens
-                        Expanded(
-                          flex: 1,
-                          child: Card(
-                            elevation: 2,
-                            child: _filteredItems.isEmpty
-                                ? const Center(
-                                    child: Text('Nenhum item encontrado'),
-                                  )
-                                : ListView.builder(
-                                    itemCount: _filteredItems.length,
-                                    itemBuilder: (context, index) {
-                                      final item = _filteredItems[index];
-                                      return ListTile(
-                                        title: Text(
-                                          item['title'] as String,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        subtitle: Text(
-                                          'ID: ${item['id']}',
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                        selected: _selectedItem == item,
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedItem = item;
-                                          });
-                                        },
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ),
-                        
-                        const SizedBox(width: 16),
-                        
-                        // Detalhes do item selecionado
-                        Expanded(
-                          flex: 2,
-                          child: Card(
-                            elevation: 2,
-                            child: _selectedItem == null
-                                ? const Center(
-                                    child: Text('Selecione um item para ver detalhes'),
-                                  )
-                                : Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                _selectedItem!['title'] as String,
-                                                style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              icon: const Icon(Icons.copy),
-                                              tooltip: 'Copiar ID',
-                                              onPressed: () {
-                                                // Aqui deveria usar Clipboard, mas vamos só logar para o exemplo
-                                                _log('📋 ID copiado: ${_selectedItem!['id']}');
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        const Divider(),
-                                        Expanded(
-                                          child: ListView(
-                                            children: [
-                                              SelectableText(
-                                                _prettyPrint(_selectedItem!['data']),
-                                                style: const TextStyle(
-                                                  fontFamily: 'monospace',
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
+            _buildInspectionTab(context, responsive),
+            
+            // TAB 3: Ferramentas Adicionais
+            _buildToolsTab(context, responsive),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // TAB 1: Status & Sincronização
+  Widget _buildStatusTab(
+    BuildContext context, 
+    ResponsiveSizing responsive,
+    int cardsCount,
+    int workersCount,
+    int timesheetsCount,
+    int draftsCount,
+    int receiptsCount,
+    int usersCount,
+    DateTime? lastCardSync,
+    DateTime? lastWorkerSync,
+    DateTime? lastTimesheetSync,
+  ) {
+    return SingleChildScrollView(
+      padding: responsive.screenPadding,
+      child: ResponsiveContainer(
+        mobileMaxWidth: double.infinity,
+        tabletMaxWidth: 900,
+        desktopMaxWidth: 1200,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status das caixas de dados
+            Text('📊 Status do banco de dados local:', 
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: responsive.responsiveValue(
+                  mobile: 18.0,
+                  tablet: 20.0,
+                  desktop: 22.0,
+                ),
+              ),
+            ),
+            SizedBox(height: responsive.spacing / 2),
+            
+            // Estatísticas em Grid responsivo
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: responsive.responsiveValue(
+                  mobile: 2, 
+                  tablet: 3, 
+                  desktop: 4
+                ),
+                crossAxisSpacing: responsive.spacing,
+                mainAxisSpacing: responsive.spacing,
+                childAspectRatio: responsive.responsiveValue(
+                  mobile: 2.5, 
+                  tablet: 3.0, 
+                  desktop: 3.5
+                ),
+              ),
+              itemCount: 7,
+              itemBuilder: (context, index) {
+                switch (index) {
+                  case 0: return _buildStatCard(context, 'Cards', cardsCount);
+                  case 1: return _buildStatCard(context, 'Workers', workersCount);
+                  case 2: return _buildStatCard(context, 'Timesheets', timesheetsCount);
+                  case 3: return _buildStatCard(context, 'Drafts', draftsCount);
+                  case 4: return _buildStatCard(context, 'Receipts', receiptsCount);
+                  case 5: return _buildStatCard(context, 'Users', usersCount);
+                  default: return const SizedBox();
+                }
+              },
+            ),
+            
+            SizedBox(height: responsive.spacing),
+            Text('🕒 Última sincronização:', 
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: responsive.responsiveValue(
+                  mobile: 18.0,
+                  tablet: 20.0,
+                  desktop: 22.0,
+                ),
+              ),
+            ),
+            SizedBox(height: responsive.spacing / 2),
+            
+            // Informações de sincronização
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(responsive.spacing),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cards: ${_formatDateTime(lastCardSync)}'),
+                    SizedBox(height: responsive.spacing / 2),
+                    Text('Workers: ${_formatDateTime(lastWorkerSync)}'),
+                    SizedBox(height: responsive.spacing / 2),
+                    Text('Timesheets: ${_formatDateTime(lastTimesheetSync)}'),
+                    SizedBox(height: responsive.spacing / 2),
+                    Text('Receipts: ${_formatDateTime(SyncMetadata.getLastSync('receipts'))}'),
+                    SizedBox(height: responsive.spacing / 2),
+                    Text('Drafts: ${_formatDateTime(SyncMetadata.getLastSync('timesheet_drafts'))}'),
+                    SizedBox(height: responsive.spacing / 2),
+                    Text('Users: ${_formatDateTime(SyncMetadata.getLastSync('users'))}'),
+                  ],
+                ),
+              ),
+            ),
+            
+            SizedBox(height: responsive.spacing),
+            
+            // Progress bar de sincronização
+            if (_isSyncing) ...[
+              Text('Sincronizando $_currentCollection...', 
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: responsive.spacing / 2),
+              LinearProgressIndicator(value: _syncProgress),
+              SizedBox(height: responsive.spacing),
+            ],
+            
+            // Botões de ação responsivos
+            Wrap(
+              spacing: responsive.spacing,
+              runSpacing: responsive.spacing,
+              alignment: WrapAlignment.spaceBetween,
+              children: [
+                SizedBox(
+                  width: responsive.isMobile 
+                    ? (MediaQuery.of(context).size.width - (responsive.spacing * 3)) / 2 
+                    : (MediaQuery.of(context).size.width - (responsive.spacing * 4)) / 3,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.sync),
+                    label: const Text('Sincronizar'),
+                    onPressed: _isSyncing ? null : _forceSyncDetailed,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: responsive.spacing),
                     ),
                   ),
+                ),
+                SizedBox(
+                  width: responsive.isMobile 
+                    ? (MediaQuery.of(context).size.width - (responsive.spacing * 3)) / 2 
+                    : (MediaQuery.of(context).size.width - (responsive.spacing * 4)) / 3,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Dados de Teste'),
+                    onPressed: _isSyncing ? null : _addTestData,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: responsive.spacing),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: responsive.isMobile 
+                    ? MediaQuery.of(context).size.width - (responsive.spacing * 2)
+                    : (MediaQuery.of(context).size.width - (responsive.spacing * 4)) / 3,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.delete),
+                    label: const Text('Limpar Hive'),
+                    onPressed: _isSyncing ? null : _clearHive,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.symmetric(vertical: responsive.spacing),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: responsive.spacing),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('📋 Log de operações:', 
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: responsive.responsiveValue(
+                      mobile: 18.0,
+                      tablet: 20.0,
+                      desktop: 22.0,
+                    ),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Limpar Log'),
+                  onPressed: _clearLogs,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red[400],
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive.spacing,
+                      vertical: responsive.spacing / 2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: responsive.spacing / 2),
+            
+            // Controles de busca e filtro do log - Layout responsivo
+            ResponsiveLayout(
+              mobile: Column(
+                children: [
+                  _buildLogSearchField(responsive),
+                  SizedBox(height: responsive.spacing / 2),
+                  _buildLogFilterChips(responsive),
+                ],
+              ),
+              tablet: Row(
+                children: [
+                  Expanded(child: _buildLogSearchField(responsive)),
+                  SizedBox(width: responsive.spacing),
+                  _buildLogFilterChips(responsive),
                 ],
               ),
             ),
             
-            // TAB 3: Ferramentas Adicionais
-            Padding(
-              padding: const EdgeInsets.all(16),
+            SizedBox(height: responsive.spacing / 2),
+            
+            // Log de mensagens
+            Container(
+              height: responsive.responsiveValue(
+                mobile: 200.0,
+                tablet: 250.0,
+                desktop: 300.0,
+              ),
+              padding: EdgeInsets.all(responsive.spacing / 2),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[400]!),
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('🔧 Ferramentas Adicionais', 
-                    style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  
-                  // Ferramentas serão implementadas aqui
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 2,
-                      children: [
-                        // Grade de ferramentas
-                        _buildToolCard(
-                          context, 
-                          title: 'Verificar Conexão',
-                          icon: Icons.wifi,
-                          description: 'Testa a conectividade com o Firestore',
-                          onTap: _testFirestoreConnection,
+                  // Cabeçalho com estatísticas
+                  if (_isLogSearchActive)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: responsive.spacing / 2),
+                      child: Text(
+                        'Mostrando ${_filteredLogMessages.length} de ${_logMessages.length} mensagens',
+                        style: TextStyle(
+                          fontSize: responsive.responsiveValue(
+                            mobile: 11.0,
+                            tablet: 12.0,
+                            desktop: 13.0,
+                          ),
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[700],
                         ),
-                        _buildToolCard(
-                          context, 
-                          title: 'Exportar Banco Local',
-                          icon: Icons.download,
-                          description: 'Salva todos os dados locais em JSON',
-                          onTap: _exportLocalData,
-                        ),
-                        _buildToolCard(
-                          context, 
-                          title: 'Informações do Sistema',
-                          icon: Icons.info_outline,
-                          description: 'Mostra detalhes técnicos do dispositivo',
-                          onTap: _showSystemInfo,
-                        ),
-                        _buildToolCard(
-                          context, 
-                          title: 'Métricas de Performance',
-                          icon: Icons.speed,
-                          description: 'Exibe estatísticas de desempenho',
-                          onTap: _measurePerformance,
-                        ),
-                      ],
+                      ),
                     ),
+                  
+                  // Lista de mensagens
+                  Expanded(
+                    child: _filteredLogMessages.isEmpty
+                        ? const Center(child: Text('Nenhuma operação realizada'))
+                        : ListView.builder(
+                            controller: _logScrollController,
+                            itemCount: _filteredLogMessages.length,
+                            itemBuilder: (context, index) {
+                              final message = _filteredLogMessages[index];
+                              return Padding(
+                                padding: EdgeInsets.symmetric(vertical: 2),
+                                child: SelectableText(
+                                  message,
+                                  style: TextStyle(
+                                    fontSize: responsive.responsiveValue(
+                                      mobile: 11.0,
+                                      tablet: 12.0,
+                                      desktop: 13.0,
+                                    ),
+                                    fontFamily: 'monospace',
+                                    color: message.contains('❌')
+                                        ? Colors.red
+                                        : message.contains('✅')
+                                            ? Colors.green[700]
+                                            : message.contains('⚠️')
+                                                ? Colors.orange[800]
+                                                : Colors.black,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -1157,9 +980,462 @@ class _DebugPageState extends ConsumerState<DebugPage> {
       ),
     );
   }
+
+  // Campo de busca para o log
+  Widget _buildLogSearchField(ResponsiveSizing responsive) {
+    return TextField(
+      controller: _logSearchController,
+      decoration: InputDecoration(
+        labelText: 'Buscar no log',
+        hintText: 'Digite para filtrar mensagens...',
+        border: const OutlineInputBorder(),
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: responsive.spacing,
+          vertical: responsive.spacing,
+        ),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: _filterLogMessages,
+          tooltip: 'Buscar',
+          iconSize: responsive.responsiveValue(
+            mobile: 18.0,
+            tablet: 20.0,
+            desktop: 22.0,
+          ),
+        ),
+      ),
+      onSubmitted: (_) => _filterLogMessages(),
+    );
+  }
+
+  // Chips de filtro para o log
+  Widget _buildLogFilterChips(ResponsiveSizing responsive) {
+    return Wrap(
+      spacing: responsive.spacing / 2,
+      children: [
+        ChoiceChip(
+          label: const Text('❌ Erros'),
+          selected: _showErrorsOnly,
+          onSelected: (selected) {
+            setState(() {
+              _showErrorsOnly = selected;
+              if (selected) {
+                _showSuccessOnly = false;
+              }
+              _filterLogMessages();
+            });
+          },
+          labelStyle: TextStyle(
+            fontSize: responsive.responsiveValue(
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
+        ),
+        ChoiceChip(
+          label: const Text('✅ Sucesso'),
+          selected: _showSuccessOnly,
+          onSelected: (selected) {
+            setState(() {
+              _showSuccessOnly = selected;
+              if (selected) {
+                _showErrorsOnly = false;
+              }
+              _filterLogMessages();
+            });
+          },
+          labelStyle: TextStyle(
+            fontSize: responsive.responsiveValue(
+              mobile: 12.0,
+              tablet: 13.0,
+              desktop: 14.0,
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Limpar filtros',
+          iconSize: responsive.responsiveValue(
+            mobile: 20.0,
+            tablet: 22.0,
+            desktop: 24.0,
+          ),
+          onPressed: () {
+            setState(() {
+              _showErrorsOnly = false;
+              _showSuccessOnly = false;
+              _logSearchController.clear();
+              _isLogSearchActive = false;
+              _filteredLogMessages.clear();
+              _filteredLogMessages.addAll(_logMessages);
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  // TAB 2: Inspeção de Banco de Dados
+  Widget _buildInspectionTab(BuildContext context, ResponsiveSizing responsive) {
+    return Padding(
+      padding: responsive.screenPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('🔍 Inspeção de Dados', 
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontSize: responsive.responsiveValue(
+                mobile: 18.0,
+                tablet: 20.0,
+                desktop: 22.0,
+              ),
+            ),
+          ),
+          SizedBox(height: responsive.spacing),
+          
+          // Seletor de tipo de dados e busca - Layout responsivo
+          ResponsiveLayout(
+            mobile: Column(
+              children: [
+                _buildTypeSelector(responsive),
+                SizedBox(height: responsive.spacing / 2),
+                _buildSearchField(responsive),
+              ],
+            ),
+            tablet: Row(
+              children: [
+                Expanded(child: _buildTypeSelector(responsive)),
+                SizedBox(width: responsive.spacing),
+                Expanded(child: _buildSearchField(responsive)),
+              ],
+            ),
+          ),
+          
+          SizedBox(height: responsive.spacing),
+          
+          // Exibição de registros - Layout responsivo
+          Expanded(
+            child: ResponsiveLayout(
+              // Layout mobile: Stack vertical com lista em cima e detalhes embaixo
+              mobile: Column(
+                children: [
+                  // Lista de itens (1/3 da altura)
+                  SizedBox(
+                    height: (MediaQuery.of(context).size.height - 
+                            kToolbarHeight - 
+                            kBottomNavigationBarHeight - 
+                            200) / 3,
+                    child: _buildItemList(responsive),
+                  ),
+                  SizedBox(height: responsive.spacing),
+                  // Detalhes do item (2/3 da altura)
+                  Expanded(
+                    child: _buildItemDetails(responsive),
+                  ),
+                ],
+              ),
+              // Layout tablet e desktop: Lado a lado
+              tablet: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Lista de itens
+                  Expanded(
+                    flex: 1,
+                    child: _buildItemList(responsive),
+                  ),
+                  SizedBox(width: responsive.spacing),
+                  // Detalhes do item
+                  Expanded(
+                    flex: 2,
+                    child: _buildItemDetails(responsive),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Seletor de tipo para inspeção
+  Widget _buildTypeSelector(ResponsiveSizing responsive) {
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: 'Tipo de Dados',
+        border: const OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: responsive.spacing,
+          vertical: responsive.spacing,
+        ),
+      ),
+      value: _selectedBoxType,
+      items: const [
+        DropdownMenuItem(value: 'cards', child: Text('Cards')),
+        DropdownMenuItem(value: 'workers', child: Text('Workers')),
+        DropdownMenuItem(value: 'timesheets', child: Text('Timesheets')),
+        DropdownMenuItem(value: 'drafts', child: Text('Drafts')),
+        DropdownMenuItem(value: 'receipts', child: Text('Receipts')),
+        DropdownMenuItem(value: 'users', child: Text('Users')),
+      ],
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedBoxType = value;
+            _selectedItem = null;
+          });
+          _updateFilteredItems();
+        }
+      },
+    );
+  }
+
+  // Campo de busca para inspeção
+  Widget _buildSearchField(ResponsiveSizing responsive) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        labelText: 'Buscar',
+        hintText: 'Nome, ID...',
+        border: const OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: responsive.spacing,
+          vertical: responsive.spacing,
+        ),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: _updateFilteredItems,
+        ),
+      ),
+      onSubmitted: (_) => _updateFilteredItems(),
+    );
+  }
+
+  // Lista de itens para inspeção
+  Widget _buildItemList(ResponsiveSizing responsive) {
+    return Card(
+      elevation: 2,
+      child: _filteredItems.isEmpty
+          ? const Center(
+              child: Text('Nenhum item encontrado'),
+            )
+          : ListView.builder(
+              itemCount: _filteredItems.length,
+              itemBuilder: (context, index) {
+                final item = _filteredItems[index];
+                return ListTile(
+                  title: Text(
+                    item['title'] as String,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: responsive.responsiveValue(
+                        mobile: 14.0,
+                        tablet: 15.0,
+                        desktop: 16.0,
+                      ),
+                    ),
+                  ),
+                  subtitle: Text(
+                    'ID: ${item['id']}',
+                    style: TextStyle(
+                      fontSize: responsive.responsiveValue(
+                        mobile: 11.0,
+                        tablet: 12.0,
+                        desktop: 13.0,
+                      ),
+                    ),
+                  ),
+                  selected: _selectedItem == item,
+                  dense: responsive.isMobile,
+                  onTap: () {
+                    setState(() {
+                      _selectedItem = item;
+                    });
+                  },
+                );
+              },
+            ),
+    );
+  }
+
+  // Detalhes do item para inspeção
+  Widget _buildItemDetails(ResponsiveSizing responsive) {
+    return Card(
+      elevation: 2,
+      child: _selectedItem == null
+          ? const Center(
+              child: Text('Selecione um item para ver detalhes'),
+            )
+          : Padding(
+              padding: EdgeInsets.all(responsive.spacing),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _selectedItem!['title'] as String,
+                          style: TextStyle(
+                            fontSize: responsive.responsiveValue(
+                              mobile: 16.0,
+                              tablet: 18.0,
+                              desktop: 20.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy),
+                        tooltip: 'Copiar ID',
+                        onPressed: () {
+                          // Aqui deveria usar Clipboard, mas vamos só logar para o exemplo
+                          _log('📋 ID copiado: ${_selectedItem!['id']}');
+                        },
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        _prettyPrint(_selectedItem!['data']),
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: responsive.responsiveValue(
+                            mobile: 12.0,
+                            tablet: 13.0,
+                            desktop: 14.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  // TAB 3: Ferramentas Adicionais
+  Widget _buildToolsTab(BuildContext context, ResponsiveSizing responsive) {
+    return Padding(
+      padding: responsive.screenPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('🔧 Ferramentas Adicionais', 
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontSize: responsive.responsiveValue(
+                mobile: 18.0,
+                tablet: 20.0,
+                desktop: 22.0,
+              ),
+            ),
+          ),
+          SizedBox(height: responsive.spacing),
+          
+          // Ferramentas em grid responsivo
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: responsive.responsiveValue(
+                  mobile: 1,
+                  tablet: 2,
+                  desktop: 3,
+                ),
+                crossAxisSpacing: responsive.spacing,
+                mainAxisSpacing: responsive.spacing,
+                childAspectRatio: responsive.responsiveValue(
+                  mobile: 4.0,
+                  tablet: 3.0,
+                  desktop: 2.5,
+                ),
+              ),
+              itemCount: 7,
+              itemBuilder: (context, index) {
+                switch (index) {
+                  case 0:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Verificar Conexão',
+                      icon: Icons.wifi,
+                      description: 'Testa a conectividade com o Firestore',
+                      onTap: _testFirestoreConnection,
+                    );
+                  case 1:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Exportar Banco Local',
+                      icon: Icons.download,
+                      description: 'Salva todos os dados locais em JSON',
+                      onTap: _exportLocalData,
+                    );
+                  case 2:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Informações do Sistema',
+                      icon: Icons.info_outline,
+                      description: 'Mostra detalhes técnicos do dispositivo',
+                      onTap: _showSystemInfo,
+                    );
+                  case 3:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Métricas de Performance',
+                      icon: Icons.speed,
+                      description: 'Exibe estatísticas de desempenho',
+                      onTap: _measurePerformance,
+                    );
+                  case 4:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Teste de Layout',
+                      icon: Icons.dashboard_customize,
+                      description: 'Testar diferentes variantes do BaseLayout',
+                      onTap: () => context.go(AppRoutes.layoutTest),
+                    );
+                  case 5:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Showcase de Botões',
+                      icon: Icons.touch_app,
+                      description: 'Visualizar todos os botões do aplicativo',
+                      onTap: () => context.go(AppRoutes.buttonShowcase),
+                    );
+                  case 6:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Showcase de Feedback',
+                      icon: Icons.notifications,
+                      description: 'Visualizar todos os componentes de feedback visual',
+                      onTap: () => context.go(AppRoutes.feedbackShowcase),
+                    );
+                  default:
+                    return const SizedBox();
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   
-  Widget _buildToolCard(
-    BuildContext context, {
+  Widget _buildToolCard({
+    required BuildContext context,
+    required ResponsiveSizing responsive,
     required String title,
     required IconData icon,
     required String description,
@@ -1169,35 +1445,70 @@ class _DebugPageState extends ConsumerState<DebugPage> {
       elevation: 3,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(responsive.spacing),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 48,
-                color: Theme.of(context).primaryColor,
+              // Fazer o ícone se adaptar ao tamanho disponível
+              Container(
+                width: responsive.responsiveValue(
+                  mobile: 36.0,
+                  tablet: 40.0,
+                  desktop: 48.0,
+                ),
+                height: responsive.responsiveValue(
+                  mobile: 36.0,
+                  tablet: 40.0,
+                  desktop: 48.0,
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: responsive.responsiveValue(
+                      mobile: 28.0,
+                      tablet: 32.0,
+                      desktop: 36.0,
+                    ),
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: responsive.spacing),
+              // Conteúdo com texto que se adapta ao espaço disponível
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: responsive.responsiveValue(
+                          mobile: 14.0,
+                          tablet: 15.0,
+                          desktop: 16.0,
+                        ),
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: responsive.spacing / 4),
                     Text(
                       description,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: responsive.responsiveValue(
+                          mobile: 11.0,
+                          tablet: 12.0,
+                          desktop: 13.0,
+                        ),
                         color: Colors.grey[700],
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -1210,24 +1521,70 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   Widget _buildStatCard(BuildContext context, String title, int count) {
+    final responsive = ResponsiveSizing(context);
+    
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(responsive.spacing / 2),
         child: Row(
           children: [
-            Icon(
-              _getIconForType(title),
-              color: Theme.of(context).primaryColor,
+            // Ícone com tamanho responsivo
+            Container(
+              width: responsive.responsiveValue(
+                mobile: 24.0,
+                tablet: 28.0,
+                desktop: 32.0,
+              ),
+              height: responsive.responsiveValue(
+                mobile: 24.0,
+                tablet: 28.0,
+                desktop: 32.0,
+              ),
+              child: Center(
+                child: Icon(
+                  _getIconForType(title),
+                  color: Theme.of(context).primaryColor,
+                  size: responsive.responsiveValue(
+                    mobile: 18.0,
+                    tablet: 22.0,
+                    desktop: 26.0,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('$count itens'),
-              ],
+            SizedBox(width: responsive.spacing / 2),
+            // Conteúdo de texto responsivo
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: responsive.responsiveValue(
+                        mobile: 12.0,
+                        tablet: 13.0,
+                        desktop: 14.0,
+                      ),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '$count itens',
+                    style: TextStyle(
+                      fontSize: responsive.responsiveValue(
+                        mobile: 11.0,
+                        tablet: 12.0,
+                        desktop: 13.0,
+                      ),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

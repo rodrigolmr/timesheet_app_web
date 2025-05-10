@@ -1,6 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Flag para modo de desenvolvimento (sem acessar o Firestore)
+const bool _devMode = false;
+
+// Mock data para desenvolvimento
+final _now = DateTime.now().toIso8601String();
+
 Future<List<Map<String, dynamic>>> fetchCardsFromFirestore() async {
+  if (_devMode) {
+    print('⚠️ Usando dados mockados para cards em vez do Firestore');
+    return [];
+  }
+
   final snapshot = await FirebaseFirestore.instance.collection('cards').get();
   return snapshot.docs.map((doc) {
     final data = doc.data();
@@ -12,6 +23,11 @@ Future<List<Map<String, dynamic>>> fetchCardsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchReceiptsFromFirestore() async {
+  if (_devMode) {
+    print('⚠️ Usando dados mockados para receipts em vez do Firestore');
+    return [];
+  }
+
   final snapshot =
       await FirebaseFirestore.instance.collection('receipts').get();
   return snapshot.docs.map((doc) {
@@ -25,6 +41,11 @@ Future<List<Map<String, dynamic>>> fetchReceiptsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchDraftsFromFirestore() async {
+  if (_devMode) {
+    print('⚠️ Usando dados mockados para drafts em vez do Firestore');
+    return [];
+  }
+
   final snapshot =
       await FirebaseFirestore.instance.collection('timesheet_drafts').get();
   return snapshot.docs.map((doc) {
@@ -38,6 +59,11 @@ Future<List<Map<String, dynamic>>> fetchDraftsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchTimesheetsFromFirestore() async {
+  if (_devMode) {
+    print('⚠️ Usando dados mockados para timesheets em vez do Firestore');
+    return [];
+  }
+
   final snapshot =
       await FirebaseFirestore.instance.collection('timesheets').get();
   return snapshot.docs.map((doc) {
@@ -51,6 +77,21 @@ Future<List<Map<String, dynamic>>> fetchTimesheetsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchUsersFromFirestore() async {
+  if (_devMode) {
+    print('⚠️ Usando dados mockados para users em vez do Firestore');
+    return [
+      {
+        'userId': 'mock-user-id',
+        'email': 'rodrigo.lmr@hotmail.com',
+        'name': 'Rodrigo (Dev Mode)',
+        'role': 'admin',
+        'status': 'active',
+        'createdAt': _now,
+        'updatedAt': _now,
+      }
+    ];
+  }
+
   final snapshot = await FirebaseFirestore.instance.collection('users').get();
   return snapshot.docs.map((doc) {
     final data = doc.data();
@@ -62,6 +103,11 @@ Future<List<Map<String, dynamic>>> fetchUsersFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchWorkersFromFirestore() async {
+  if (_devMode) {
+    print('⚠️ Usando dados mockados para workers em vez do Firestore');
+    return [];
+  }
+
   final snapshot = await FirebaseFirestore.instance.collection('workers').get();
   return snapshot.docs.map((doc) {
     final data = doc.data();

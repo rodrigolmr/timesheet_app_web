@@ -11,8 +11,6 @@ Este é um aplicativo Flutter web para gerenciamento de timesheets, que permite 
 
 ## Regras Gerais
 
-1. **Dimensões para desenvolvimento**: Quando executado com `flutter run`, o app deve manter dimensões de 320x640 pixels para simular um dispositivo móvel.
-
 2. **Estilo de código**:
    - Seguir as convenções de nomenclatura do Dart (camelCase para variáveis e métodos, PascalCase para classes)
    - Manter o código limpo e autoexplicativo

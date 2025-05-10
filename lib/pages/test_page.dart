@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../core/theme/app_theme.dart';
 import '../core/routes/app_routes.dart';
+import '../core/theme/app_theme.dart';
+import '../core/responsive/responsive.dart';
+import '../widgets/title_box.dart';
 
 class TestPage extends ConsumerStatefulWidget {
   const TestPage({super.key});
@@ -22,23 +24,63 @@ class _TestPageState extends ConsumerState<TestPage> {
       _testWidgets.add(widget);
     }
   }
-
-  void _initTestWidgets() {
-    _addTestWidget('Empty Container', Container(
-      height: 100,
-      color: Colors.grey.shade200,
-      child: const Center(
-        child: Text('Add widgets to test them here'),
-      ),
-    ));
-    
-    // Add more test widgets here
+  
+  // Função auxiliar para criar containers responsivos consistentes para cada exemplo
+  Widget _responsiveTestContainer({required Widget child}) {
+    return ResponsiveContainer(
+      mobileMaxWidth: 500,
+      tabletMaxWidth: 600,
+      desktopMaxWidth: 700,
+      padding: const EdgeInsets.all(AppTheme.defaultSpacing),
+      backgroundColor: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+      child: child,
+    );
   }
 
   @override
   void initState() {
     super.initState();
     _initTestWidgets();
+  }
+  
+  void _initTestWidgets() {
+    // Widget de boas-vindas
+    _addTestWidget(
+      'Introdução', 
+      _responsiveTestContainer(
+        child: Column(
+          children: [
+            const TitleBox(
+              title: 'Widget Showcase',
+              backgroundColor: AppTheme.primaryBlue,
+            ),
+            const SizedBox(height: AppTheme.defaultSpacing),
+            const Text(
+              'Esta página demonstra os widgets implementados no aplicativo.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: AppTheme.bodyTextSize),
+            ),
+            const SizedBox(height: AppTheme.largeSpacing),
+            Text(
+              'Use os botões abaixo para navegar entre os widgets.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppTheme.smallTextSize,
+                color: AppTheme.textGrayColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -81,7 +123,7 @@ class _TestPageState extends ConsumerState<TestPage> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryBlue.withOpacity(0.1),
             child: Column(
               children: [
                 Text(
@@ -102,7 +144,7 @@ class _TestPageState extends ConsumerState<TestPage> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _currentWidgetIndex == index
-                                ? AppTheme.primaryColor
+                                ? AppTheme.primaryBlue
                                 : Colors.grey.shade300,
                             foregroundColor: _currentWidgetIndex == index
                                 ? Colors.white
