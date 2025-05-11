@@ -59,6 +59,9 @@ class TimesheetModel extends HiveObject {
     required this.updatedAt,
   });
 
+  /// Retorna um identificador único para este timesheet baseado no userId e timestamp
+  String get documentId => '${userId}-${timestamp.toIso8601String()}';
+
   factory TimesheetModel.fromMap(Map<String, dynamic> map) {
     return TimesheetModel(
       userId: map['userId'],
@@ -106,6 +109,10 @@ class TimesheetModel extends HiveObject {
     if (value is DateTime) return value;
     if (value is String) return DateTime.tryParse(value);
     if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
-    throw Exception('Unsupported date type: ${value.runtimeType}');
+    // Handle Firestore Timestamp
+    if (value.runtimeType.toString() == 'Timestamp') {
+      return value.toDate();
+    }
+    return DateTime.now();
   }
 }

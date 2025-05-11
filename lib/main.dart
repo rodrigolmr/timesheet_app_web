@@ -31,11 +31,10 @@ void main() async {
     print('❌ Erro ao inicializar Hive: $e');
   }
 
-  // Desativado temporariamente para desenvolvimento
-  // FirestoreLiveSyncService().startAllListeners();
-  print('⚠️ FirestoreLiveSyncService desativado para desenvolvimento');
+  // Não iniciar os listeners de sincronização até o login
+  // A sincronização será ativada após autenticação
 
-  // Para desenvolvimento
+  // Iniciar aplicação em modo produção
   runApp(const ProviderScope(child: AppWithInitialSync()));
 }
 
@@ -62,7 +61,11 @@ class _AppWithInitialSyncState extends ConsumerState<AppWithInitialSync> {
     final isAuthenticated = ref.read(authStateProvider);
 
     if (isAuthenticated) {
-      print('Usuário já autenticado. Realizando sincronização inicial...');
+      print('Usuário já autenticado. Iniciando listeners de sincronização...');
+
+      // Iniciar os listeners do FirestoreLiveSyncService
+      ref.read(firestoreLiveSyncServiceProvider).startAllListeners();
+      print('✅ FirestoreLiveSyncService ativado após detecção de autenticação existente');
 
       // Se um usuário já estiver logado, iniciar a sincronização
       // A sincronização ocorre em background e o router lidará com

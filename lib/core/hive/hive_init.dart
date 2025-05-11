@@ -24,5 +24,5 @@ Future<void> initHive() async {
   await Hive.openBox<UserModel>('usersBox');
   await Hive.openBox<WorkerModel>('workersBox');
   await Hive.openBox('prefs');
-  await Hive.openBox<DateTime>('syncMetadataBox');
+  await Hive.openBox('syncMetadataBox');
 }

@@ -44,9 +44,13 @@ class AppTheme {
   static const Color textLightColor = Colors.white;
 
   // Espaçamentos
-  static const double defaultSpacing = 16.0;
+  static const double extraSmallSpacing = 4.0;
   static const double smallSpacing = 8.0;
+  static const double mediumSmallSpacing = 12.0;
+  static const double defaultSpacing = 16.0;
+  static const double mediumSpacing = 20.0;
   static const double largeSpacing = 24.0;
+  static const double mediumLargeSpacing = 28.0;
   static const double extraLargeSpacing = 32.0;
 
   // Raios de borda
@@ -57,7 +61,7 @@ class AppTheme {
   // Alturas
   static const double headerHeight = 60.0;
   static const double titleBoxHeight = 70.0;
-  static const double inputFieldHeight = 40.0;
+  static const double inputFieldHeight = 48.0; // Aumentado para melhor toque em dispositivos móveis (padrão Material)
   static const double buttonHeight = 50.0;
   static const double miniButtonHeight = 25.0;
 

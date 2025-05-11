@@ -19,6 +19,7 @@ import '../core/hive/sync_metadata.dart';
 import '../core/network/firestore_fetch.dart';
 import '../core/routes/app_routes.dart';
 import '../core/responsive/responsive.dart';
+import '../widgets/base_layout.dart';
 
 class DebugPage extends ConsumerStatefulWidget {
   const DebugPage({super.key});
@@ -646,45 +647,51 @@ class _DebugPageState extends ConsumerState<DebugPage> {
     final lastWorkerSync = SyncMetadata.getLastSync('workers');
     final lastTimesheetSync = SyncMetadata.getLastSync('timesheets');
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('🔧 Debug & Sincronização'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.home),
-              onPressed: () => Navigator.of(context).pop(),
-              tooltip: 'Voltar para Home',
-            ),
-          ],
-          bottom: TabBar(
-            tabs: const [
-              Tab(text: '📊 Status'),
-              Tab(text: '🔍 Inspeção'),
-              Tab(text: '🔧 Ferramentas'),
-            ],
-            labelStyle: TextStyle(
-              fontSize: responsive.responsiveValue(
-                mobile: 12.0, 
-                tablet: 14.0, 
-                desktop: 16.0
+    return BaseLayout.noTitleBox(
+      title: '🔧 Debug & Synchronization',
+      child: DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            // Tab bar
+            Material(
+              color: Theme.of(context).primaryColor,
+              child: TabBar(
+                tabs: const [
+                  Tab(text: '📊 Status'),
+                  Tab(text: '🔍 Inspection'),
+                  Tab(text: '🔧 Tools'),
+                ],
+                labelStyle: TextStyle(
+                  fontSize: responsive.responsiveValue(
+                    mobile: 12.0,
+                    tablet: 14.0,
+                    desktop: 16.0
+                  ),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
               ),
             ),
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            // TAB 1: Status & Syncronização
-            _buildStatusTab(context, responsive, cardsCount, workersCount, 
-                timesheetsCount, draftsCount, receiptsCount, usersCount, 
-                lastCardSync, lastWorkerSync, lastTimesheetSync),
-            
-            // TAB 2: Inspeção de Banco de Dados
-            _buildInspectionTab(context, responsive),
-            
-            // TAB 3: Ferramentas Adicionais
-            _buildToolsTab(context, responsive),
+
+            // Tab content in Expanded to take remaining space
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // TAB 1: Status & Synchronization
+                  _buildStatusTab(context, responsive, cardsCount, workersCount,
+                      timesheetsCount, draftsCount, receiptsCount, usersCount,
+                      lastCardSync, lastWorkerSync, lastTimesheetSync),
+
+                  // TAB 2: Database Inspection
+                  _buildInspectionTab(context, responsive),
+
+                  // TAB 3: Additional Tools
+                  _buildToolsTab(context, responsive),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -744,7 +751,7 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   desktop: 3.5
                 ),
               ),
-              itemCount: 7,
+              itemCount: 8,
               itemBuilder: (context, index) {
                 switch (index) {
                   case 0: return _buildStatCard(context, 'Cards', cardsCount);
@@ -1356,7 +1363,7 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   desktop: 2.5,
                 ),
               ),
-              itemCount: 7,
+              itemCount: 8,
               itemBuilder: (context, index) {
                 switch (index) {
                   case 0:
@@ -1421,6 +1428,15 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                       icon: Icons.notifications,
                       description: 'Visualizar todos os componentes de feedback visual',
                       onTap: () => context.go(AppRoutes.feedbackShowcase),
+                    );
+                  case 7:
+                    return _buildToolCard(
+                      context: context,
+                      responsive: responsive,
+                      title: 'Teste de Inputs',
+                      icon: Icons.input,
+                      description: 'Testar os componentes de input melhorados',
+                      onTap: () => context.go(AppRoutes.inputTest),
                     );
                   default:
                     return const SizedBox();

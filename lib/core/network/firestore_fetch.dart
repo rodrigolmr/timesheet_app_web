@@ -3,11 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // Flag para modo de desenvolvimento (sem acessar o Firestore)
 const bool _devMode = false;
 
+// Função para verificar se o modo desenvolvimento está ativado
+bool isDevMode() {
+  // Sempre retorna false para garantir que o modo de desenvolvimento não seja usado em produção
+  return false;
+}
+
 // Mock data para desenvolvimento
 final _now = DateTime.now().toIso8601String();
 
 Future<List<Map<String, dynamic>>> fetchCardsFromFirestore() async {
-  if (_devMode) {
+  if (isDevMode()) {
     print('⚠️ Usando dados mockados para cards em vez do Firestore');
     return [];
   }
@@ -23,7 +29,7 @@ Future<List<Map<String, dynamic>>> fetchCardsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchReceiptsFromFirestore() async {
-  if (_devMode) {
+  if (isDevMode()) {
     print('⚠️ Usando dados mockados para receipts em vez do Firestore');
     return [];
   }
@@ -41,7 +47,7 @@ Future<List<Map<String, dynamic>>> fetchReceiptsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchDraftsFromFirestore() async {
-  if (_devMode) {
+  if (isDevMode()) {
     print('⚠️ Usando dados mockados para drafts em vez do Firestore');
     return [];
   }
@@ -59,7 +65,7 @@ Future<List<Map<String, dynamic>>> fetchDraftsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchTimesheetsFromFirestore() async {
-  if (_devMode) {
+  if (isDevMode()) {
     print('⚠️ Usando dados mockados para timesheets em vez do Firestore');
     return [];
   }
@@ -77,7 +83,7 @@ Future<List<Map<String, dynamic>>> fetchTimesheetsFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchUsersFromFirestore() async {
-  if (_devMode) {
+  if (isDevMode()) {
     print('⚠️ Usando dados mockados para users em vez do Firestore');
     return [
       {
@@ -103,7 +109,7 @@ Future<List<Map<String, dynamic>>> fetchUsersFromFirestore() async {
 }
 
 Future<List<Map<String, dynamic>>> fetchWorkersFromFirestore() async {
-  if (_devMode) {
+  if (isDevMode()) {
     print('⚠️ Usando dados mockados para workers em vez do Firestore');
     return [];
   }

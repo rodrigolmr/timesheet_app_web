@@ -25,11 +25,29 @@ class TimesheetRowItem extends StatefulWidget {
   /// The full user name to display (will be split into first and last name)
   final String userName;
   
-  /// Whether the checkbox should be initially checked
-  final bool initialChecked;
-  
-  /// Callback when the checkbox value changes
-  final ValueChanged<bool>? onCheckChanged;
+  /// Whether the item is selected
+  final bool isSelected;
+
+  /// Callback when the selection state changes
+  final ValueChanged<bool>? onSelectionChanged;
+
+  /// Callback when long press is detected
+  final VoidCallback? onLongPress;
+
+  /// Callback when select all action is requested
+  final VoidCallback? onSelectAll;
+
+  /// Callback when edit action is selected
+  final VoidCallback? onEdit;
+
+  /// Callback when delete action is selected
+  final VoidCallback? onDelete;
+
+  /// Callback when duplicate action is selected
+  final VoidCallback? onDuplicate;
+
+  /// Callback when print action is selected
+  final VoidCallback? onPrint;
 
   /// Creates a TimesheetRowItem widget.
   const TimesheetRowItem({
@@ -38,8 +56,14 @@ class TimesheetRowItem extends StatefulWidget {
     required this.month,
     required this.jobName,
     required this.userName,
-    this.initialChecked = false,
-    this.onCheckChanged,
+    this.isSelected = false,
+    this.onSelectionChanged,
+    this.onLongPress,
+    this.onSelectAll,
+    this.onEdit,
+    this.onDelete,
+    this.onDuplicate,
+    this.onPrint,
   }) : super(key: key);
 
   @override
@@ -47,29 +71,16 @@ class TimesheetRowItem extends StatefulWidget {
 }
 
 class _TimesheetRowItemState extends State<TimesheetRowItem> {
-  late bool _isChecked;
+  // Removemos o estado interno do checkbox
 
   @override
   void initState() {
     super.initState();
-    _isChecked = widget.initialChecked;
   }
 
   @override
   void didUpdateWidget(covariant TimesheetRowItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update checkbox state if initialChecked changes
-    if (widget.initialChecked != oldWidget.initialChecked) {
-      setState(() {
-        _isChecked = widget.initialChecked;
-      });
-    }
-  }
-
-  void _onCheckboxChanged(bool? value) {
-    if (value == null) return;
-    setState(() => _isChecked = value);
-    widget.onCheckChanged?.call(_isChecked);
   }
 
   @override
@@ -115,7 +126,10 @@ class _TimesheetRowItemState extends State<TimesheetRowItem> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => widget.onCheckChanged?.call(!_isChecked),
+                    // Removendo o onTap do InkWell para que o GestureDetector na página pai
+                    // seja responsável por manipular o toque (navegação ou seleção)
+                    onTap: null,
+                    onLongPress: widget.onLongPress,
                     borderRadius: BorderRadius.circular(5),
                     child: Semantics(
                       label: semanticLabel,
@@ -123,8 +137,13 @@ class _TimesheetRowItemState extends State<TimesheetRowItem> {
                       child: Container(
                         height: isVerySmall ? 40 : 45,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFFDD0), // Light yellow background
-                          border: Border.all(color: primaryBlue, width: 1),
+                          color: widget.isSelected
+                              ? const Color(0xFFE3F2FD) // Light blue when selected
+                              : const Color(0xFFFFFDD0), // Light yellow background when not selected
+                          border: Border.all(
+                            color: widget.isSelected ? Colors.blue : primaryBlue,
+                            width: widget.isSelected ? 2 : 1,
+                          ),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         clipBehavior: Clip.antiAlias,
@@ -299,25 +318,89 @@ class _TimesheetRowItemState extends State<TimesheetRowItem> {
                 ),
               ),
               
-              // Checkbox section
+              // Actions button
               SizedBox(
                 width: isVerySmall ? 30 : 34,
-                child: Semantics(
-                  label: _isChecked ? 'Selected' : 'Not selected',
-                  child: Checkbox(
-                    value: _isChecked,
-                    onChanged: _onCheckboxChanged,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+                child: PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.more_vert, color: primaryBlue),
+                  offset: const Offset(0, 40),
+                  itemBuilder: (context) => [
+                    if (widget.onEdit != null)
+                      const PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                    if (widget.onDuplicate != null)
+                      const PopupMenuItem<String>(
+                        value: 'duplicate',
+                        child: Row(
+                          children: [
+                            Icon(Icons.copy, size: 18),
+                            SizedBox(width: 8),
+                            Text('Duplicate'),
+                          ],
+                        ),
+                      ),
+                    if (widget.onPrint != null)
+                      const PopupMenuItem<String>(
+                        value: 'print',
+                        child: Row(
+                          children: [
+                            Icon(Icons.print, size: 18),
+                            SizedBox(width: 8),
+                            Text('Print'),
+                          ],
+                        ),
+                      ),
+                    // Opção de selecionar
+                    const PopupMenuItem<String>(
+                      value: 'select',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Select'),
+                        ],
+                      ),
                     ),
-                    activeColor: primaryBlue,
-                    materialTapTargetSize: isVerySmall ?
-                        MaterialTapTargetSize.shrinkWrap :
-                        MaterialTapTargetSize.padded,
-                    visualDensity: isVerySmall ?
-                        VisualDensity.compact :
-                        VisualDensity.standard,
-                  ),
+                    if (widget.onDelete != null)
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 18, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        widget.onEdit?.call();
+                        break;
+                      case 'duplicate':
+                        widget.onDuplicate?.call();
+                        break;
+                      case 'print':
+                        widget.onPrint?.call();
+                        break;
+                      case 'delete':
+                        widget.onDelete?.call();
+                        break;
+                      case 'select':
+                        widget.onSelectionChanged?.call(!widget.isSelected);
+                        break;
+                    }
+                  },
                 ),
               ),
             ],

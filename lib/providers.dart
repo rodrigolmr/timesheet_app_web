@@ -20,6 +20,7 @@ import 'services/connectivity_service.dart';
 final cardRepositoryProvider = Provider((ref) => CardRepository());
 final receiptRepositoryProvider = Provider((ref) => ReceiptRepository());
 final draftRepositoryProvider = Provider((ref) => TimesheetDraftRepository());
+final timesheetDraftRepositoryProvider = Provider((ref) => TimesheetDraftRepository());
 final timesheetRepositoryProvider = Provider((ref) => TimesheetRepository());
 final userRepositoryProvider = Provider((ref) => UserRepository());
 final workerRepositoryProvider = Provider((ref) => WorkerRepository());
@@ -173,6 +174,10 @@ final loginCallbackProvider = Provider<LoginCallback>((ref) {
         // Atualizar o estado de autenticação após salvar o usuário
         ref.read(authStateProvider.notifier).state = true;
 
+        // Iniciar os listeners do FirestoreLiveSyncService após o login
+        ref.read(firestoreLiveSyncServiceProvider).startAllListeners();
+        print('✅ FirestoreLiveSyncService ativado após autenticação');
+
         // Realizar a sincronização inicial após o login, mas não bloquear o login esperando por ela
         ref.read(syncManagerProvider).performInitialSync().then((success) {
           if (!success) {
@@ -190,6 +195,10 @@ final loginCallbackProvider = Provider<LoginCallback>((ref) {
 final logoutCallbackProvider = Provider<LogoutCallback>((ref) {
   final auth = ref.watch(authServiceProvider);
   return () async {
+    // Parar os listeners de sincronização antes do logout
+    ref.read(firestoreLiveSyncServiceProvider).stopAllListeners();
+    print('🛑 Live sync: listeners parados durante logout');
+
     // Efetuar logout no Firebase Auth
     await auth.signOut();
 

@@ -79,9 +79,9 @@ class _InputFieldDropdownState<T> extends State<InputFieldDropdown<T>> {
   @override
   Widget build(BuildContext context) {
     // Texto do placeholder com base no rótulo, se não for fornecido
-    final placeholder = widget.placeholderText ?? 
+    final placeholder = widget.placeholderText ??
                         'Select ${widget.label.toLowerCase()}';
-    
+
     // Item de placeholder
     Widget? hint = Text(
       placeholder,
@@ -91,35 +91,41 @@ class _InputFieldDropdownState<T> extends State<InputFieldDropdown<T>> {
         color: AppTheme.textGrayColor,
       ),
     );
-    
+
     return Container(
       width: double.infinity,
-      height: AppTheme.inputFieldHeight,
+      constraints: const BoxConstraints(
+        minHeight: AppTheme.inputFieldHeight,
+      ),
       decoration: InputFieldCore.containerDecoration(widget.error),
-      child: DropdownButtonFormField<T>(
-        focusNode: _focusNode,
-        value: widget.value,
-        items: widget.items,
-        onChanged: widget.onChanged,
-        icon: widget.suffixIcon ?? const Icon(
-          Icons.arrow_drop_down,
-          color: AppTheme.primaryBlue,
-        ),
-        iconSize: 24,
-        hint: hint,
-        isExpanded: true,
-        dropdownColor: Colors.white,
-        menuMaxHeight: 300,
-        style: const TextStyle(
-          fontSize: AppTheme.bodyTextSize,
-          fontWeight: FontWeight.normal,
-          color: AppTheme.textDarkColor,
-        ),
-        decoration: InputFieldCore.decoration(
-          label: widget.label,
-          hintText: '', // Vazio para evitar conflito com o hint
-          prefixText: widget.prefixText,
-          error: widget.error,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppTheme.defaultRadius),
+        child: DropdownButtonFormField<T>(
+          focusNode: _focusNode,
+          value: widget.value,
+          items: widget.items,
+          onChanged: widget.onChanged,
+          icon: widget.suffixIcon ?? const Icon(
+            Icons.arrow_drop_down,
+            color: AppTheme.primaryBlue,
+          ),
+          iconSize: 24,
+          hint: hint,
+          isExpanded: true,
+          dropdownColor: Colors.white,
+          menuMaxHeight: 300,
+          style: const TextStyle(
+            fontSize: AppTheme.bodyTextSize,
+            fontWeight: FontWeight.normal,
+            color: AppTheme.textDarkColor,
+          ),
+          decoration: InputFieldCore.decoration(
+            label: widget.label,
+            hintText: '', // Vazio para evitar conflito com o hint
+            prefixText: widget.prefixText,
+            error: widget.error,
+          ),
         ),
       ),
     );

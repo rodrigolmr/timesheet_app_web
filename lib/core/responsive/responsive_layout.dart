@@ -72,6 +72,7 @@ class ResponsiveContainer extends StatelessWidget {
   final List<BoxShadow>? boxShadow;
   final BorderRadius? borderRadius;
   final Border? border;
+  final double? childSpacing; // Espaço entre elementos filho quando child é uma Column/Row
 
   /// Cria um container responsivo com larguras máximas diferentes para cada breakpoint.
   ///
@@ -88,6 +89,7 @@ class ResponsiveContainer extends StatelessWidget {
   /// [boxShadow] aplica sombras ao container.
   /// [borderRadius] define o arredondamento das bordas.
   /// [border] define as bordas do container.
+  /// [childSpacing] define o espaçamento entre elementos quando o child é uma Column ou Row.
   const ResponsiveContainer({
     Key? key,
     required this.child,
@@ -106,6 +108,7 @@ class ResponsiveContainer extends StatelessWidget {
     this.boxShadow,
     this.borderRadius,
     this.border,
+    this.childSpacing,
   }) : super(key: key);
 
   @override
@@ -152,10 +155,37 @@ class ResponsiveContainer extends StatelessWidget {
 
         // Prepara o conteúdo filho, aplicando Column/Row se necessário
         Widget content = child;
-        if (crossAxisAlignment != null || mainAxisAlignment != null) {
+
+        // Identifica se o child já é uma Column e aplica o espaçamento automático
+        if (child is Column && childSpacing != null) {
+          // Se o child já é uma Column, ajustamos o espaçamento entre seus elementos
+          final Column column = child as Column;
+          // Adiciona SizedBox entre os elementos da Column
+          final List<Widget> childrenWithSpacing = [];
+          for (int i = 0; i < column.children.length; i++) {
+            childrenWithSpacing.add(column.children[i]);
+            // Adiciona espaçamento entre os elementos, exceto após o último
+            if (i < column.children.length - 1) {
+              childrenWithSpacing.add(SizedBox(height: childSpacing));
+            }
+          }
+
+          // Cria uma nova Column com os mesmos parâmetros da original, mas com espaçamento
           content = Column(
-            crossAxisAlignment: crossAxisAlignment ?? CrossAxisAlignment.center,
+            mainAxisAlignment: column.mainAxisAlignment,
+            mainAxisSize: MainAxisSize.min, // Usamos min para não esticar
+            crossAxisAlignment: column.crossAxisAlignment,
+            textDirection: column.textDirection,
+            verticalDirection: column.verticalDirection,
+            textBaseline: column.textBaseline,
+            children: childrenWithSpacing,
+          );
+        } else if (crossAxisAlignment != null || mainAxisAlignment != null) {
+          // Se não for uma Column mas tiver parâmetros de alinhamento, criar uma Column
+          content = Column(
+            crossAxisAlignment: crossAxisAlignment ?? CrossAxisAlignment.start,
             mainAxisAlignment: mainAxisAlignment ?? MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [child],
           );
         }
@@ -188,7 +218,10 @@ class ResponsiveContainer extends StatelessWidget {
 
         // Centraliza o conteúdo se solicitado
         if (center) {
-          content = Center(child: content);
+          content = Align(
+            alignment: Alignment.topCenter,
+            child: content,
+          );
         }
 
         return content;

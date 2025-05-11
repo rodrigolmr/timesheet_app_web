@@ -9,8 +9,14 @@ import '../../pages/test_page.dart'; // <-- Import da página de teste
 import '../../pages/layout_test_page.dart'; // <-- Import da página de teste de layout
 import '../../pages/button_showcase_page.dart'; // <-- Import da página de showcase de botões
 import '../../pages/feedback_showcase_page.dart'; // <-- Import da página de showcase de feedback
+import '../../pages/input_test_page.dart'; // <-- Import da página de teste de inputs
 import '../../pages/timesheet_list_page.dart'; // <-- Import da página de lista de timesheets
+import '../../pages/timesheet_view_page.dart'; // <-- Import da página de visualização do timesheet
+import '../../pages/timesheet_header_page.dart'; // <-- Import da página de cabeçalho do timesheet
+import '../../pages/timesheet_workers_page.dart'; // <-- Import da página de trabalhadores do timesheet
+import '../../pages/timesheet_review_page.dart'; // <-- Import da página de revisão do timesheet
 import '../../pages/sync_page.dart'; // <-- Import da página de sincronização
+import '../../pages/settings_page.dart'; // <-- Import da página de configurações
 import '../../services/sync_manager.dart'; // <-- Import para acesso ao SyncStatus
 // Import da página de showcase de variantes removido
 import '../../providers.dart';
@@ -30,13 +36,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Verificar se está autenticado
       final isLoggedIn = authState;
 
-      // Não redirecionar para páginas de teste e desenvolvimento
+      // Permitir acesso às páginas de teste enquanto usa dados reais
       if (state.matchedLocation == '/test' ||
           state.matchedLocation == '/layout-test' ||
           state.matchedLocation == '/button-showcase' ||
           state.matchedLocation == '/feedback-showcase' ||
-          state.matchedLocation == '/sync') {
-        return null;
+          state.matchedLocation == '/input-test' ||
+          state.matchedLocation == '/sync' ||
+          state.matchedLocation == '/debug' ||
+          state.matchedLocation == '/settings') {
+        return null; // Permitir acesso
       }
 
       // Verificar se está tentando acessar a página de login
@@ -76,6 +85,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DebugPage(),
       ),
       GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
         path: '/test',
         name: 'test',
         builder: (context, state) => const TestPage(),
@@ -96,6 +110,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const FeedbackShowcasePage(),
       ),
       GoRoute(
+        path: '/input-test',
+        name: AppRoutes.inputTestName,
+        builder: (context, state) => const InputTestPage(),
+      ),
+      GoRoute(
         path: '/timesheets',
         name: AppRoutes.timesheetsName,
         builder: (context, state) => const TimesheetListPage(),
@@ -104,18 +123,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/timesheets/view/:id',
         name: AppRoutes.timesheetViewName,
         builder: (context, state) {
-          // final id = state.pathParameters['id'] ?? '';
-          return const Scaffold(
-            body: Center(child: Text('Timesheet View - Implementação pendente')),
-          );
+          return const TimesheetViewPage();
         },
       ),
       GoRoute(
         path: '/timesheets/new',
         name: AppRoutes.timesheetNewName,
-        builder: (context, state) => const Scaffold(
-          body: Center(child: Text('New Timesheet - Implementação pendente')),
-        ),
+        builder: (context, state) => const TimesheetHeaderPage(),
+      ),
+      GoRoute(
+        path: '/timesheets/header',
+        name: AppRoutes.timesheetHeaderName,
+        builder: (context, state) => const TimesheetHeaderPage(),
+      ),
+      GoRoute(
+        path: '/timesheets/workers',
+        name: AppRoutes.timesheetWorkersName,
+        builder: (context, state) => const TimesheetWorkersPage(),
+      ),
+      GoRoute(
+        path: '/timesheets/review',
+        name: AppRoutes.timesheetReviewName,
+        builder: (context, state) => const TimesheetReviewPage(),
       ),
       GoRoute(
         path: '/timesheets/edit/:id',
@@ -160,6 +189,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const DebugPage(),
     ),
     GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
       path: '/test',
       name: 'test',
       builder: (context, state) => const TestPage(),
@@ -180,6 +214,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const FeedbackShowcasePage(),
     ),
     GoRoute(
+      path: '/input-test',
+      name: AppRoutes.inputTestName,
+      builder: (context, state) => const InputTestPage(),
+    ),
+    GoRoute(
       path: '/timesheets',
       name: AppRoutes.timesheetsName,
       builder: (context, state) => const TimesheetListPage(),
@@ -188,18 +227,28 @@ final appRouter = GoRouter(
       path: '/timesheets/view/:id',
       name: AppRoutes.timesheetViewName,
       builder: (context, state) {
-        // final id = state.pathParameters['id'] ?? '';
-        return const Scaffold(
-          body: Center(child: Text('Timesheet View - Implementação pendente')),
-        );
+        return const TimesheetViewPage();
       },
     ),
     GoRoute(
       path: '/timesheets/new',
       name: AppRoutes.timesheetNewName,
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('New Timesheet - Implementação pendente')),
-      ),
+      builder: (context, state) => const TimesheetHeaderPage(),
+    ),
+    GoRoute(
+      path: '/timesheets/header',
+      name: AppRoutes.timesheetHeaderName,
+      builder: (context, state) => const TimesheetHeaderPage(),
+    ),
+    GoRoute(
+      path: '/timesheets/workers',
+      name: AppRoutes.timesheetWorkersName,
+      builder: (context, state) => const TimesheetWorkersPage(),
+    ),
+    GoRoute(
+      path: '/timesheets/review',
+      name: AppRoutes.timesheetReviewName,
+      builder: (context, state) => const TimesheetReviewPage(),
     ),
     GoRoute(
       path: '/timesheets/edit/:id',

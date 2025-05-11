@@ -76,6 +76,10 @@ class UserModel extends HiveObject {
     if (value is DateTime) return value;
     if (value is String) return DateTime.tryParse(value);
     if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
-    throw Exception('Unsupported date type: ${value.runtimeType}');
+    // Handle Firestore Timestamp
+    if (value.runtimeType.toString() == 'Timestamp') {
+      return value.toDate();
+    }
+    return DateTime.now();
   }
 }

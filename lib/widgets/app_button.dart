@@ -122,7 +122,7 @@ enum ButtonType {
   // Botões de navegação
   nextButton,
   backButton,
-  
+
   // Botões de ação primária
   newButton,
   addWorkerButton,
@@ -131,25 +131,26 @@ enum ButtonType {
   submitButton,
   loginButton,
   saveButton,
-  
+
   // Botões de documentos/dados
   sheetsButton,
   receiptsButton,
   pdfButton,
   uploadReceiptButton,
-  
-  // Botões de administração 
+
+  // Botões de administração
   settingsButton,
   usersButton,
   workersButton,
   cardsButton,
-  
+
   // Botões de edição/modificação
   editButton,
   clearButton,
   columnsButton,
   searchButton,
-  
+  sortButton,
+
   // Botões de cancelamento/remoção
   cancelButton,
   deleteButton,
@@ -489,6 +490,22 @@ extension ButtonTypeConfig on ButtonType {
           icon: FontAwesomeIcons.search,
           backgroundColor: AppTheme.indigoColor,
           borderColor: AppTheme.indigoColor,
+          textColor: AppTheme.textLightColor,
+          iconColor: AppTheme.textLightColor,
+          width: AppTheme.buttonWidth,
+          height: AppTheme.buttonHeight,
+          iconSize: 24.0,
+          textSize: AppTheme.buttonTextSize,
+          iconSpacing: 4.0,
+          category: ButtonCategory.utility,
+        );
+
+      case ButtonType.sortButton:
+        return const ButtonConfig(
+          label: 'Sort',
+          icon: FontAwesomeIcons.sort,
+          backgroundColor: AppTheme.purpleDeepColor,
+          borderColor: AppTheme.purpleDeepColor,
           textColor: AppTheme.textLightColor,
           iconColor: AppTheme.textLightColor,
           width: AppTheme.buttonWidth,

@@ -139,6 +139,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return BaseLayout(
       title: 'Central Island Floors',
       showTitleBox: false, // Desabilita TitleBox conforme referência
+      verticalAlignment: LayoutAlignment.center, // Alinhamento centralizado para home page
       child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -158,15 +159,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(height: responsive.responsiveValue(
-                          mobile: 16.0,
-                          tablet: 24.0,
-                          desktop: 32.0,
+                          mobile: AppTheme.defaultSpacing, // 16px para telas pequenas (320px)
+                          tablet: AppTheme.largeSpacing, // 24px para tablets
+                          desktop: AppTheme.extraLargeSpacing, // 32px para desktop
                         )),
                         const LogoText(),
                         SizedBox(height: responsive.responsiveValue(
-                          mobile: 16.0,
-                          tablet: 20.0,
-                          desktop: 24.0,
+                          mobile: AppTheme.defaultSpacing, // 16px para telas pequenas (320px)
+                          tablet: AppTheme.mediumSpacing, // 20px para tablets
+                          desktop: AppTheme.largeSpacing, // 24px para desktop
                         )),
                         if (_fullName.isNotEmpty)
                           Text(
@@ -175,16 +176,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                             textAlign: TextAlign.center,
                           ),
                         SizedBox(height: responsive.responsiveValue(
-                          mobile: 32.0,
-                          tablet: 40.0,
-                          desktop: 48.0,
+                          mobile: AppTheme.largeSpacing + AppTheme.defaultSpacing, // 40px para telas pequenas
+                          tablet: AppTheme.extraLargeSpacing + AppTheme.mediumSmallSpacing, // 44px para tablets
+                          desktop: AppTheme.extraLargeSpacing + AppTheme.mediumSpacing, // 52px para desktop
                         )),
                         Wrap(
                           spacing: responsive.spacing,
                           runSpacing: responsive.responsiveValue(
-                            mobile: 16.0,
-                            tablet: 20.0,
-                            desktop: 24.0,
+                            mobile: AppTheme.defaultSpacing, // 16px para telas pequenas (320px)
+                            tablet: AppTheme.mediumSpacing, // 20px para tablets
+                            desktop: AppTheme.largeSpacing, // 24px para desktop
                           ),
                           alignment: WrapAlignment.center,
                           children: [
@@ -192,77 +193,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                               config: ButtonType.sheetsButton.config,
                               onPressed: () => context.goNamed(AppRoutes.timesheetsName),
                             ),
-                            StateButton.fromType(
-                              type: ButtonType.settingsButton,
-                              onPressed: () async {
-                                ToastMessage.showInfo(
-                                  context,
-                                  "Settings module coming soon!",
-                                );
-                                await Future.delayed(const Duration(milliseconds: 500));
-                                return true;
-                              },
+                            AppButton(
+                              config: ButtonType.settingsButton.config,
+                              onPressed: () => context.go('/settings'),
                             ),
-                            LoadingButton.fromType(
-                              type: ButtonType.workersButton,
-                              onPressed: () async {
-                                await Future.delayed(const Duration(seconds: 1));
-                                if (context.mounted) {
-                                  ToastMessage.showInfo(
-                                    context,
-                                    "Workers module coming soon!",
-                                  );
-                                }
-                              },
-                              loadingText: 'Loading...',
-                            ),
-                            StateButton.fromType(
-                              type: ButtonType.usersButton,
-                              onPressed: () async {
-                                // Realizar uma atualização de dados
-                                return await _syncData();
-                              },
-                              loadingText: 'Loading...',
-                              successText: 'Success!',
-                              errorText: 'Failed!',
-                            ),
-
-                            // Removida a exibição da data da última sincronização
                           ],
                         ),
                         SizedBox(height: responsive.responsiveValue(
-                          mobile: 32.0,
-                          tablet: 40.0,
-                          desktop: 48.0,
+                          mobile: AppTheme.largeSpacing + AppTheme.defaultSpacing, // 40px para telas pequenas
+                          tablet: AppTheme.extraLargeSpacing + AppTheme.mediumSmallSpacing, // 44px para tablets
+                          desktop: AppTheme.extraLargeSpacing + AppTheme.mediumSpacing, // 52px para desktop
                         )),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AppButton.fromType(
-                              type: ButtonType.newButton,
-                              buttonStyle: AppButtonStyle.outline,
-                              onPressed: () {
-                                // Usar addPostFrameCallback para evitar problemas durante build
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  if (mounted) {
-                                    FeedbackController.showInfo(
-                                      context,
-                                      message: 'Opening showcase...',
-                                      position: FeedbackPosition.bottom,
-                                    );
-                                  }
-                                });
-                                // Navegar para a página de showcase
-                                context.go('/feedback-showcase');
-                              },
-                            ),
-                            const SizedBox(width: 16),
-                            AppButton.fromType(
-                              type: ButtonType.editButton,
-                              onPressed: () => context.push('/debug'),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),

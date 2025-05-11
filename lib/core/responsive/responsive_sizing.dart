@@ -95,13 +95,13 @@ class ResponsiveSizing {
     desktop: 1.4,
   );
   
-  // Calcula padding responsivo
+  // Calcula padding responsivo - otimizado para telas a partir de 320px
   EdgeInsets get screenPadding => responsiveValue(
-    mobile: const EdgeInsets.all(16.0),
-    mobileLarge: const EdgeInsets.all(20.0),
-    tablet: const EdgeInsets.all(24.0),
-    tabletLarge: const EdgeInsets.all(32.0),
-    desktop: const EdgeInsets.all(48.0),
+    mobile: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0), // Padrão para telas pequenas (320px)
+    mobileLarge: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+    tablet: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+    tabletLarge: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 28.0),
+    desktop: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 32.0),
   );
   
   // Calcula largura máxima para conteúdo centralizado

@@ -36,10 +36,7 @@ class SortField extends StatelessWidget {
   
   /// Função chamada para limpar todos os filtros.
   final VoidCallback onClearAll;
-  
-  /// Função chamada para aplicar os filtros.
-  final VoidCallback onApply;
-  
+
   /// Função chamada para fechar o painel de filtros.
   final VoidCallback onClose;
   
@@ -58,7 +55,6 @@ class SortField extends StatelessWidget {
     required this.onSortOrderChanged,
     required this.onCreatorChanged,
     required this.onClearAll,
-    required this.onApply,
     required this.onClose,
     required this.onSearchChanged,
   }) : super(key: key);
@@ -94,15 +90,40 @@ class SortField extends StatelessWidget {
                 // 1) Range + setas
                 Row(
                   children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isDateActive ? Colors.green : const Color(0xFF0277BD),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(80, 40),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: isDateActive
+                            ? [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.6),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : [],
                       ),
-                      onPressed: onPickRange,
-                      child: const Text("Range"),
+                      child: Material(
+                        color: isDateActive ? Colors.green : const Color(0xFF777777),
+                        borderRadius: BorderRadius.circular(4),
+                        elevation: 0,
+                        child: InkWell(
+                          onTap: onPickRange,
+                          borderRadius: BorderRadius.circular(4),
+                          child: Container(
+                            width: 80,
+                            height: 40,
+                            alignment: Alignment.center,
+                            child: const Text(
+                              "Range",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -149,16 +170,16 @@ class SortField extends StatelessWidget {
                           color:
                               isCreatorActive
                                   ? Colors.green
-                                  : const Color(0xFF0205D3),
+                                  : Colors.grey,
                           width: isCreatorActive ? 2 : 1,
                         ),
                         boxShadow:
                             isCreatorActive
                                 ? [
                                     BoxShadow(
-                                      color: Colors.green.withOpacity(0.4),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
+                                      color: Colors.green.withOpacity(0.6),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
                                     ),
                                   ]
                                 : [],
@@ -200,10 +221,6 @@ class SortField extends StatelessWidget {
                       onPressed: onClearAll,
                     ),
                     AppButton.mini(
-                      type: MiniButtonType.applyMiniButton,
-                      onPressed: onApply,
-                    ),
-                    AppButton.mini(
                       type: MiniButtonType.closeMiniButton,
                       onPressed: onClose,
                     ),
@@ -218,16 +235,31 @@ class SortField extends StatelessWidget {
   }
 
   Widget _squareArrow(IconData icon, bool isActive, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF0205D3) : Colors.grey,
-          borderRadius: BorderRadius.circular(4),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.6),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ]
+            : [],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isActive ? Colors.green : Colors.grey,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
@@ -245,9 +277,9 @@ class SortField extends StatelessWidget {
             isActive
                 ? [
                     BoxShadow(
-                      color: Colors.green.withOpacity(0.4),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                      color: Colors.green.withOpacity(0.6),
+                      blurRadius: 8,
+                      spreadRadius: 1,
                     ),
                   ]
                 : [],
@@ -266,7 +298,7 @@ class SortField extends StatelessWidget {
           floatingLabelStyle: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: isActive ? Colors.green : const Color(0xFF0205D3),
+            color: isActive ? Colors.green : Colors.grey,
           ),
           hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
           filled: true,
@@ -274,13 +306,13 @@ class SortField extends StatelessWidget {
           prefixIcon: const Icon(Icons.search),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-              color: isActive ? Colors.green : const Color(0xFF0205D3),
+              color: isActive ? Colors.green : Colors.grey,
               width: isActive ? 2 : 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(
-              color: isActive ? Colors.green : const Color(0xFF0205D3),
+              color: isActive ? Colors.green : Colors.grey,
               width: isActive ? 2 : 1,
             ),
           ),

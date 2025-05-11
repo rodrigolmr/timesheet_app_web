@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:timesheet_app_web/core/theme/app_theme.dart';
 import 'input_field_core.dart';
-import 'capitalization_formater_sentence.dart';
+import 'text_formatter.dart';
 
 /// Um campo de entrada para texto multi-linha com suporte para formatação de texto.
 ///
@@ -104,44 +104,48 @@ class _InputFieldMultilineState extends State<InputFieldMultiline> {
   @override
   Widget build(BuildContext context) {
     // Configura os formatadores de texto
-    final formatters = widget.inputFormatters ?? 
-        [const CapitalizationFormaterSentence()];
-        
+    final formatters = widget.inputFormatters ??
+        [TextFormatter.capitalization(CapitalizationType.sentences)];
+
     // Define o padding para o campo multi-linha
     final contentPadding = const EdgeInsets.symmetric(
       horizontal: 12,
       vertical: 12,
     );
-    
+
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: widget.minHeight),
-      decoration: InputFieldCore.containerDecoration(widget.error),
-      child: TextField(
-        focusNode: _focusNode,
-        controller: _controller,
-        maxLines: widget.maxLines,
-        minLines: 3,
-        textCapitalization: widget.textCapitalization,
-        autocorrect: widget.textCapitalization != TextCapitalization.none,
-        enableSuggestions: widget.textCapitalization != TextCapitalization.none,
-        inputFormatters: formatters,
-        onChanged: widget.onChanged,
-        onTap: () {
-          if (widget.error && widget.onClearError != null) {
-            widget.onClearError!();
-          }
-        },
-        style: const TextStyle(
-          fontSize: AppTheme.bodyTextSize,
-          color: AppTheme.textDarkColor,
-        ),
-        decoration: InputFieldCore.decoration(
-          label: widget.label,
-          hintText: widget.hintText,
-          prefixText: widget.prefixText,
-          error: widget.error,
-          contentPadding: contentPadding,
+      // Removido decoration do Container para evitar a borda dupla
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppTheme.defaultRadius),
+        child: TextField(
+          focusNode: _focusNode,
+          controller: _controller,
+          maxLines: widget.maxLines,
+          minLines: 3,
+          textCapitalization: widget.textCapitalization,
+          autocorrect: widget.textCapitalization != TextCapitalization.none,
+          enableSuggestions: widget.textCapitalization != TextCapitalization.none,
+          inputFormatters: formatters,
+          onChanged: widget.onChanged,
+          onTap: () {
+            if (widget.error && widget.onClearError != null) {
+              widget.onClearError!();
+            }
+          },
+          style: const TextStyle(
+            fontSize: AppTheme.bodyTextSize,
+            color: AppTheme.textDarkColor,
+          ),
+          decoration: InputFieldCore.decoration(
+            label: widget.label,
+            hintText: widget.hintText,
+            prefixText: widget.prefixText,
+            error: widget.error,
+            contentPadding: contentPadding,
+          ),
         ),
       ),
     );
