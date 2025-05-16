@@ -1,0 +1,294 @@
+import 'package:flutter/material.dart';
+
+/// Enum que define as variantes de tema disponíveis no aplicativo
+enum AppThemeVariant {
+  blue,   // Tema azul corporativo (padrão)
+  green,  // Tema verde
+  pink,   // Tema rosa
+}
+
+/// Classe principal para gerenciar temas do aplicativo
+class AppTheme {
+  // Cores do tema Azul Corporativo
+  static const Color _blueMain = Color(0xFF1565C0);
+  static const Color _blueLight = Color(0xFF1E88E5);
+  static const Color _blueLighter = Color(0xFF90CAF9);
+  static const Color _blueDark = Color(0xFF0D47A1);
+  static const Color _blueDarker = Color(0xFF0A3880);
+  
+  // Cores do tema Verde
+  static const Color _greenMain = Color(0xFF00897B);
+  static const Color _greenLight = Color(0xFF4DB6AC);
+  static const Color _greenLighter = Color(0xFFB2DFDB);
+  static const Color _greenDark = Color(0xFF00695C);
+  static const Color _greenDarker = Color(0xFF004D40);
+  
+  // Cores do tema Rosa
+  static const Color _pinkMain = Color(0xFFE91E63);
+  static const Color _pinkLight = Color(0xFFF06292);
+  static const Color _pinkLighter = Color(0xFFF8BBD0);
+  static const Color _pinkDark = Color(0xFFC2185B);
+  static const Color _pinkDarker = Color(0xFF880E4F);
+  
+  // Cores comuns - fundos e superfícies
+  static const Color _cardBackground = Color(0xFFFFF8E1);
+  static const Color _background = Color(0xFFFAFAFA);
+  static const Color _surface = Color(0xFFFFFFFF);
+  
+  // Cores comuns - status funcionais
+  static const Color _success = Color(0xFF4CAF50);
+  static const Color _warning = Color(0xFFFFA000);
+  static const Color _error = Color(0xFFE53935);
+  static const Color _info = Color(0xFF2196F3);
+  
+  // Cores comuns - texto
+  static const Color _onPrimary = Colors.white;
+  static const Color _onBackground = Color(0xFF212121);
+  static const Color _onBackgroundMuted = Color(0xFF757575);
+  
+  /// Retorna o ThemeData para a variante de tema selecionada
+  static ThemeData getThemeData(AppThemeVariant variant) {
+    // Define a cor primária baseada na variante selecionada
+    final Color primaryColor = _getPrimaryColor(variant);
+    final Color primaryLightColor = _getPrimaryLightColor(variant);
+    
+    // Configurações de tema comuns para todas as variantes
+    return ThemeData(
+      useMaterial3: true,
+      
+      // Esquema de cores
+      colorScheme: ColorScheme(
+        brightness: Brightness.light,
+        primary: primaryColor,
+        onPrimary: _onPrimary,
+        secondary: primaryLightColor,
+        onSecondary: _onPrimary,
+        error: _error,
+        onError: _onPrimary,
+        background: _background,
+        onBackground: _onBackground,
+        surface: _surface,
+        onSurface: _onBackground,
+      ),
+      
+      // Cor primária e acentuação (para widgets que não usam ColorScheme)
+      primaryColor: primaryColor,
+      primaryColorLight: primaryLightColor,
+      primaryColorDark: _getPrimaryDarkColor(variant),
+      
+      // Cores de cards
+      cardColor: _cardBackground,
+      cardTheme: const CardTheme(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+        ),
+      ),
+      
+      // Tipografia
+      textTheme: const TextTheme(
+        // Títulos
+        displayLarge: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, letterSpacing: -1.0),
+        displayMedium: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+        displaySmall: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        
+        // Títulos menores
+        headlineLarge: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        headlineSmall: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        
+        // Títulos de seção
+        titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        
+        // Texto de corpo
+        bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+        bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+        bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+      ).apply(
+        bodyColor: _onBackground,
+        displayColor: _onBackground,
+      ),
+      
+      // Botões
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: _onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      
+      // Botões de texto
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      
+      // Botões com borda
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primaryColor,
+          side: BorderSide(color: primaryColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      
+      // AppBar
+      appBarTheme: AppBarTheme(
+        backgroundColor: primaryColor,
+        foregroundColor: _onPrimary,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      
+      // FAB
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryColor,
+        foregroundColor: _onPrimary,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      
+      // Inputs
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: primaryColor, width: 2),
+        ),
+        floatingLabelStyle: TextStyle(color: primaryColor),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      
+      // CheckBox, Switch, etc.
+      checkboxTheme: CheckboxThemeData(
+        fillColor: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.selected)) {
+            return primaryColor;
+          }
+          return null;
+        }),
+      ),
+      
+      // Tabs
+      tabBarTheme: TabBarTheme(
+        labelColor: primaryColor,
+        unselectedLabelColor: _onBackgroundMuted,
+        indicatorColor: primaryColor,
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+      ),
+    );
+  }
+  
+  /// Retorna a cor primária baseada na variante do tema
+  static Color _getPrimaryColor(AppThemeVariant variant) {
+    switch (variant) {
+      case AppThemeVariant.blue:
+        return _blueMain;
+      case AppThemeVariant.green:
+        return _greenMain;
+      case AppThemeVariant.pink:
+        return _pinkMain;
+    }
+  }
+  
+  /// Retorna a cor primária mais clara baseada na variante do tema
+  static Color _getPrimaryLightColor(AppThemeVariant variant) {
+    switch (variant) {
+      case AppThemeVariant.blue:
+        return _blueLight;
+      case AppThemeVariant.green:
+        return _greenLight;
+      case AppThemeVariant.pink:
+        return _pinkLight;
+    }
+  }
+  
+  /// Retorna a cor primária mais escura baseada na variante do tema
+  static Color _getPrimaryDarkColor(AppThemeVariant variant) {
+    switch (variant) {
+      case AppThemeVariant.blue:
+        return _blueDark;
+      case AppThemeVariant.green:
+        return _greenDark;
+      case AppThemeVariant.pink:
+        return _pinkDark;
+    }
+  }
+  
+  /// Retorna a cor primária muito clara baseada na variante do tema
+  static Color getPrimaryLighterColor(AppThemeVariant variant) {
+    switch (variant) {
+      case AppThemeVariant.blue:
+        return _blueLighter;
+      case AppThemeVariant.green:
+        return _greenLighter;
+      case AppThemeVariant.pink:
+        return _pinkLighter;
+    }
+  }
+  
+  /// Retorna a cor primária muito escura baseada na variante do tema
+  static Color getPrimaryDarkerColor(AppThemeVariant variant) {
+    switch (variant) {
+      case AppThemeVariant.blue:
+        return _blueDarker;
+      case AppThemeVariant.green:
+        return _greenDarker;
+      case AppThemeVariant.pink:
+        return _pinkDarker;
+    }
+  }
+  
+  /// Retorna a cor de sucesso (verde)
+  static Color getSuccessColor() => _success;
+  
+  /// Retorna a cor de alerta (amarelo/âmbar)
+  static Color getWarningColor() => _warning;
+  
+  /// Retorna a cor de erro (vermelho)
+  static Color getErrorColor() => _error;
+  
+  /// Retorna a cor de informação (azul)
+  static Color getInfoColor() => _info;
+  
+  /// Retorna a cor de fundo de cards
+  static Color getCardBackgroundColor() => _cardBackground;
+  
+  /// Retorna a cor de fundo principal
+  static Color getBackgroundColor() => _background;
+  
+  /// Retorna a cor de superfície
+  static Color getSurfaceColor() => _surface;
+  
+  /// Retorna a cor de texto sobre cor primária
+  static Color getOnPrimaryColor() => _onPrimary;
+  
+  /// Retorna a cor de texto principal
+  static Color getOnBackgroundColor() => _onBackground;
+  
+  /// Retorna a cor de texto secundário/muted
+  static Color getOnBackgroundMutedColor() => _onBackgroundMuted;
+}

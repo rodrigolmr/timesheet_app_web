@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timesheet_app_web/src/core/theme/app_theme.dart';
+
+part 'app_theme_provider.g.dart';
+
+/// Chave utilizada para armazenar o tema no SharedPreferences
+const String _themeVariantKey = 'app_theme_variant';
+
+/// Provider para o SharedPreferences que será sobrescrito no main.dart
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('Inicialize este provider em main.dart');
+});
+
+/// Provider para fornecer a variante de tema atual
+@Riverpod(keepAlive: true)
+class AppThemeVariantNotifier extends _$AppThemeVariantNotifier {
+  @override
+  AppThemeVariant build() {
+    _loadSavedTheme();
+    return AppThemeVariant.blue; // Tema padrão (azul corporativo)
+  }
+  
+  /// Altera o tema atual
+  void setTheme(AppThemeVariant variant) {
+    state = variant;
+    _saveTheme(variant);
+  }
+  
+  /// Carrega o tema salvo do SharedPreferences
+  Future<void> _loadSavedTheme() async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final savedThemeString = prefs.getString(_themeVariantKey);
+      
+      if (savedThemeString != null) {
+        final savedVariant = _stringToThemeVariant(savedThemeString);
+        state = savedVariant;
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar tema salvo: $e');
+    }
+  }
+  
+  /// Salva o tema no SharedPreferences
+  Future<void> _saveTheme(AppThemeVariant variant) async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.setString(_themeVariantKey, variant.toString().split('.').last);
+    } catch (e) {
+      debugPrint('Erro ao salvar tema: $e');
+    }
+  }
+  
+  /// Converte uma string para AppThemeVariant
+  AppThemeVariant _stringToThemeVariant(String value) {
+    return AppThemeVariant.values.firstWhere(
+      (variant) => variant.toString().split('.').last == value,
+      orElse: () => AppThemeVariant.blue, // Padrão se não encontrar
+    );
+  }
+}
+
+/// Provider que fornece o ThemeData baseado na variante selecionada
+final appThemeProvider = Provider<ThemeData>((ref) {
+  final variant = ref.watch(appThemeVariantNotifierProvider);
+  return AppTheme.getThemeData(variant);
+});
