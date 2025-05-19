@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
-import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
 import 'package:timesheet_app_web/src/core/widgets/logo/logo.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
@@ -20,6 +19,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill credentials for testing
+    _emailController.text = 'rodrigo.lmr@hotmail.com';
+    _passwordController.text = '120118';
+  }
 
   @override
   void dispose() {
@@ -174,76 +181,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       children: [
         // Email field
-        TextFormField(
+        AppTextField.email(
           controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          validator: _validateEmail,
-          decoration: InputDecoration(
-            labelText: 'Email',
-            hintText: 'Enter your email address',
-            prefixIcon: Icon(
-              Icons.email_outlined,
-              color: context.colors.primary,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.textSecondary.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.error, width: 2),
-            ),
-          ),
+          label: 'Email',
+          hintText: 'Enter your email address',
         ),
         
         SizedBox(height: context.dimensions.spacingM),
         
         // Password field
-        TextFormField(
+        AppPasswordField(
           controller: _passwordController,
-          obscureText: true,
-          textInputAction: TextInputAction.done,
-          validator: _validatePassword,
-          onFieldSubmitted: (_) => _handleLogin(),
-          decoration: InputDecoration(
-            labelText: 'Password',
-            hintText: 'Enter your password',
-            prefixIcon: Icon(
-              Icons.lock_outline,
-              color: context.colors.primary,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.textSecondary.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              borderSide: BorderSide(color: context.colors.error, width: 2),
-            ),
-          ),
+          label: 'Password',
+          hintText: 'Enter your password',
+          onSubmitted: (_) => _handleLogin(),
         ),
       ],
     );
@@ -287,40 +238,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       children: [
         // Sign in button
-        AppButton(
-          label: _isLoading ? 'Signing in...' : 'Sign In',
-          onPressed: _isLoading ? null : _handleLogin,
-          type: AppButtonType.primary,
-          size: AppButtonSize.large,
-          isLoading: _isLoading,
-          icon: Icons.login,
-          fullWidth: true,
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: _isLoading ? null : _handleLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+              ),
+            ),
+            icon: _isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(context.colors.onPrimary),
+                    ),
+                  )
+                : Icon(Icons.login),
+            label: Text(_isLoading ? 'Signing in...' : 'Sign In'),
+          ),
         ),
-        
       ],
     );
   }
 
-  // Validators
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Email is required';
-    }
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Enter a valid email address';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Password is required';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-    return null;
-  }
 
   // Helpers
   void _clearError() {

@@ -67,6 +67,9 @@ class AppInputFieldBase extends StatelessWidget {
   /// Número máximo de linhas (para campos multiline)
   final int? maxLines;
 
+  /// Número mínimo de linhas (para campos multiline que crescem automaticamente)
+  final int? minLines;
+
   /// Expande para preencher o espaço disponível (para campos multiline)
   final bool expands;
 
@@ -108,6 +111,7 @@ class AppInputFieldBase extends StatelessWidget {
     this.textAlignVertical,
     this.multiline = false,
     this.maxLines = 1,
+    this.minLines,
     this.expands = false,
     this.onChanged,
     this.onTap,
@@ -122,7 +126,8 @@ class AppInputFieldBase extends StatelessWidget {
     final effectiveMaxWidth = maxWidth ?? double.infinity;
     
     // Define a altura com base no multiline e no parâmetro height
-    final effectiveHeight = height ?? (multiline ? 120.0 : 52.0);
+    // Para ambos os casos, se não há altura específica, deixa null para o Flutter calcular
+    final effectiveHeight = height;
     
     // Define o padding interno
     final effectiveContentPadding = contentPadding ?? EdgeInsets.symmetric(
@@ -136,21 +141,28 @@ class AppInputFieldBase extends StatelessWidget {
       height: multiline ? 1.4 : null,
     );
     
-    return Container(
-      width: effectiveMaxWidth,
-      height: expands ? null : effectiveHeight,
-      decoration: hasError
-          ? BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: context.colors.error.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            )
-          : null,
-      child: TextField(
+    // Padding fixo para reservar espaço para o glow
+    const glowPadding = 4.0;
+    
+    return Padding(
+      padding: const EdgeInsets.all(glowPadding),
+      child: Container(
+        width: effectiveMaxWidth,
+        height: expands ? null : effectiveHeight,
+        decoration: hasError
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.colors.error.withOpacity(0.5),
+                    blurRadius: 6,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              )
+            : null,
+        child: TextField(
         controller: controller,
         focusNode: focusNode,
         keyboardType: keyboardType,
@@ -161,15 +173,19 @@ class AppInputFieldBase extends StatelessWidget {
             (multiline ? TextAlignVertical.top : TextAlignVertical.center),
         enabled: enabled,
         maxLines: expands ? null : maxLines,
+        minLines: minLines,
         expands: expands,
         onChanged: onChanged,
         readOnly: readOnly,
         obscureText: obscureText,
         onTap: () {
+          // Sempre limpa o erro ao clicar se houver callback
+          if (hasError && onClearError != null) {
+            onClearError!();
+          }
+          // Depois executa o onTap personalizado se existir
           if (onTap != null) {
             onTap!();
-          } else if (hasError && onClearError != null) {
-            onClearError!();
           }
         },
         decoration: InputDecoration(
@@ -194,15 +210,13 @@ class AppInputFieldBase extends StatelessWidget {
           filled: true,
           fillColor: !enabled 
               ? context.colors.surfaceVariant.withOpacity(0.5)
-              : context.colors.surfaceVariant.withOpacity(0.3),
-          errorText: hasError ? (errorText ?? ' ') : null,
-          errorStyle: errorText == null 
-              ? const TextStyle(fontSize: 0, height: 0)
-              : context.textStyles.labelSmall.copyWith(color: context.colors.error),
+              : context.colors.surfaceAccent.withOpacity(0.85),  // Mantém sempre o amarelo do tema
+          errorText: hasError && errorText != null ? errorText : null,
+          errorStyle: context.textStyles.labelSmall.copyWith(color: context.colors.error),
           contentPadding: effectiveContentPadding,
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-              color: hasError ? context.colors.error : context.colors.outline,
+              color: hasError ? context.colors.error : context.colors.secondary,
               width: 1,
             ),
             borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
@@ -216,7 +230,7 @@ class AppInputFieldBase extends StatelessWidget {
           ),
           disabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-              color: context.colors.outline.withOpacity(0.5),
+              color: context.colors.secondary.withOpacity(0.3),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
@@ -236,6 +250,7 @@ class AppInputFieldBase extends StatelessWidget {
             borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
           ),
         ),
+      ),
       ),
     );
   }

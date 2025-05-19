@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,7 +6,8 @@ import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_draft_providers.dart';
+import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
+import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_create_providers.dart';
 import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/timesheet_stepper.dart';
 import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/step1_header_form.dart';
 import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/step2_employees_form.dart';
@@ -19,290 +21,527 @@ class TimesheetCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Carregar draft existente ao iniciar
-    Future.microtask(() {
-      ref.read(timesheetDraftProvider.notifier).build();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentStep = ref.watch(currentStepNotifierProvider);
-    final draftAsync = ref.watch(timesheetDraftProvider);
-    
-    return Scaffold(
-      appBar: AppHeader(
-        title: 'Create Timesheet',
-        showBackButton: true,
-      ),
-      body: Column(
-        children: [
-          // Stepper
-          TimesheetStepper(
-            currentStep: currentStep,
-            onStepTapped: (step) {
-              // Validar antes de mudar de step
-              if (step > currentStep && !_validateCurrentStep()) {
-                return;
-              }
-              ref.read(currentStepNotifierProvider.notifier).setStep(step);
-            },
-          ),
-          
-          Divider(height: 1),
-          
-          // Content
-          Expanded(
-            child: draftAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: context.colors.error,
-                    ),
-                    SizedBox(height: context.dimensions.spacingM),
-                    Text(
-                      'Error loading draft',
-                      style: context.textStyles.title,
-                    ),
-                    SizedBox(height: context.dimensions.spacingS),
-                    Text(
-                      error.toString(),
-                      style: context.textStyles.body.copyWith(
-                        color: context.colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              data: (_) => _buildStepContent(currentStep),
-            ),
-          ),
-          
-          // Navigation Buttons
-          Container(
-            padding: EdgeInsets.all(context.dimensions.spacingM),
-            decoration: BoxDecoration(
-              color: context.colors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            child: _buildNavigationButtons(currentStep),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepContent(int step) {
-    switch (step) {
+  
+  Widget _buildCurrentStep(int currentStep) {
+    switch (currentStep) {
       case 0:
-        return const Step1HeaderForm();
+        return Step1HeaderForm(key: ref.watch(step1FormKeyProvider));
       case 1:
         return const Step2EmployeesForm();
       case 2:
         return const Step3ReviewForm();
       default:
-        return SizedBox.shrink();
+        return Step1HeaderForm(key: ref.watch(step1FormKeyProvider));
     }
   }
-
-  Widget _buildNavigationButtons(int currentStep) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Back Button
-        if (currentStep > 0)
-          OutlinedButton.icon(
-            onPressed: () {
-              ref.read(currentStepNotifierProvider.notifier).previousStep();
-            },
-            icon: Icon(Icons.arrow_back),
-            label: Text('Back'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.dimensions.spacingL,
-                vertical: context.dimensions.spacingM,
-              ),
+  
+  void _handlePrevious() {
+    ref.read(currentStepNotifierProvider.notifier).previousStep();
+  }
+  
+  void _handleNext() async {
+    final currentStep = ref.read(currentStepNotifierProvider);
+    final formState = ref.read(timesheetFormStateProvider);
+    
+    developer.log('=== HANDLE NEXT - Step $currentStep ===', name: 'TimesheetCreateScreen');
+    
+    if (currentStep == 2) {
+      // Validate before submit
+      if (formState.jobName.isEmpty || formState.jobDescription.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please complete all required fields'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+        return;
+      }
+      
+      if (formState.employees.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please add at least one employee'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+        return;
+      }
+      
+      // Submit the timesheet
+      await _submitTimesheet();
+    } else {
+      // Validate current step
+      bool canProceed = false;
+      
+      if (currentStep == 0) {
+        // Use the GlobalKey to access Step1HeaderForm and validate
+        final step1FormKey = ref.read(step1FormKeyProvider);
+        canProceed = step1FormKey.currentState?.validateForm() ?? false;
+        
+        if (canProceed) {
+          // Add small delay to ensure state is saved
+          await Future.delayed(Duration(milliseconds: 100));
+          
+          // Verify state before navigation
+          final savedState = ref.read(timesheetFormStateProvider);
+          developer.log('State before navigation - JobName: "${savedState.jobName}", Date: "${savedState.date}"', 
+            name: 'TimesheetCreateScreen');
+        }
+      } else if (currentStep == 1) {
+        // Validate employees
+        canProceed = formState.employees.isNotEmpty;
+        
+        if (!canProceed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Please add at least one employee'),
+              backgroundColor: context.colors.error,
             ),
-          )
-        else
-          SizedBox.shrink(),
-
-        // Action Buttons
-        Row(
-          children: [
-            if (currentStep == 2) ...[
-              // Cancel button only on last step
-              TextButton(
-                onPressed: () => _handleCancel(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: context.colors.error),
+          );
+        }
+      }
+      
+      if (canProceed) {
+        ref.read(currentStepNotifierProvider.notifier).nextStep();
+        developer.log('Moving to step ${currentStep + 1}', name: 'TimesheetCreateScreen');
+      }
+    }
+  }
+  
+  Future<void> _submitTimesheet() async {
+    // Show confirmation dialog first
+    final shouldSubmit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        ),
+        title: Text(
+          'Submit Timesheet',
+          style: context.textStyles.title,
+        ),
+        content: Text(
+          'Are you ready to submit this timesheet? Once submitted, it cannot be edited.',
+          style: context.textStyles.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: context.colors.textSecondary,
+            ),
+            child: Text('Review Again'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
+            ),
+            child: Text('Submit'),
+          ),
+        ],
+      ),
+    );
+    
+    if (shouldSubmit != true) return;
+    
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          backgroundColor: context.colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(context.dimensions.spacingL),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  color: context.colors.primary,
                 ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.dimensions.spacingL,
-                    vertical: context.dimensions.spacingM,
+                SizedBox(height: context.dimensions.spacingM),
+                Text(
+                  'Submitting timesheet...',
+                  style: context.textStyles.body,
+                ),
+                SizedBox(height: context.dimensions.spacingS),
+                Text(
+                  'Please wait',
+                  style: context.textStyles.caption.copyWith(
+                    color: context.colors.textSecondary,
                   ),
                 ),
-              ),
-              SizedBox(width: context.dimensions.spacingM),
-            ],
-            
-            // Next/Submit Button
-            ElevatedButton.icon(
-              onPressed: () => _handleNext(currentStep),
-              icon: Icon(
-                currentStep == 2 ? Icons.check : Icons.arrow_forward,
-              ),
-              label: Text(currentStep == 2 ? 'Submit' : 'Next'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: context.dimensions.spacingL,
-                  vertical: context.dimensions.spacingM,
-                ),
-                backgroundColor: context.colors.primary,
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ],
-    );
-  }
-
-  bool _validateCurrentStep() {
-    final currentStep = ref.read(currentStepNotifierProvider);
-    final draft = ref.read(timesheetDraftProvider).valueOrNull;
-    
-    switch (currentStep) {
-      case 0:
-        // Validar campos obrigatórios do header
-        if (draft == null) return false;
-        if (draft.jobName.isEmpty || 
-            draft.jobDescription.isEmpty) {
-          _showValidationError('Please fill in all required fields');
-          return false;
+      );
+      
+      final success = await ref.read(timesheetFormStateProvider.notifier).submitTimesheet();
+      
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Timesheet submitted successfully!'),
+              backgroundColor: context.colors.success,
+            ),
+          );
+          
+          // Navigate back to home
+          context.go(AppRoute.home.path);
         }
-        return true;
-        
-      case 1:
-        // Validar que tem pelo menos um funcionário
-        if (draft == null || draft.employees.isEmpty) {
-          _showValidationError('Please add at least one employee');
-          return false;
-        }
-        return true;
-        
-      case 2:
-        // Step de revisão sempre pode avançar
-        return true;
-        
-      default:
-        return false;
+      }
+    } catch (e, stackTrace) {
+      developer.log('Error submitting timesheet', error: e, stackTrace: stackTrace, name: 'TimesheetCreateScreen');
+      
+      // Close loading dialog if still open
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      
+      if (mounted) {
+        final errorMessage = _getErrorMessage(e);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: context.colors.error,
+            duration: Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: context.colors.onError,
+              onPressed: () => _submitTimesheet(),
+            ),
+          ),
+        );
+      }
     }
   }
-
-  void _handleNext(int currentStep) async {
-    if (!_validateCurrentStep()) return;
-    
-    if (currentStep < 2) {
-      ref.read(currentStepNotifierProvider.notifier).nextStep();
+  
+  String _getErrorMessage(dynamic error) {
+    if (error.toString().contains('permission')) {
+      return 'You do not have permission to submit timesheets';
+    } else if (error.toString().contains('network')) {
+      return 'Network error. Please check your connection';
+    } else if (error.toString().contains('required fields')) {
+      return 'Please fill all required fields';
     } else {
-      // Submit
-      _handleSubmit();
+      return 'Failed to submit timesheet. Please try again';
     }
   }
-
+  
   void _handleCancel() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Cancel Timesheet?'),
-        content: Text('Are you sure you want to cancel? All unsaved changes will be lost.'),
+        backgroundColor: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        ),
+        title: Text(
+          'Cancel Timesheet',
+          style: context.textStyles.title,
+        ),
+        content: Text(
+          'Are you sure you want to cancel? All data will be lost.',
+          style: context.textStyles.body,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('No'),
+            style: TextButton.styleFrom(
+              foregroundColor: context.colors.textSecondary,
+            ),
+            child: Text('No, Continue'),
           ),
           TextButton(
-            onPressed: () async {
+            onPressed: () {
               Navigator.of(context).pop();
-              await ref.read(timesheetDraftProvider.notifier).cancelDraft();
-              if (mounted) {
-                context.go(AppRoute.home.path);
-              }
+              ref.read(timesheetFormStateProvider.notifier).resetForm();
+              context.go(AppRoute.home.path);
             },
-            child: Text(
-              'Yes, Cancel',
-              style: TextStyle(color: context.colors.error),
+            style: TextButton.styleFrom(
+              foregroundColor: context.colors.error,
             ),
+            child: Text('Yes, Cancel'),
           ),
         ],
       ),
     );
   }
-
-  void _handleSubmit() {
+  
+  void _handleClearHeader() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Submit Timesheet?'),
-        content: Text('Are you sure you want to submit this timesheet? This action cannot be undone.'),
+        title: Text('Clear Form'),
+        content: Text('Are you sure you want to clear all fields?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel'),
+            child: Text('No, Keep'),
           ),
           TextButton(
-            onPressed: () async {
+            onPressed: () {
               Navigator.of(context).pop();
-              final success = await ref.read(timesheetDraftProvider.notifier).submitTimesheet();
+              ref.read(timesheetFormStateProvider.notifier).clearHeaderData();
               
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Timesheet submitted successfully'),
-                    backgroundColor: context.colors.success,
-                  ),
-                );
-                context.go(AppRoute.home.path);
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error submitting timesheet'),
-                    backgroundColor: context.colors.error,
-                  ),
-                );
-              }
+              // Clear error states in the form
+              final step1FormKey = ref.read(step1FormKeyProvider);
+              step1FormKey.currentState?.clearErrors();
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Form cleared'),
+                  backgroundColor: context.colors.primary,
+                  duration: Duration(seconds: 2),
+                ),
+              );
             },
-            child: Text(
-              'Submit',
-              style: TextStyle(color: context.colors.primary),
-            ),
+            child: Text('Yes, Clear'),
           ),
         ],
       ),
     );
   }
-
-  void _showValidationError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: context.colors.error,
+  
+  @override
+  Widget build(BuildContext context) {
+    final currentStep = ref.watch(currentStepNotifierProvider);
+    
+    return Scaffold(
+      appBar: AppHeader(
+        title: 'Create Timesheet',
+        showBackButton: true,
+        onBackPressed: () => context.go(AppRoute.home.path),
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Stepper - wrapped in ResponsiveContainer for better alignment
+              Padding(
+                padding: EdgeInsets.only(
+                  top: context.dimensions.spacingXS, // Reduzido
+                  bottom: 2, // Reduzido ao mínimo
+                ),
+                child: ResponsiveContainer(
+                  child: TimesheetStepper(
+                    currentStep: currentStep,
+                    onStepTapped: (step) {
+                      ref.read(currentStepNotifierProvider.notifier).setStep(step);
+                    },
+                  ),
+                ),
+              ),
+              
+              // Current step content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    top: 0, // Removido completamente o espaço superior
+                    // Adicionado padding inferior que corresponde à altura dos botões + seu espaçamento
+                    bottom: currentStep == 0 ? context.responsive<double>(
+                      xs: 56.0 + context.dimensions.spacingS * 2, // Altura do FAB (56) + espaçamento acima e abaixo
+                      sm: 56.0 + context.dimensions.spacingM * 2,
+                      md: 36.0 + context.dimensions.spacingM * 2, // Altura aproximada do ElevatedButton + espaçamento
+                      lg: 36.0 + context.dimensions.spacingM * 2,
+                    ) : 0,
+                  ),
+                  child: ResponsiveContainer(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.responsive<double>(
+                        xs: context.dimensions.spacingS,
+                        sm: context.dimensions.spacingS,
+                        md: context.dimensions.spacingM,
+                        lg: context.dimensions.spacingM,
+                      ),
+                    ),
+                    child: _buildCurrentStep(currentStep),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          // Floating buttons (realmente flutuantes, sem barra ao redor)
+          Positioned(
+            bottom: context.responsive<double>(
+              xs: context.dimensions.spacingS, // Ajustado para ficar mais próximo da borda em mobile
+              sm: context.dimensions.spacingM,
+              md: context.dimensions.spacingM,
+            ),
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: context.responsive<double>(
+                  xs: context.dimensions.spacingM,
+                  sm: context.dimensions.spacingM,
+                  md: context.dimensions.spacingL,
+                  lg: context.dimensions.spacingL,
+                ),
+              ),
+              child: ResponsiveContainer(
+                padding: EdgeInsets.zero,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Área de botões à esquerda
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Previous button (flutuante) - apenas nos steps > 1
+                        if (currentStep > 0)
+                          if (!context.isMobile)
+                            ElevatedButton.icon(
+                              icon: Icon(Icons.arrow_back, size: 16),
+                              label: Text('Previous'),
+                              onPressed: _handlePrevious,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.colors.surface,
+                                foregroundColor: context.colors.primary,
+                                elevation: 3,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: context.dimensions.spacingM,
+                                  vertical: context.dimensions.spacingS,
+                                ),
+                              ),
+                            )
+                          else
+                            FloatingActionButton.small(
+                              heroTag: 'prevBtn',
+                              onPressed: _handlePrevious,
+                              tooltip: 'Previous',
+                              elevation: 3,
+                              backgroundColor: context.colors.surface,
+                              foregroundColor: context.colors.primary,
+                              child: Icon(Icons.arrow_back, size: 16),
+                            ),
+                            
+                        // Clear button para o Step 1 com ícone de vassoura amarelo
+                        if (currentStep == 0)
+                          if (!context.isMobile)
+                            ElevatedButton.icon(
+                              icon: Icon(Icons.cleaning_services, size: 16, color: Colors.amber),
+                              label: Text('Clear'),
+                              onPressed: _handleClearHeader,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.colors.surface,
+                                foregroundColor: context.colors.secondary,
+                                elevation: 3,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: context.dimensions.spacingM,
+                                  vertical: context.dimensions.spacingS,
+                                ),
+                              ),
+                            )
+                          else
+                            FloatingActionButton.small(
+                              heroTag: 'clearBtn',
+                              onPressed: _handleClearHeader,
+                              tooltip: 'Clear',
+                              elevation: 3,
+                              backgroundColor: context.colors.surface,
+                              foregroundColor: Colors.amber,
+                              child: Icon(Icons.cleaning_services, size: 16),
+                            ),
+                      ],
+                    ),
+                    
+                    // Spacing otimizado
+                    const Spacer(),
+                    
+                    // Action buttons - Desktop (flutuantes)
+                    if (!context.isMobile)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Cancel button - flutuante
+                          ElevatedButton(
+                            onPressed: _handleCancel,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.colors.surface,
+                              foregroundColor: context.colors.error,
+                              elevation: 2,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: context.dimensions.spacingM,
+                                vertical: context.dimensions.spacingS,
+                              ),
+                            ),
+                            child: Text('Cancel'),
+                          ),
+                          SizedBox(width: context.dimensions.spacingL),
+                          
+                          // Next/Submit button - flutuante e destacado
+                          ElevatedButton.icon(
+                            onPressed: _handleNext,
+                            icon: Icon(
+                              currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                              size: 18,
+                            ),
+                            label: Text(currentStep == 2 ? 'Submit' : 'Next'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: context.colors.primary,
+                              foregroundColor: context.colors.onPrimary,
+                              elevation: 4,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: context.dimensions.spacingM,
+                                vertical: context.dimensions.spacingS,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    
+                    // Action buttons - Mobile (botões flutuantes)
+                    if (context.isMobile)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Cancel button - flutuante pequeno
+                          FloatingActionButton.small(
+                            heroTag: 'cancelBtn',
+                            onPressed: _handleCancel,
+                            tooltip: 'Cancel',
+                            elevation: 2,
+                            backgroundColor: context.colors.surface,
+                            foregroundColor: context.colors.error,
+                            child: Icon(Icons.close, size: 16),
+                          ),
+                          SizedBox(width: context.dimensions.spacingL),
+                          
+                          // Next/Submit button - flutuante destacado
+                          FloatingActionButton(
+                            heroTag: 'nextBtn',
+                            onPressed: _handleNext,
+                            tooltip: currentStep == 2 ? 'Submit' : 'Next',
+                            elevation: 4,
+                            backgroundColor: context.colors.primary,
+                            child: Icon(
+                              currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

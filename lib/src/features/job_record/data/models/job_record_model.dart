@@ -27,6 +27,9 @@ class JobRecordModel with _$JobRecordModel {
     // Array de funcionários
     required List<JobEmployeeModel> employees,
     
+    // Notas adicionais
+    @Default('') String notes,
+    
     // Campos de controle
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -51,6 +54,7 @@ class JobRecordModel with _$JobRecordModel {
       employees: (data['employees'] as List<dynamic>)
           .map((e) => JobEmployeeModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      notes: data['notes'] ?? '',
       createdAt: (data['created_at'] as Timestamp).toDate(),
       updatedAt: (data['updated_at'] as Timestamp).toDate(),
     );
@@ -68,6 +72,7 @@ class JobRecordModel with _$JobRecordModel {
       'foreman': foreman,
       'vehicle': vehicle,
       'employees': employees.map((e) => e.toFirestore()).toList(),
+      'notes': notes,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

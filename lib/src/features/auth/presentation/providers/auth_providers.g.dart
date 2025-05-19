@@ -62,7 +62,7 @@ final currentUserProvider = AutoDisposeProvider<User?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentUserRef = AutoDisposeProviderRef<User?>;
-String _$currentUserIdHash() => r'5a6d193d283b7912b6ef9ba4740ae7ac5a68dfdf';
+String _$currentUserIdHash() => r'54084e33c55be422a51a1828cbc99a5e55c789a7';
 
 /// Provider que fornece o ID do usuário autenticado atualmente
 ///
@@ -123,7 +123,7 @@ final isUserAuthenticatedProvider = AutoDisposeFutureProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsUserAuthenticatedRef = AutoDisposeFutureProviderRef<bool>;
-String _$authStateHash() => r'47f926e4d93179dce1d71b2d8797bd978adcaebf';
+String _$authStateHash() => r'df3b8b5ec99d731197b321a908fa287489f12485';
 
 /// Provider para gerenciar o estado de carregamento da autenticação
 ///

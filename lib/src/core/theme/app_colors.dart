@@ -106,7 +106,7 @@ class AppColors {
       // Cores de fundo da Palette4CorporateAmber
       background: const Color(0xFFFAFAFA),     // Cinza muito claro
       surface: Colors.white,
-      surfaceAccent: const Color(0xFFFFF8E1),  // Âmbar pálido (cardBackground)
+      surfaceAccent: const Color(0xFFFFFFCC),  // Amarelo padrão web
       
       // Cores de texto da Palette4CorporateAmber
       textPrimary: const Color(0xFF212121),    // onBackground

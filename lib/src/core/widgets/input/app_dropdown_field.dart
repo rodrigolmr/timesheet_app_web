@@ -103,6 +103,7 @@ class AppDropdownField<T> extends StatelessWidget {
         focusNode: focusNode,
         value: value,
         isExpanded: true,
+        alignment: AlignmentDirectional.center,
         icon: Icon(
           Icons.arrow_drop_down,
           color: hasError 
@@ -114,6 +115,7 @@ class AppDropdownField<T> extends StatelessWidget {
         style: context.textStyles.input.copyWith(
           color: context.colors.textPrimary,
         ),
+        dropdownColor: context.colors.surfaceAccent,
         
         // Widget exibido quando nenhum valor está selecionado
         hint: Text(
@@ -121,6 +123,7 @@ class AppDropdownField<T> extends StatelessWidget {
           style: context.textStyles.inputHint.copyWith(
             color: context.colors.onSurfaceVariant.withOpacity(0.6),
           ),
+          textAlign: TextAlign.center,
         ),
         
         // O que acontece quando o valor muda
@@ -143,10 +146,15 @@ class AppDropdownField<T> extends StatelessWidget {
           
           return DropdownMenuItem<T>(
             value: item,
+            alignment: Alignment.center,
             child: Text(
               itemLabelBuilder != null 
                   ? itemLabelBuilder!(item) 
                   : item.toString(),
+              style: context.textStyles.input.copyWith(
+                color: context.colors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
             ),
           );
         }).toList(),
@@ -169,12 +177,11 @@ class AppDropdownField<T> extends StatelessWidget {
           filled: true,
           fillColor: !enabled 
               ? context.colors.surfaceVariant.withOpacity(0.5)
-              : context.colors.surfaceVariant.withOpacity(0.3),
-          errorText: hasError ? (errorText ?? ' ') : null,
-          errorStyle: errorText == null 
-              ? const TextStyle(fontSize: 0, height: 0)
-              : context.textStyles.inputFloatingLabel.copyWith(color: context.colors.error),
+              : context.colors.surfaceAccent.withOpacity(0.85),
+          errorText: hasError && errorText != null ? errorText : null,
+          errorStyle: context.textStyles.inputFloatingLabel.copyWith(color: context.colors.error),
           contentPadding: dropdownPadding,
+          floatingLabelAlignment: FloatingLabelAlignment.center,
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
               color: hasError ? context.colors.error : context.colors.outline,

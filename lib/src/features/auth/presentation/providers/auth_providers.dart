@@ -20,14 +20,20 @@ AuthRepository authRepository(AuthRepositoryRef ref) {
 /// Provider que fornece o usuário autenticado atualmente
 @riverpod
 User? currentUser(CurrentUserRef ref) {
+  // Acessar diretamente do authRepositoryProvider para evitar ciclo
+  // Usar authStateChanges é melhor para evitar dependência circular
   return ref.watch(authRepositoryProvider).currentUser;
 }
 
 /// Provider que fornece o ID do usuário autenticado atualmente
 @riverpod
 AsyncValue<String?> currentUserId(CurrentUserIdRef ref) {
-  final user = ref.watch(currentUserProvider);
-  return AsyncData(user?.uid);
+  final authState = ref.watch(authStateProvider);
+  return authState.when(
+    data: (user) => AsyncData(user?.uid),
+    loading: () => const AsyncLoading(),
+    error: (e, st) => AsyncError(e, st),
+  );
 }
 
 /// Provider que fornece um stream do estado de autenticação
@@ -57,8 +63,8 @@ class AuthState extends _$AuthState {
       );
     });
     
-    // Retorna o estado inicial com o usuário atual
-    final currentUser = ref.watch(currentUserProvider);
+    // Retorna o estado inicial usando o currentUser do repositório diretamente
+    final currentUser = ref.read(authRepositoryProvider).currentUser;
     return currentUser != null ? AsyncData(currentUser) : const AsyncData(null);
   }
 

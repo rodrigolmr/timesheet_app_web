@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
@@ -5,16 +6,17 @@ import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_draft_providers.dart';
+import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_create_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 
 class Step1HeaderForm extends ConsumerStatefulWidget {
   const Step1HeaderForm({super.key});
 
   @override
-  ConsumerState<Step1HeaderForm> createState() => _Step1HeaderFormState();
+  ConsumerState<Step1HeaderForm> createState() => Step1HeaderFormState();
 }
 
-class _Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
+class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   final _formKey = GlobalKey<FormState>();
   
   late TextEditingController _jobNameController;
@@ -25,11 +27,20 @@ class _Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   late TextEditingController _foremanController;
   late TextEditingController _vehicleController;
   
-  DateTime _selectedDate = DateTime.now();
+  DateTime? _selectedDate;
+  bool _dateWasModified = false;
+  bool _initialized = false;
+  
+  // Validation states
+  bool _jobNameHasError = false;
+  bool _dateHasError = false;
+  bool _jobDescriptionHasError = false;
 
   @override
   void initState() {
     super.initState();
+    
+    developer.log('=== Step1HeaderForm initState ===', name: 'Step1HeaderForm');
     
     _jobNameController = TextEditingController();
     _territorialManagerController = TextEditingController();
@@ -38,21 +49,46 @@ class _Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController = TextEditingController();
     _foremanController = TextEditingController();
     _vehicleController = TextEditingController();
-    
-    // Carregar dados existentes do draft
-    Future.microtask(() {
-      final draft = ref.read(timesheetDraftProvider).valueOrNull;
-      if (draft != null) {
-        _jobNameController.text = draft.jobName;
-        _territorialManagerController.text = draft.territorialManager;
-        _jobSizeController.text = draft.jobSize;
-        _materialController.text = draft.material;
-        _jobDescriptionController.text = draft.jobDescription;
-        _foremanController.text = draft.foreman;
-        _vehicleController.text = draft.vehicle;
-        _selectedDate = draft.date;
-      }
+  }
+  
+  bool validateForm() {
+    setState(() {
+      _jobNameHasError = _jobNameController.text.trim().isEmpty;
+      _dateHasError = !_dateWasModified;
+      _jobDescriptionHasError = _jobDescriptionController.text.trim().isEmpty;
     });
+    
+    return !_jobNameHasError && !_dateHasError && !_jobDescriptionHasError;
+  }
+  
+  void clearErrors() {
+    setState(() {
+      _jobNameHasError = false;
+      _dateHasError = false;
+      _jobDescriptionHasError = false;
+      _dateWasModified = false;
+    });
+  }
+
+  void _loadFormData(JobRecordModel formState) {
+    developer.log('=== Loading form data ===', name: 'Step1HeaderForm');
+    developer.log('JobName: "${formState.jobName}", Date: "${formState.date}"', name: 'Step1HeaderForm');
+    
+    _jobNameController.text = formState.jobName;
+    _territorialManagerController.text = formState.territorialManager;
+    _jobSizeController.text = formState.jobSize;
+    _materialController.text = formState.material;
+    _jobDescriptionController.text = formState.jobDescription;
+    _foremanController.text = formState.foreman;
+    _vehicleController.text = formState.vehicle;
+    // Load the date from formState
+    _selectedDate = formState.date;
+    _dateWasModified = true; // Date is always present in JobRecordModel
+    
+    // Clear errors when reloading data (like after Clear button)
+    clearErrors();
+    
+    developer.log('Form data loaded successfully', name: 'Step1HeaderForm');
   }
 
   @override
@@ -64,152 +100,221 @@ class _Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController.dispose();
     _foremanController.dispose();
     _vehicleController.dispose();
+    
     super.dispose();
   }
 
-  void _updateDraft(String field, dynamic value) {
-    final headerData = {
-      'jobName': _jobNameController.text,
-      'date': _selectedDate,
-      'territorialManager': _territorialManagerController.text,
-      'jobSize': _jobSizeController.text,
-      'material': _materialController.text,
-      'jobDescription': _jobDescriptionController.text,
-      'foreman': _foremanController.text,
-      'vehicle': _vehicleController.text,
-    };
-    
-    headerData[field] = value;
-    ref.read(timesheetDraftProvider.notifier).updateHeader(headerData);
+  void _updateFormData(String field, dynamic value) {
+    try {
+      // Validate required fields
+      setState(() {
+        if (field == 'jobName') {
+          _jobNameHasError = (value as String).trim().isEmpty;
+        } else if (field == 'jobDescription') {
+          _jobDescriptionHasError = (value as String).trim().isEmpty;
+        } else if (field == 'date') {
+          _dateHasError = value == null;
+        }
+      });
+      
+      final headerData = {
+        'jobName': _jobNameController.text,
+        'date': _selectedDate ?? DateTime.now(),
+        'territorialManager': _territorialManagerController.text,
+        'jobSize': _jobSizeController.text,
+        'material': _materialController.text,
+        'jobDescription': _jobDescriptionController.text,
+        'foreman': _foremanController.text,
+        'vehicle': _vehicleController.text,
+      };
+      
+      headerData[field] = value;
+      ref.read(timesheetFormStateProvider.notifier).updateHeader(headerData);
+      
+      developer.log('Updated form field: $field with value: $value', name: 'Step1HeaderForm');
+      developer.log('Full header data: $headerData', name: 'Step1HeaderForm');
+      
+      // Read back the state to verify it was saved
+      final savedState = ref.read(timesheetFormStateProvider);
+      developer.log('Saved state - JobName: ${savedState.jobName}, Date: ${savedState.date}', name: 'Step1HeaderForm');
+    } catch (e, stackTrace) {
+      developer.log('Error updating form', error: e, stackTrace: stackTrace, name: 'Step1HeaderForm');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating form. Please try again.'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveContainer(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(context.dimensions.spacingL),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'General Information',
-                style: context.textStyles.headline,
-              ),
-              SizedBox(height: context.dimensions.spacingL),
-              
-              // Grid layout for form fields
-              ResponsiveGrid(
-                spacing: context.dimensions.spacingM,
-                xsColumns: 1,
-                mdColumns: 2,
-                children: [
-                  // Job Name (required)
-                  AppTextField(
-                    label: 'Job Name *',
-                    hintText: 'Enter job name',
-                    controller: _jobNameController,
-                    onChanged: (_) => _updateDraft('jobName', _jobNameController.text),
-                  ),
-                  
-                  // Date (required)
-                  AppDatePickerField(
-                    label: 'Date *',
-                    hintText: 'Select date',
-                    initialDate: _selectedDate,
-                    onDateSelected: (date) {
-                      if (date != null) {
+    final formState = ref.watch(timesheetFormStateProvider);
+    
+    // Initialize controllers on first build
+    if (!_initialized) {
+      developer.log('First build - initializing form data', name: 'Step1HeaderForm');
+      _loadFormData(formState);
+      _initialized = true;
+    }
+    
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        left: context.responsive<double>(
+          xs: context.dimensions.spacingS,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+        ),
+        right: context.responsive<double>(
+          xs: context.dimensions.spacingS,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+        ),
+        // Sem padding inferior para maximizar o espaço
+        bottom: 0,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: context.responsive<double>(
+              xs: double.infinity,
+              sm: double.infinity,
+              md: 800,
+              lg: 1000,
+              xl: 1200,
+            ),
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                
+                // Grid layout for form fields
+                ResponsiveGrid(
+                  spacing: context.dimensions.spacingM > 8 ? context.dimensions.spacingM - 8 : 0, // Compensar o padding do glow apenas se maior que 8
+                  xsColumns: 1,
+                  mdColumns: 2,
+                  children: [
+                    // Job Name (required)
+                    AppTextField(
+                      label: 'Job Name',
+                      hintText: 'Enter job name',
+                      controller: _jobNameController,
+                      hasError: _jobNameHasError,
+                      errorText: null,
+                      onClearError: () {
+                        setState(() {
+                          _jobNameHasError = false;
+                        });
+                      },
+                      onChanged: (value) {
+                        _updateFormData('jobName', value);
+                      },
+                    ),
+                    
+                    // Date (required)
+                    AppDatePickerField(
+                      label: 'Date',
+                      hintText: 'Select date',
+                      initialDate: _selectedDate,
+                      hasError: _dateHasError,
+                      errorText: null,
+                      onClearError: () {
+                        setState(() {
+                          _dateHasError = false;
+                        });
+                      },
+                      onDateSelected: (date) {
                         setState(() {
                           _selectedDate = date;
+                          _dateWasModified = true;
                         });
-                        _updateDraft('date', date);
-                      }
-                    },
-                    dateFormat: intl.DateFormat('MMM-dd-yyyy, EEEE'),
-                  ),
-                  
-                  // Territorial Manager
-                  AppTextField(
-                    label: 'Territorial Manager',
-                    hintText: 'Enter territorial manager name',
-                    controller: _territorialManagerController,
-                    onChanged: (_) => _updateDraft('territorialManager', _territorialManagerController.text),
-                  ),
-                  
-                  // Job Size
-                  AppTextField(
-                    label: 'Job Size',
-                    hintText: 'Enter job size',
-                    controller: _jobSizeController,
-                    onChanged: (_) => _updateDraft('jobSize', _jobSizeController.text),
-                  ),
-                  
-                  // Material
-                  AppTextField(
-                    label: 'Material',
-                    hintText: 'Enter material type',
-                    controller: _materialController,
-                    onChanged: (_) => _updateDraft('material', _materialController.text),
-                  ),
-                  
-                  // Foreman
-                  AppTextField(
-                    label: 'Foreman',
-                    hintText: 'Enter foreman name',
-                    controller: _foremanController,
-                    onChanged: (_) => _updateDraft('foreman', _foremanController.text),
-                  ),
-                  
-                  // Vehicle
-                  AppTextField(
-                    label: 'Vehicle',
-                    hintText: 'Enter vehicle information',
-                    controller: _vehicleController,
-                    onChanged: (_) => _updateDraft('vehicle', _vehicleController.text),
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: context.dimensions.spacingM),
-              
-              // Job Description (required) - Full width
-              AppMultilineTextField(
-                label: 'Job Description *',
-                hintText: 'Enter job description',
-                controller: _jobDescriptionController,
-                maxLines: 5,
-                onChanged: (_) => _updateDraft('jobDescription', _jobDescriptionController.text),
-              ),
-              
-              SizedBox(height: context.dimensions.spacingL),
-              
-              // Instructions
-              Container(
-                padding: EdgeInsets.all(context.dimensions.spacingM),
-                decoration: BoxDecoration(
-                  color: context.colors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: context.colors.primary,
+                        _updateFormData('date', date);
+                      },
                     ),
-                    SizedBox(width: context.dimensions.spacingS),
-                    Expanded(
-                      child: Text(
-                        'Fields marked with * are required. Changes are saved automatically.',
-                        style: context.textStyles.body.copyWith(
-                          color: context.colors.primary,
-                        ),
-                      ),
+                    
+                    // Territorial Manager
+                    AppTextField(
+                      label: 'Territorial Manager',
+                      hintText: 'Enter territorial manager name',
+                      controller: _territorialManagerController,
+                      onChanged: (value) {
+                        _updateFormData('territorialManager', value);
+                      },
+                    ),
+                    
+                    // Job Size
+                    AppTextField(
+                      label: 'Job Size',
+                      hintText: 'Enter job size',
+                      controller: _jobSizeController,
+                      onChanged: (value) {
+                        _updateFormData('jobSize', value);
+                      },
+                    ),
+                    
+                    // Foreman
+                    AppTextField(
+                      label: 'Foreman',
+                      hintText: 'Enter foreman name',
+                      controller: _foremanController,
+                      onChanged: (value) {
+                        _updateFormData('foreman', value);
+                      },
+                    ),
+                    
+                    // Vehicle
+                    AppTextField(
+                      label: 'Vehicle',
+                      hintText: 'Enter vehicle information',
+                      controller: _vehicleController,
+                      onChanged: (value) {
+                        _updateFormData('vehicle', value);
+                      },
                     ),
                   ],
                 ),
-              ),
-            ],
+                
+                SizedBox(height: context.dimensions.spacingM),
+                
+                // Material - Full width multiline
+                AppMultilineTextField(
+                  label: 'Material',
+                  hintText: 'Enter material type and details',
+                  controller: _materialController,
+                  minLines: 3,
+                  maxLines: 5,
+                  onChanged: (value) {
+                    _updateFormData('material', value);
+                  },
+                ),
+                
+                SizedBox(height: context.dimensions.spacingM),
+                
+                // Job Description (required) - Full width multiline
+                AppMultilineTextField(
+                  label: 'Job Description',
+                  hintText: 'Describe the work performed in detail',
+                  controller: _jobDescriptionController,
+                  minLines: 4,
+                  maxLines: 10,
+                  hasError: _jobDescriptionHasError,
+                  errorText: null,
+                  onClearError: () {
+                    setState(() {
+                      _jobDescriptionHasError = false;
+                    });
+                  },
+                  onChanged: (value) {
+                    _updateFormData('jobDescription', value);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

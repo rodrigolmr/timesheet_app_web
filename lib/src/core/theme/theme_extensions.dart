@@ -115,6 +115,38 @@ extension ResponsiveThemeExtension on BuildContext {
       xl: xl,
     );
   }
+  
+  /// Retorna um estilo headline responsivo
+  TextStyle get responsiveHeadline => responsiveTextStyle(
+    xs: textStyles.title,      // Em mobile usa title
+    sm: textStyles.title,      // Em mobile grande ainda usa title
+    md: textStyles.headline,   // Em tablet usa headline
+    lg: textStyles.headline,   // Em desktop usa headline
+  );
+  
+  /// Retorna um estilo title responsivo
+  TextStyle get responsiveTitle => responsiveTextStyle(
+    xs: textStyles.subtitle,   // Em mobile usa subtitle
+    sm: textStyles.subtitle,   // Em mobile grande usa subtitle
+    md: textStyles.title,      // Em tablet usa title
+    lg: textStyles.title,      // Em desktop usa title
+  );
+  
+  /// Retorna um estilo subtitle responsivo
+  TextStyle get responsiveSubtitle => responsiveTextStyle(
+    xs: textStyles.body.copyWith(fontWeight: FontWeight.w600),  // Em mobile usa body com peso maior
+    sm: textStyles.body.copyWith(fontWeight: FontWeight.w600),  // Em mobile grande usa body com peso maior
+    md: textStyles.subtitle,   // Em tablet usa subtitle
+    lg: textStyles.subtitle,   // Em desktop usa subtitle
+  );
+  
+  /// Retorna um estilo body responsivo
+  TextStyle get responsiveBody => responsiveTextStyle(
+    xs: textStyles.caption.copyWith(fontSize: 12),  // Em mobile usa texto menor
+    sm: textStyles.body,       // Em mobile grande usa body normal
+    md: textStyles.body,       // Em tablet usa body
+    lg: textStyles.body,       // Em desktop usa body
+  );
 }
 
 /// Extensão para WidgetRef que permite controlar o tema

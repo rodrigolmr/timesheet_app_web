@@ -22,6 +22,7 @@ _$JobRecordModelImpl _$$JobRecordModelImplFromJson(Map<String, dynamic> json) =>
           (json['employees'] as List<dynamic>)
               .map((e) => JobEmployeeModel.fromJson(e as Map<String, dynamic>))
               .toList(),
+      notes: json['notes'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -40,6 +41,7 @@ Map<String, dynamic> _$$JobRecordModelImplToJson(
   'foreman': instance.foreman,
   'vehicle': instance.vehicle,
   'employees': instance.employees,
+  'notes': instance.notes,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt.toIso8601String(),
 };

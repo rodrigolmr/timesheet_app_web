@@ -35,7 +35,8 @@ mixin _$JobRecordModel {
   String get vehicle =>
       throw _privateConstructorUsedError; // Array de funcionários
   List<JobEmployeeModel> get employees =>
-      throw _privateConstructorUsedError; // Campos de controle
+      throw _privateConstructorUsedError; // Notas adicionais
+  String get notes => throw _privateConstructorUsedError; // Campos de controle
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
@@ -68,6 +69,7 @@ abstract class $JobRecordModelCopyWith<$Res> {
     String foreman,
     String vehicle,
     List<JobEmployeeModel> employees,
+    String notes,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -99,6 +101,7 @@ class _$JobRecordModelCopyWithImpl<$Res, $Val extends JobRecordModel>
     Object? foreman = null,
     Object? vehicle = null,
     Object? employees = null,
+    Object? notes = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -159,6 +162,11 @@ class _$JobRecordModelCopyWithImpl<$Res, $Val extends JobRecordModel>
                     ? _value.employees
                     : employees // ignore: cast_nullable_to_non_nullable
                         as List<JobEmployeeModel>,
+            notes:
+                null == notes
+                    ? _value.notes
+                    : notes // ignore: cast_nullable_to_non_nullable
+                        as String,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
@@ -196,6 +204,7 @@ abstract class _$$JobRecordModelImplCopyWith<$Res>
     String foreman,
     String vehicle,
     List<JobEmployeeModel> employees,
+    String notes,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -226,6 +235,7 @@ class __$$JobRecordModelImplCopyWithImpl<$Res>
     Object? foreman = null,
     Object? vehicle = null,
     Object? employees = null,
+    Object? notes = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -286,6 +296,11 @@ class __$$JobRecordModelImplCopyWithImpl<$Res>
                 ? _value._employees
                 : employees // ignore: cast_nullable_to_non_nullable
                     as List<JobEmployeeModel>,
+        notes:
+            null == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                    as String,
         createdAt:
             null == createdAt
                 ? _value.createdAt
@@ -316,6 +331,7 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     required this.foreman,
     required this.vehicle,
     required final List<JobEmployeeModel> employees,
+    this.notes = '',
     required this.createdAt,
     required this.updatedAt,
   }) : _employees = employees,
@@ -356,6 +372,10 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     return EqualUnmodifiableListView(_employees);
   }
 
+  // Notas adicionais
+  @override
+  @JsonKey()
+  final String notes;
   // Campos de controle
   @override
   final DateTime createdAt;
@@ -364,7 +384,7 @@ class _$JobRecordModelImpl extends _JobRecordModel {
 
   @override
   String toString() {
-    return 'JobRecordModel(id: $id, userId: $userId, jobName: $jobName, date: $date, territorialManager: $territorialManager, jobSize: $jobSize, material: $material, jobDescription: $jobDescription, foreman: $foreman, vehicle: $vehicle, employees: $employees, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'JobRecordModel(id: $id, userId: $userId, jobName: $jobName, date: $date, territorialManager: $territorialManager, jobSize: $jobSize, material: $material, jobDescription: $jobDescription, foreman: $foreman, vehicle: $vehicle, employees: $employees, notes: $notes, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -389,6 +409,7 @@ class _$JobRecordModelImpl extends _JobRecordModel {
               other._employees,
               _employees,
             ) &&
+            (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -410,6 +431,7 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     foreman,
     vehicle,
     const DeepCollectionEquality().hash(_employees),
+    notes,
     createdAt,
     updatedAt,
   );
@@ -444,6 +466,7 @@ abstract class _JobRecordModel extends JobRecordModel {
     required final String foreman,
     required final String vehicle,
     required final List<JobEmployeeModel> employees,
+    final String notes,
     required final DateTime createdAt,
     required final DateTime updatedAt,
   }) = _$JobRecordModelImpl;
@@ -474,7 +497,9 @@ abstract class _JobRecordModel extends JobRecordModel {
   @override
   String get vehicle; // Array de funcionários
   @override
-  List<JobEmployeeModel> get employees; // Campos de controle
+  List<JobEmployeeModel> get employees; // Notas adicionais
+  @override
+  String get notes; // Campos de controle
   @override
   DateTime get createdAt;
   @override

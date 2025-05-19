@@ -93,7 +93,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(
         title,
-        style: textStyles.titleLarge.copyWith(
+        style: context.responsiveTitle.copyWith(
           color: fgColor,
           fontWeight: FontWeight.bold,
         ),
@@ -288,7 +288,7 @@ class _AppHeaderWithTabs extends AppHeader {
     return AppBar(
       title: Text(
         title,
-        style: textStyles.titleLarge.copyWith(
+        style: context.responsiveTitle.copyWith(
           color: fgColor,
           fontWeight: FontWeight.bold,
         ),

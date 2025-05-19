@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
-import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
-import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
-import 'package:timesheet_app_web/src/features/employee/data/models/employee_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_employee_model.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_draft_providers.dart';
+import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_create_providers.dart';
+import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/add_employee_form.dart';
 
 class Step2EmployeesForm extends ConsumerStatefulWidget {
   const Step2EmployeesForm({super.key});
@@ -18,319 +14,448 @@ class Step2EmployeesForm extends ConsumerStatefulWidget {
 }
 
 class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
-  EmployeeModel? _selectedEmployee;
-  final _startTimeController = TextEditingController();
-  final _finishTimeController = TextEditingController();
-  final _hoursController = TextEditingController();
-  final _travelHoursController = TextEditingController();
-  final _mealController = TextEditingController();
-  
   int? _editingIndex;
+  JobEmployeeModel? _employeeToEdit;
+  bool _showAddForm = false;
 
-  @override
-  void dispose() {
-    _startTimeController.dispose();
-    _finishTimeController.dispose();
-    _hoursController.dispose();
-    _travelHoursController.dispose();
-    _mealController.dispose();
-    super.dispose();
-  }
-
-  void _clearForm() {
-    setState(() {
-      _selectedEmployee = null;
-      _startTimeController.clear();
-      _finishTimeController.clear();
-      _hoursController.clear();
-      _travelHoursController.clear();
-      _mealController.clear();
-      _editingIndex = null;
-    });
-  }
-
-  void _addOrUpdateEmployee() {
-    if (_selectedEmployee == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please select an employee'),
-          backgroundColor: context.colors.error,
-        ),
-      );
-      return;
-    }
-
-    if (_hoursController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hours field is required'),
-          backgroundColor: context.colors.error,
-        ),
-      );
-      return;
-    }
-
-    final employee = JobEmployeeModel(
-      employeeId: _selectedEmployee!.id,
-      employeeName: _selectedEmployee!.name,
-      startTime: _startTimeController.text,
-      finishTime: _finishTimeController.text,
-      hours: double.tryParse(_hoursController.text) ?? 0.0,
-      travelHours: double.tryParse(_travelHoursController.text) ?? 0.0,
-      meal: double.tryParse(_mealController.text) ?? 0.0,
-    );
-
+  void _handleAddOrUpdate(JobEmployeeModel employee) {
     if (_editingIndex != null) {
-      ref.read(timesheetDraftProvider.notifier).updateEmployee(_editingIndex!, employee);
+      ref.read(timesheetFormStateProvider.notifier).updateEmployee(_editingIndex!, employee);
+      // When updating, close the form
+      setState(() {
+        _editingIndex = null;
+        _employeeToEdit = null;
+        _showAddForm = false;
+      });
     } else {
-      ref.read(timesheetDraftProvider.notifier).addEmployee(employee);
+      ref.read(timesheetFormStateProvider.notifier).addEmployee(employee);
+      // When adding, keep the form open
+      setState(() {
+        _employeeToEdit = null; // Reset for next entry
+      });
     }
+  }
 
-    _clearForm();
+  void _handleCancel() {
+    setState(() {
+      _editingIndex = null;
+      _employeeToEdit = null;
+      _showAddForm = false;
+    });
   }
 
   void _editEmployee(int index, JobEmployeeModel employee) {
     setState(() {
       _editingIndex = index;
-      _startTimeController.text = employee.startTime;
-      _finishTimeController.text = employee.finishTime;
-      _hoursController.text = employee.hours.toString();
-      _travelHoursController.text = employee.travelHours.toString();
-      _mealController.text = employee.meal.toString();
-    });
-    
-    // Buscar o employee model completo
-    ref.read(employeesStreamProvider).whenData((employees) {
-      final emp = employees.firstWhere(
-        (e) => e.id == employee.employeeId,
-        orElse: () => EmployeeModel(
-          id: employee.employeeId,
-          firstName: employee.employeeName.split(' ').first,
-          lastName: employee.employeeName.split(' ').last,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      );
-      setState(() {
-        _selectedEmployee = emp;
-      });
+      _employeeToEdit = employee;
+      _showAddForm = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final employeesAsync = ref.watch(employeesStreamProvider);
-    final draft = ref.watch(timesheetDraftProvider).valueOrNull;
-    final addedEmployees = draft?.employees ?? [];
-
-    return ResponsiveContainer(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(context.dimensions.spacingL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Add Employees',
-              style: context.textStyles.headline,
+    final formState = ref.watch(timesheetFormStateProvider);
+    final employees = formState.employees;
+    
+    final bool isDesktop = context.isDesktop;
+    
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.responsive<double>(
+          xs: context.dimensions.spacingS,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+        ),
+        vertical: 0,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: context.responsive<double>(
+              xs: double.infinity,
+              sm: double.infinity,
+              md: 800,
+              lg: 1000,
+              xl: 1200,
             ),
-            SizedBox(height: context.dimensions.spacingL),
-
-            // Employee Form
-            Container(
-              padding: EdgeInsets.all(context.dimensions.spacingM),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: context.colors.textSecondary.withOpacity(0.3),
-                ),
-                borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-              ),
-              child: Column(
-                children: [
-                  // Employee Dropdown
-                  employeesAsync.when(
-                    data: (employees) {
-                      final activeEmployees = employees.where((e) => e.isActive).toList();
-                      return AppDropdownField<EmployeeModel>(
-                        label: 'Employee Name *',
-                        hintText: 'Select an employee',
-                        value: _selectedEmployee,
-                        items: activeEmployees,
-                        itemLabelBuilder: (employee) => employee.name,
-                        onChanged: (employee) {
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Add button - only show when form is hidden AND no employees added yet
+              if (!_showAddForm) ...[
+                Center(
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: context.dimensions.spacingL),
+                    child: Material(
+                      color: context.colors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                      child: InkWell(
+                        onTap: () {
                           setState(() {
-                            _selectedEmployee = employee;
+                            _showAddForm = true;
+                            _editingIndex = null;
+                            _employeeToEdit = null;
                           });
                         },
-                      );
-                    },
-                    loading: () => const CircularProgressIndicator(),
-                    error: (error, stack) => Text('Error loading employees'),
-                  ),
-
-                  SizedBox(height: context.dimensions.spacingM),
-
-                  // Time fields
-                  ResponsiveGrid(
-                    spacing: context.dimensions.spacingM,
-                    xsColumns: 1,
-                    mdColumns: 3,
-                    children: [
-                      AppTextField(
-                        label: 'Start Time',
-                        hintText: 'HH:mm',
-                        controller: _startTimeController,
-                        keyboardType: TextInputType.datetime,
-                      ),
-                      AppTextField(
-                        label: 'Finish Time',
-                        hintText: 'HH:mm',
-                        controller: _finishTimeController,
-                        keyboardType: TextInputType.datetime,
-                      ),
-                      AppTextField(
-                        label: 'Hours *',
-                        hintText: '0.0',
-                        controller: _hoursController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: context.dimensions.spacingM),
-
-                  // Additional fields
-                  ResponsiveGrid(
-                    spacing: context.dimensions.spacingM,
-                    xsColumns: 1,
-                    mdColumns: 2,
-                    children: [
-                      AppTextField(
-                        label: 'Travel Hours',
-                        hintText: '0.0',
-                        controller: _travelHoursController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      AppTextField(
-                        label: 'Meal',
-                        hintText: '0.0',
-                        controller: _mealController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: context.dimensions.spacingL),
-
-                  // Action buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (_editingIndex != null)
-                        AppButton(
-                          label: 'Cancel',
-                          type: AppButtonType.secondary,
-                          onPressed: _clearForm,
-                        ),
-                      SizedBox(width: context.dimensions.spacingM),
-                      AppButton(
-                        label: _editingIndex != null ? 'Update' : 'Add Employee',
-                        onPressed: _addOrUpdateEmployee,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: context.dimensions.spacingXL),
-
-            // Employees Table
-            if (addedEmployees.isNotEmpty) ...[
-              Text(
-                'Added Employees',
-                style: context.textStyles.title,
-              ),
-              SizedBox(height: context.dimensions.spacingM),
-              
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: context.dimensions.spacingL,
-                  columns: const [
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Start')),
-                    DataColumn(label: Text('Finish')),
-                    DataColumn(label: Text('Hours')),
-                    DataColumn(label: Text('Travel')),
-                    DataColumn(label: Text('Meal')),
-                    DataColumn(label: Text('Actions')),
-                  ],
-                  rows: List.generate(addedEmployees.length, (index) {
-                    final employee = addedEmployees[index];
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(employee.employeeName)),
-                        DataCell(Text(employee.startTime)),
-                        DataCell(Text(employee.finishTime)),
-                        DataCell(Text(employee.hours.toStringAsFixed(1))),
-                        DataCell(Text(employee.travelHours.toStringAsFixed(1))),
-                        DataCell(Text(employee.meal.toStringAsFixed(1))),
-                        DataCell(
-                          Row(
+                        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.dimensions.spacingL,
+                            vertical: context.dimensions.spacingS + 2,
+                          ),
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              AppIconButton(
-                                icon: Icons.edit,
-                                onPressed: () => _editEmployee(index, employee),
-                                tooltip: 'Edit',
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: context.colors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.add,
+                                  color: context.colors.onPrimary,
+                                  size: 16,
+                                ),
                               ),
-                              AppIconButton(
-                                icon: Icons.delete,
-                                onPressed: () {
-                                  ref.read(timesheetDraftProvider.notifier).removeEmployee(index);
-                                },
-                                tooltip: 'Delete',
-                                color: context.colors.error,
+                              SizedBox(width: context.dimensions.spacingM),
+                              Text(
+                                'Add Employee',
+                                style: context.textStyles.subtitle.copyWith(
+                                  color: context.colors.primary,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              
+              // Add employee form - keep it visible after clicking the button
+              AnimatedSize(
+                duration: Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: AnimatedOpacity(
+                  opacity: _showAddForm ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 200),
+                  child: _showAddForm 
+                    ? Column(
+                        children: [
+                          AddEmployeeForm(
+                            key: ValueKey(_employeeToEdit), // Force rebuild when employeeToEdit changes
+                            employeeToEdit: _employeeToEdit,
+                            onSave: _handleAddOrUpdate,
+                            onCancel: _handleCancel,
+                          ),
+                          SizedBox(height: context.dimensions.spacingM),
+                        ],
+                      )
+                    : SizedBox.shrink(),
+                ),
+              ),
+              
+              // Employee list - table-like format
+              if (employees.isNotEmpty) 
+                Builder(
+                  builder: (context) {
+                    // Check if any employee has travel or meal values
+                    final hasTravelData = employees.any((e) => e.travelHours > 0);
+                    final hasMealData = employees.any((e) => e.meal > 0);
+                    final hasExtraData = hasTravelData || hasMealData;
+                    
+                    return Column(
+                      children: [
+                        
+                        // Table header - different layouts
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.dimensions.spacingM,
+                            vertical: context.dimensions.spacingS,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.colors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(context.dimensions.borderRadiusM),
+                              topRight: Radius.circular(context.dimensions.borderRadiusM),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: hasExtraData ? 3 : 2,
+                                child: Text(
+                                  'Name',
+                                  style: context.textStyles.caption.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: context.colors.primary,
+                                  ),
+                                ),
+                              ),
+                              if (!hasExtraData) ...[
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    'Start',
+                                    style: context.textStyles.caption.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.primary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    'Finish',
+                                    style: context.textStyles.caption.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.primary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                              Expanded(
+                                flex: 1,
+                                child: Text(
+                                  'Hours',
+                                  style: context.textStyles.caption.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: context.colors.primary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              if (hasExtraData) ...[
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    'Travel',
+                                    style: context.textStyles.caption.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.primary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    'Meal',
+                                    style: context.textStyles.caption.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.primary,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                              SizedBox(width: 28), // Space for menu button
+                            ],
+                          ),
+                        ),
+                
+                // Employee rows
+                Column(
+                  children: List.generate(employees.length, (index) {
+                    final employee = employees[index];
+                    final isEditing = _editingIndex == index;
+                    final isLast = index == employees.length - 1;
+                    
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: isEditing 
+                          ? context.colors.primary.withOpacity(0.05)
+                          : index.isEven
+                            ? context.colors.surface
+                            : context.colors.background,
+                        border: Border(
+                          left: BorderSide(
+                            color: context.colors.outline.withOpacity(0.5),
+                            width: 1,
+                          ),
+                          right: BorderSide(
+                            color: context.colors.outline.withOpacity(0.5),
+                            width: 1,
+                          ),
+                          bottom: BorderSide(
+                            color: context.colors.outline.withOpacity(0.5),
+                            width: 1,
+                          ),
+                        ),
+                        borderRadius: isLast
+                          ? BorderRadius.only(
+                              bottomLeft: Radius.circular(context.dimensions.borderRadiusM),
+                              bottomRight: Radius.circular(context.dimensions.borderRadiusM),
+                            )
+                          : null,
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: context.dimensions.spacingM,
+                        vertical: context.dimensions.spacingS,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: hasExtraData ? 3 : 2,
+                            child: hasExtraData
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      employee.employeeName,
+                                      style: context.textStyles.body.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      '${employee.startTime} - ${employee.finishTime}',
+                                      style: context.textStyles.caption.copyWith(
+                                        color: context.colors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  employee.employeeName,
+                                  style: context.textStyles.body.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                          ),
+                          if (!hasExtraData) ...[
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                employee.startTime,
+                                style: context.textStyles.body,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                employee.finishTime,
+                                style: context.textStyles.body,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              employee.hours.toStringAsFixed(1),
+                              style: context.textStyles.body,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (hasExtraData) ...[
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                employee.travelHours > 0 
+                                  ? employee.travelHours.toStringAsFixed(1)
+                                  : '-',
+                                style: context.textStyles.body,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                employee.meal > 0 
+                                  ? employee.meal.toStringAsFixed(1)
+                                  : '-',
+                                style: context.textStyles.body,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                          SizedBox(
+                            width: 28,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Transform.translate(
+                                offset: Offset(4, 0), // Move closer to edge
+                                child: PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    size: 18,
+                                    color: context.colors.textSecondary,
+                                  ),
+                                onSelected: (value) {
+                                  switch (value) {
+                                    case 'edit':
+                                      _editEmployee(index, employee);
+                                      break;
+                                    case 'delete':
+                                      ref.read(timesheetFormStateProvider.notifier).removeEmployee(index);
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.edit,
+                                          size: 16,
+                                          color: context.colors.textSecondary,
+                                        ),
+                                        SizedBox(width: context.dimensions.spacingS),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete,
+                                          size: 16,
+                                          color: context.colors.error,
+                                        ),
+                                        SizedBox(width: context.dimensions.spacingS),
+                                        Text(
+                                          'Delete',
+                                          style: TextStyle(color: context.colors.error),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                padding: EdgeInsets.zero,
+                                constraints: BoxConstraints(
+                                  minWidth: 24,
+                                  minHeight: 24,
+                                ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }),
                 ),
-              ),
-            ] else
-              Container(
-                padding: EdgeInsets.all(context.dimensions.spacingXL),
-                decoration: BoxDecoration(
-                  color: context.colors.surface,
-                  borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                  border: Border.all(
-                    color: context.colors.textSecondary.withOpacity(0.3),
-                  ),
+                      ],
+                    );
+                  },
                 ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 64,
-                        color: context.colors.textSecondary.withOpacity(0.5),
-                      ),
-                      SizedBox(height: context.dimensions.spacingM),
-                      Text(
-                        'No employees added yet',
-                        style: context.textStyles.body.copyWith(
-                          color: context.colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
+              
+            ],
+          ),
         ),
       ),
     );

@@ -9,7 +9,11 @@
       "Bash(flutter build:*)",
       "Bash(flutter run:*)",
       "Bash(grep:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(sed:*)",
+      "Bash(cp:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

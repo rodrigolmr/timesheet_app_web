@@ -129,9 +129,9 @@ class SettingsScreen extends ConsumerWidget {
         title: 'Database',
         description: 'View data',
         icon: Icons.storage,
-        route: '/settings/database',
+        route: AppRoute.database.path,
         color: context.categoryColorByName('timesheet'),
-        isActive: false,
+        isActive: true,
       ),
       NavigationCard(
         title: 'Users',

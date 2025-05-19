@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
+import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 
 class TimesheetStepper extends StatelessWidget {
   final int currentStep;
@@ -16,14 +17,18 @@ class TimesheetStepper extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: context.dimensions.spacingL,
-        vertical: context.dimensions.spacingM,
+        vertical: context.responsive<double>(
+          xs: context.dimensions.spacingXS, // Very small padding on mobile
+          sm: context.dimensions.spacingXS,
+          md: context.dimensions.spacingS, // Slightly larger on desktop
+        ),
       ),
       child: Row(
         children: [
           _buildStep(
             context,
             stepNumber: 1,
-            title: 'General Info',
+            title: 'Job Info',
             isActive: currentStep >= 0,
             isCurrent: currentStep == 0,
           ),
@@ -39,7 +44,7 @@ class TimesheetStepper extends StatelessWidget {
           _buildStep(
             context,
             stepNumber: 3,
-            title: 'Review & Submit',
+            title: 'Review',
             isActive: currentStep >= 2,
             isCurrent: currentStep == 2,
           ),
@@ -61,10 +66,22 @@ class TimesheetStepper extends StatelessWidget {
     return GestureDetector(
       onTap: () => onStepTapped(stepIndex),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Minimiza altura
+        mainAxisAlignment: MainAxisAlignment.center, // Centro vertical
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: context.responsive<double>(
+              xs: 24, // Much smaller on mobile
+              sm: 26, // Small on tablets
+              md: 28, // Medium size on tablets
+              lg: 30, // Reduced size on desktop
+            ),
+            height: context.responsive<double>(
+              xs: 24, // Much smaller on mobile
+              sm: 26, // Small on tablets
+              md: 28, // Medium size on tablets
+              lg: 30, // Reduced size on desktop
+            ),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isCurrent
@@ -77,7 +94,7 @@ class TimesheetStepper extends StatelessWidget {
               border: Border.all(
                 color: isActive
                     ? context.colors.primary
-                    : context.colors.textSecondary.withOpacity(0.3),
+                    : context.colors.outline,
                 width: 2,
               ),
             ),
@@ -85,28 +102,33 @@ class TimesheetStepper extends StatelessWidget {
               child: isCompleted
                   ? Icon(
                       Icons.check,
-                      color: Colors.white,
-                      size: 20,
+                      color: context.colors.onPrimary,
+                      size: 16, // Smaller icon
                     )
                   : Text(
                       stepNumber.toString(),
-                      style: context.textStyles.body.copyWith(
-                        color: isCurrent
-                            ? Colors.white
-                            : isActive
-                                ? context.colors.textPrimary
-                                : context.colors.textSecondary,
+                      style: context.textStyles.caption.copyWith( // Smaller text
                         fontWeight: FontWeight.bold,
+                        color: isCurrent
+                            ? context.colors.onPrimary
+                            : isActive
+                                ? context.colors.primary
+                                : context.colors.textSecondary,
                       ),
                     ),
             ),
           ),
-          SizedBox(height: context.dimensions.spacingXS),
+          SizedBox(height: 2), // Espaçamento mínimo possível
           Container(
-            constraints: BoxConstraints(maxWidth: 100),
+            constraints: BoxConstraints(maxWidth: 90), // Slightly reduced width
             child: Text(
               title,
-              style: context.textStyles.caption.copyWith(
+              style: TextStyle(
+                fontSize: context.responsive<double>(
+                  xs: 10, // Smaller on mobile but still readable
+                  sm: 11,
+                  md: 12, // Original caption size
+                ),
                 color: isActive
                     ? context.colors.textPrimary
                     : context.colors.textSecondary,
@@ -124,11 +146,11 @@ class TimesheetStepper extends StatelessWidget {
 
   Widget _buildStepConnector(BuildContext context, {required bool isActive}) {
     return Container(
-      height: 2,
-      margin: EdgeInsets.only(bottom: 40),
+      height: 1, // Linha ainda mais fina
+      margin: EdgeInsets.only(bottom: 10), // Margem inferior mínima
       color: isActive
           ? context.colors.primary
-          : context.colors.textSecondary.withOpacity(0.3),
+          : context.colors.outline.withOpacity(0.5), // Mais transparente
     );
   }
 }

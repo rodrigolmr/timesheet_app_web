@@ -47,8 +47,14 @@ class AppMultilineTextField extends StatelessWidget {
   /// Número máximo de linhas (null = sem limite)
   final int? maxLines;
 
+  /// Número mínimo de linhas
+  final int? minLines;
+
   /// Se o campo deve se expandir para preencher o espaço disponível
   final bool expands;
+
+  /// Se o campo deve crescer automaticamente com o conteúdo
+  final bool autoGrow;
 
   /// Tipo de teclado para este campo
   final TextInputType? keyboardType;
@@ -70,12 +76,20 @@ class AppMultilineTextField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.sentences,
     this.onChanged,
     this.maxLines = 5,
+    this.minLines = 1,
     this.expands = false,
+    this.autoGrow = false,
     this.keyboardType,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Se autoGrow é true, não define altura fixa e permite crescimento automático
+    // Para multiline, sempre deixar null para que o Flutter calcule automaticamente
+    final effectiveHeight = height;  // Sem altura padrão, deixa o Flutter calcular
+    final effectiveMaxLines = autoGrow ? null : maxLines;
+    final effectiveMinLines = autoGrow ? (minLines ?? 3) : minLines;
+    
     return AppInputFieldBase(
       label: label,
       hintText: hintText,
@@ -88,21 +102,17 @@ class AppMultilineTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       enabled: enabled,
       maxWidth: maxWidth,
-      height: height ?? 120.0, // Altura padrão maior para campo multiline
+      height: effectiveHeight,
       textCapitalization: textCapitalization,
       onChanged: onChanged,
       onTap: null, // Usando o comportamento padrão
       multiline: true,
-      maxLines: maxLines,
+      maxLines: effectiveMaxLines,
+      minLines: effectiveMinLines,
       expands: expands,
       readOnly: false,
       obscureText: false,
       textAlignVertical: TextAlignVertical.top, // Alinha texto no topo para campos multiline
-      // Padding específico para multiline
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: context.dimensions.paddingMedium,
-        vertical: context.dimensions.paddingMedium,
-      ),
     );
   }
 

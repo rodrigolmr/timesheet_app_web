@@ -10,6 +10,7 @@ import 'package:timesheet_app_web/src/features/employee/presentation/screens/emp
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_selector_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/settings_screen.dart';
+import 'package:timesheet_app_web/src/features/database/presentation/screens/database_screen.dart';
 import 'package:timesheet_app_web/src/features/timesheet_create/presentation/screens/timesheet_create_screen.dart';
 
 part 'routes.g.dart';
@@ -19,10 +20,11 @@ enum AppRoute {
   home('/'),
   employees('/employees'),
   employeeDetails('/employees/:id'),
-  timesheetCreate('/timesheets/create'),
   settings('/settings'),
   themeSettings('/settings/theme'),
-  themeSelector('/settings/theme-selector');
+  themeSelector('/settings/theme-selector'),
+  database('/settings/database'),
+  timesheetCreate('/timesheet/create');
 
   const AppRoute(this.path);
   final String path;
@@ -93,11 +95,6 @@ GoRouter goRouter(GoRouterRef ref) {
         },
       ),
       GoRoute(
-        path: AppRoute.timesheetCreate.path,
-        name: AppRoute.timesheetCreate.name,
-        builder: (context, state) => const TimesheetCreateScreen(),
-      ),
-      GoRoute(
         path: AppRoute.settings.path,
         name: AppRoute.settings.name,
         builder: (context, state) => const SettingsScreen(),
@@ -111,6 +108,16 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.themeSelector.path,
         name: AppRoute.themeSelector.name,
         builder: (context, state) => const ThemeSelectorScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.database.path,
+        name: AppRoute.database.name,
+        builder: (context, state) => const DatabaseScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.timesheetCreate.path,
+        name: AppRoute.timesheetCreate.name,
+        builder: (context, state) => const TimesheetCreateScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

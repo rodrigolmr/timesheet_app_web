@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
-import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_builder.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
@@ -70,8 +69,8 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   @override
   Widget build(BuildContext context) {
     final recordAsync = ref.watch(jobRecordProvider(widget.recordId));
-    final colors = context.appColors;
-    final textStyles = context.appTextStyles;
+    final colors = context.colors;
+    final textStyles = context.textStyles;
 
     return Scaffold(
       appBar: const AppHeader(
@@ -83,7 +82,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
             return Center(
               child: Text(
                 'Record not found',
-                style: textStyles.h3.copyWith(
+                style: textStyles.headline.copyWith(
                   color: colors.textSecondary,
                 ),
               ),
@@ -106,7 +105,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                       ),
                       child: Text(
                         record.status.toUpperCase(),
-                        style: textStyles.bodyMedium.copyWith(
+                        style: textStyles.body.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -140,13 +139,15 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                     if (record.status == 'pending' && !_isProcessing) ...[
                       Text(
                         'Review',
-                        style: textStyles.h3,
+                        style: textStyles.headline,
                       ),
                       const SizedBox(height: 10),
-                      AppTextField(
+                      TextFormField(
                         controller: _reviewerNoteController,
-                        placeholder: 'Add a note (optional)',
-                        multiline: true,
+                        decoration: InputDecoration(
+                          hintText: 'Add a note (optional)',
+                          border: OutlineInputBorder(),
+                        ),
                         maxLines: 3,
                         enabled: !_isProcessing,
                       ),
@@ -154,22 +155,28 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                       Row(
                         children: [
                           Expanded(
-                            child: AppButton(
-                              text: 'Approve',
+                            child: ElevatedButton(
                               onPressed: _isProcessing
                                   ? null
                                   : () => _updateStatus('approved'),
-                              type: ButtonType.primary,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text('Approve'),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: AppButton(
-                              text: 'Reject',
+                            child: ElevatedButton(
                               onPressed: _isProcessing
                                   ? null
                                   : () => _updateStatus('rejected'),
-                              type: ButtonType.danger,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text('Reject'),
                             ),
                           ),
                         ],
@@ -192,7 +199,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
         error: (error, _) => Center(
           child: Text(
             'Error loading record: $error',
-            style: textStyles.bodyLarge.copyWith(
+            style: textStyles.body.copyWith(
               color: colors.error,
             ),
           ),
@@ -202,8 +209,8 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   }
 
   Widget _buildInfoRow(String label, String value) {
-    final textStyles = context.appTextStyles;
-    final colors = context.appColors;
+    final textStyles = context.textStyles;
+    final colors = context.colors;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -214,7 +221,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
             width: 120,
             child: Text(
               '$label:',
-              style: textStyles.bodyMedium.copyWith(
+              style: textStyles.body.copyWith(
                 color: colors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
@@ -223,7 +230,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
           Expanded(
             child: Text(
               value,
-              style: textStyles.bodyMedium,
+              style: textStyles.body,
             ),
           ),
         ],
