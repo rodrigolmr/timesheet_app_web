@@ -22,49 +22,6 @@ class JobRecordDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen> {
-  final TextEditingController _reviewerNoteController = TextEditingController();
-  bool _isProcessing = false;
-
-  @override
-  void dispose() {
-    _reviewerNoteController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _updateStatus(String status) async {
-    setState(() => _isProcessing = true);
-    
-    try {
-      await ref.read(jobRecordStateProvider(widget.recordId).notifier).updateStatus(
-        status,
-        reviewerNote: _reviewerNoteController.text.trim().isEmpty 
-          ? null 
-          : _reviewerNoteController.text.trim(),
-      );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Status updated to ${status}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating status: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,28 +47,12 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
           }
 
           return ResponsiveBuilder(
-            builder: (context, screenType) {
+            builder: (context, constraints, screenSize) {
               return Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status Chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(record.status),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        record.status.toUpperCase(),
-                        style: textStyles.body.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
 
                     // Record Information
                     Card(
@@ -121,74 +62,11 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildInfoRow('Job Date', record.date.toString().split(' ')[0]),
-                            _buildInfoRow('Hours', record.hours.toString()),
-                            _buildInfoRow('Company Card', record.companyCardId),
                             _buildInfoRow('User', record.userId),
-                            _buildInfoRow('Worker', record.workerId),
-                            if (record.reviewedAt != null)
-                              _buildInfoRow('Reviewed At', record.reviewedAt!.toString()),
-                            if (record.reviewerNote != null && record.reviewerNote!.isNotEmpty)
-                              _buildInfoRow('Reviewer Note', record.reviewerNote!),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Review Section (if pending)
-                    if (record.status == 'pending' && !_isProcessing) ...[
-                      Text(
-                        'Review',
-                        style: textStyles.headline,
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _reviewerNoteController,
-                        decoration: InputDecoration(
-                          hintText: 'Add a note (optional)',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 3,
-                        enabled: !_isProcessing,
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isProcessing
-                                  ? null
-                                  : () => _updateStatus('approved'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: Text('Approve'),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isProcessing
-                                  ? null
-                                  : () => _updateStatus('rejected'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: Text('Reject'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    
-                    if (_isProcessing) ...[
-                      const SizedBox(height: 20),
-                      const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ],
                   ],
                 ),
               );
@@ -238,16 +116,4 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'approved':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
 }

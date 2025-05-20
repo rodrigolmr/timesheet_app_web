@@ -8,6 +8,7 @@ import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/providers/database_providers.dart';
+import 'package:timesheet_app_web/src/features/database/presentation/widgets/import_collection_dialog.dart';
 import 'package:timesheet_app_web/src/features/database/data/models/database_stats_model.dart';
 
 class DatabaseScreen extends ConsumerWidget {
@@ -145,6 +146,15 @@ class DatabaseScreen extends ConsumerWidget {
                   icon: Icon(Icons.backup),
                   label: Text('Backup Database'),
                 ),
+                ElevatedButton.icon(
+                  onPressed: () => _showUploadDialog(context, ref),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.colors.primary,
+                    foregroundColor: context.colors.onPrimary,
+                  ),
+                  icon: Icon(Icons.upload_file),
+                  label: Text('Restore from Backup'),
+                ),
                 OutlinedButton.icon(
                   onPressed: () => _handleClearCache(context, ref),
                   style: OutlinedButton.styleFrom(
@@ -274,6 +284,9 @@ class DatabaseScreen extends ConsumerWidget {
                         case 'export':
                           _handleExportCollection(context, ref, stat.collectionName);
                           break;
+                        case 'import':
+                          _handleImportCollection(context, ref, stat.collectionName);
+                          break;
                       }
                     },
                     itemBuilder: (context) => [
@@ -314,6 +327,16 @@ class DatabaseScreen extends ConsumerWidget {
                             Icon(Icons.download, size: 20),
                             SizedBox(width: 8),
                             Text('Export'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'import',
+                        child: Row(
+                          children: [
+                            Icon(Icons.upload_file, size: 20),
+                            SizedBox(width: 8),
+                            Text('Import CSV'),
                           ],
                         ),
                       ),
@@ -539,6 +562,47 @@ class DatabaseScreen extends ConsumerWidget {
             child: Text(
               'Export',
               style: TextStyle(color: context.colors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _handleImportCollection(BuildContext context, WidgetRef ref, String collectionName) {
+    showDialog(
+      context: context,
+      builder: (context) => ImportCollectionDialog(
+        collectionName: collectionName,
+      ),
+    );
+  }
+  
+  void _showUploadDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Select Collection to Restore'),
+        contentPadding: EdgeInsets.all(context.dimensions.spacingL),
+        children: [
+          Text('Choose a collection to restore from backup:'),
+          SizedBox(height: context.dimensions.spacingM),
+          ...['users', 'employees', 'company_cards', 'expenses', 'job_records'].map((collection) => 
+            ListTile(
+              leading: Icon(Icons.upload_file),
+              title: Text(collection),
+              onTap: () {
+                Navigator.of(context).pop();
+                _handleImportCollection(context, ref, collection);
+              },
+            ),
+          ),
+          SizedBox(height: context.dimensions.spacingM),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
             ),
           ),
         ],

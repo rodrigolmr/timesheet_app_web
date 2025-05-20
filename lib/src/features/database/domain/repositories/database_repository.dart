@@ -13,4 +13,16 @@ abstract class DatabaseRepository {
   Future<void> exportCollection(String collectionName);
   Future<void> backupDatabase();
   Future<void> clearCache();
+  
+  /// Importa dados de um arquivo CSV para uma coleção
+  /// [collectionName] é o nome da coleção
+  /// [csvData] é o conteúdo do arquivo CSV como uma string
+  /// [overwrite] determina se os documentos existentes serão sobrescritos
+  Future<int> importCollection(String collectionName, String csvData, {bool overwrite = false});
+  
+  /// Importa dados de um arquivo JSON para uma coleção
+  /// [collectionName] é o nome da coleção
+  /// [jsonData] é o conteúdo do arquivo JSON como uma string (array de objetos)
+  /// [overwrite] determina se os documentos existentes serão sobrescritos
+  Future<int> importJson(String collectionName, String jsonData, {bool overwrite = false});
 }

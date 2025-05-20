@@ -16,8 +16,6 @@ Stream<List<JobRecordModel>> cachedJobRecords(CachedJobRecordsRef ref) {
 enum JobRecordSortOption {
   dateDesc,
   dateAsc,
-  hoursDesc,
-  hoursAsc,
   projectNameAsc,
   projectNameDesc,
 }
@@ -39,11 +37,9 @@ class JobRecordSearchQuery extends _$JobRecordSearchQuery {
 @riverpod
 class JobRecordSearchFilters extends _$JobRecordSearchFilters {
   @override
-  ({String? userId, String? workerId, JobStatus? status, String? location, JobRecordSortOption sortOption}) build() {
+  ({String? userId, String? location, JobRecordSortOption sortOption}) build() {
     return (
       userId: null,
-      workerId: null,
-      status: null,
       location: null,
       sortOption: JobRecordSortOption.dateDesc,
     );
@@ -52,28 +48,6 @@ class JobRecordSearchFilters extends _$JobRecordSearchFilters {
   void updateUserId(String? userId) {
     state = (
       userId: userId,
-      workerId: state.workerId,
-      status: state.status,
-      location: state.location,
-      sortOption: state.sortOption,
-    );
-  }
-
-  void updateWorkerId(String? workerId) {
-    state = (
-      userId: state.userId,
-      workerId: workerId,
-      status: state.status,
-      location: state.location,
-      sortOption: state.sortOption,
-    );
-  }
-
-  void updateStatus(JobStatus? status) {
-    state = (
-      userId: state.userId,
-      workerId: state.workerId,
-      status: status,
       location: state.location,
       sortOption: state.sortOption,
     );
@@ -82,8 +56,6 @@ class JobRecordSearchFilters extends _$JobRecordSearchFilters {
   void updateLocation(String? location) {
     state = (
       userId: state.userId,
-      workerId: state.workerId,
-      status: state.status,
       location: location,
       sortOption: state.sortOption,
     );
@@ -92,8 +64,6 @@ class JobRecordSearchFilters extends _$JobRecordSearchFilters {
   void updateSortOption(JobRecordSortOption sortOption) {
     state = (
       userId: state.userId,
-      workerId: state.workerId,
-      status: state.status,
       location: state.location,
       sortOption: sortOption,
     );
@@ -102,8 +72,6 @@ class JobRecordSearchFilters extends _$JobRecordSearchFilters {
   void resetFilters() {
     state = (
       userId: null,
-      workerId: null,
-      status: null,
       location: null,
       sortOption: JobRecordSortOption.dateDesc,
     );
@@ -116,8 +84,6 @@ List<JobRecordModel> searchJobRecords(
   SearchJobRecordsRef ref, {
   required String query,
   String? userId,
-  String? workerId,
-  JobStatus? status,
   String? location,
   JobRecordSortOption? sortOption,
 }) {
@@ -133,16 +99,8 @@ List<JobRecordModel> searchJobRecords(
         filters.add((record) => record.userId == userId);
       }
       
-      if (workerId != null && workerId.isNotEmpty) {
-        filters.add((record) => record.workerId == workerId);
-      }
-      
-      if (status != null) {
-        filters.add((record) => record.status == status);
-      }
-      
       if (location != null && location.isNotEmpty) {
-        filters.add((record) => record.location.toLowerCase().contains(location.toLowerCase()));
+        filters.add((record) => record.location != null && record.location.toLowerCase().contains(location.toLowerCase()));
       }
       
       // Definir a função de ordenação
@@ -153,14 +111,10 @@ List<JobRecordModel> searchJobRecords(
           sortBy = (a, b) => searchService.sortByDate(a, b, (record) => record.date);
         case JobRecordSortOption.dateAsc:
           sortBy = (a, b) => searchService.sortByDate(a, b, (record) => record.date, descending: false);
-        case JobRecordSortOption.hoursDesc:
-          sortBy = (a, b) => (b.hours + b.travelHours).compareTo(a.hours + a.travelHours);
-        case JobRecordSortOption.hoursAsc:
-          sortBy = (a, b) => (a.hours + a.travelHours).compareTo(b.hours + b.travelHours);
         case JobRecordSortOption.projectNameAsc:
-          sortBy = (a, b) => searchService.sortByString(a, b, (record) => record.projectName);
+          sortBy = (a, b) => searchService.sortByString(a, b, (record) => record.jobName);
         case JobRecordSortOption.projectNameDesc:
-          sortBy = (a, b) => searchService.sortByString(a, b, (record) => record.projectName, descending: true);
+          sortBy = (a, b) => searchService.sortByString(a, b, (record) => record.jobName, descending: true);
       }
       
       // Usar o serviço de pesquisa
@@ -168,10 +122,8 @@ List<JobRecordModel> searchJobRecords(
         items: records,
         query: query,
         searchFields: (record) => [
-          record.projectName,
-          record.workDescription,
-          record.location,
-          record.workerName,
+          record.jobName,
+          record.jobDescription,
           record.date.toString().split(' ')[0], // Data formatada como YYYY-MM-DD
         ],
         filters: filters.isEmpty ? null : filters,
@@ -192,8 +144,6 @@ List<JobRecordModel> jobRecordSearchResults(JobRecordSearchResultsRef ref) {
   return ref.watch(searchJobRecordsProvider(
     query: query,
     userId: filters.userId,
-    workerId: filters.workerId,
-    status: filters.status,
     location: filters.location,
     sortOption: filters.sortOption,
   ));

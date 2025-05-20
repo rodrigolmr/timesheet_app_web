@@ -36,12 +36,7 @@ mixin _$JobRecordModel {
       throw _privateConstructorUsedError; // Array de funcionários
   List<JobEmployeeModel> get employees =>
       throw _privateConstructorUsedError; // Notas adicionais
-  String get notes =>
-      throw _privateConstructorUsedError; // Campos usados na tela de listagem
-  String get workerId => throw _privateConstructorUsedError;
-  String get companyCardId => throw _privateConstructorUsedError;
-  String get status => throw _privateConstructorUsedError;
-  double get hours => throw _privateConstructorUsedError; // Campos de controle
+  String get notes => throw _privateConstructorUsedError; // Campos de controle
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
@@ -75,10 +70,6 @@ abstract class $JobRecordModelCopyWith<$Res> {
     String vehicle,
     List<JobEmployeeModel> employees,
     String notes,
-    String workerId,
-    String companyCardId,
-    String status,
-    double hours,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -111,10 +102,6 @@ class _$JobRecordModelCopyWithImpl<$Res, $Val extends JobRecordModel>
     Object? vehicle = null,
     Object? employees = null,
     Object? notes = null,
-    Object? workerId = null,
-    Object? companyCardId = null,
-    Object? status = null,
-    Object? hours = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -180,26 +167,6 @@ class _$JobRecordModelCopyWithImpl<$Res, $Val extends JobRecordModel>
                     ? _value.notes
                     : notes // ignore: cast_nullable_to_non_nullable
                         as String,
-            workerId:
-                null == workerId
-                    ? _value.workerId
-                    : workerId // ignore: cast_nullable_to_non_nullable
-                        as String,
-            companyCardId:
-                null == companyCardId
-                    ? _value.companyCardId
-                    : companyCardId // ignore: cast_nullable_to_non_nullable
-                        as String,
-            status:
-                null == status
-                    ? _value.status
-                    : status // ignore: cast_nullable_to_non_nullable
-                        as String,
-            hours:
-                null == hours
-                    ? _value.hours
-                    : hours // ignore: cast_nullable_to_non_nullable
-                        as double,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
@@ -238,10 +205,6 @@ abstract class _$$JobRecordModelImplCopyWith<$Res>
     String vehicle,
     List<JobEmployeeModel> employees,
     String notes,
-    String workerId,
-    String companyCardId,
-    String status,
-    double hours,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -273,10 +236,6 @@ class __$$JobRecordModelImplCopyWithImpl<$Res>
     Object? vehicle = null,
     Object? employees = null,
     Object? notes = null,
-    Object? workerId = null,
-    Object? companyCardId = null,
-    Object? status = null,
-    Object? hours = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -342,26 +301,6 @@ class __$$JobRecordModelImplCopyWithImpl<$Res>
                 ? _value.notes
                 : notes // ignore: cast_nullable_to_non_nullable
                     as String,
-        workerId:
-            null == workerId
-                ? _value.workerId
-                : workerId // ignore: cast_nullable_to_non_nullable
-                    as String,
-        companyCardId:
-            null == companyCardId
-                ? _value.companyCardId
-                : companyCardId // ignore: cast_nullable_to_non_nullable
-                    as String,
-        status:
-            null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                    as String,
-        hours:
-            null == hours
-                ? _value.hours
-                : hours // ignore: cast_nullable_to_non_nullable
-                    as double,
         createdAt:
             null == createdAt
                 ? _value.createdAt
@@ -393,10 +332,6 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     required this.vehicle,
     required final List<JobEmployeeModel> employees,
     this.notes = '',
-    this.workerId = '',
-    this.companyCardId = '',
-    this.status = 'pending',
-    this.hours = 0.0,
     required this.createdAt,
     required this.updatedAt,
   }) : _employees = employees,
@@ -441,19 +376,6 @@ class _$JobRecordModelImpl extends _JobRecordModel {
   @override
   @JsonKey()
   final String notes;
-  // Campos usados na tela de listagem
-  @override
-  @JsonKey()
-  final String workerId;
-  @override
-  @JsonKey()
-  final String companyCardId;
-  @override
-  @JsonKey()
-  final String status;
-  @override
-  @JsonKey()
-  final double hours;
   // Campos de controle
   @override
   final DateTime createdAt;
@@ -462,7 +384,7 @@ class _$JobRecordModelImpl extends _JobRecordModel {
 
   @override
   String toString() {
-    return 'JobRecordModel(id: $id, userId: $userId, jobName: $jobName, date: $date, territorialManager: $territorialManager, jobSize: $jobSize, material: $material, jobDescription: $jobDescription, foreman: $foreman, vehicle: $vehicle, employees: $employees, notes: $notes, workerId: $workerId, companyCardId: $companyCardId, status: $status, hours: $hours, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'JobRecordModel(id: $id, userId: $userId, jobName: $jobName, date: $date, territorialManager: $territorialManager, jobSize: $jobSize, material: $material, jobDescription: $jobDescription, foreman: $foreman, vehicle: $vehicle, employees: $employees, notes: $notes, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -488,12 +410,6 @@ class _$JobRecordModelImpl extends _JobRecordModel {
               _employees,
             ) &&
             (identical(other.notes, notes) || other.notes == notes) &&
-            (identical(other.workerId, workerId) ||
-                other.workerId == workerId) &&
-            (identical(other.companyCardId, companyCardId) ||
-                other.companyCardId == companyCardId) &&
-            (identical(other.status, status) || other.status == status) &&
-            (identical(other.hours, hours) || other.hours == hours) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -516,10 +432,6 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     vehicle,
     const DeepCollectionEquality().hash(_employees),
     notes,
-    workerId,
-    companyCardId,
-    status,
-    hours,
     createdAt,
     updatedAt,
   );
@@ -555,10 +467,6 @@ abstract class _JobRecordModel extends JobRecordModel {
     required final String vehicle,
     required final List<JobEmployeeModel> employees,
     final String notes,
-    final String workerId,
-    final String companyCardId,
-    final String status,
-    final double hours,
     required final DateTime createdAt,
     required final DateTime updatedAt,
   }) = _$JobRecordModelImpl;
@@ -591,15 +499,7 @@ abstract class _JobRecordModel extends JobRecordModel {
   @override
   List<JobEmployeeModel> get employees; // Notas adicionais
   @override
-  String get notes; // Campos usados na tela de listagem
-  @override
-  String get workerId;
-  @override
-  String get companyCardId;
-  @override
-  String get status;
-  @override
-  double get hours; // Campos de controle
+  String get notes; // Campos de controle
   @override
   DateTime get createdAt;
   @override

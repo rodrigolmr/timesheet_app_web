@@ -36,20 +36,20 @@ class FirestoreJobRecordRepository extends FirestoreRepository<JobRecordModel>
   }
 
   @override
-  Future<List<JobRecordModel>> getRecordsByWorker(String workerId) async {
+  Future<List<JobRecordModel>> getRecordsByEmployee(String employeeId) async {
     // Busca todos os registros e filtra localmente
     final allRecords = await getAll();
     return allRecords.where((record) {
-      return record.employees.any((employee) => employee.employeeId == workerId);
+      return record.employees.any((employee) => employee.employeeId == employeeId);
     }).toList();
   }
 
   @override
-  Stream<List<JobRecordModel>> watchRecordsByWorker(String workerId) {
+  Stream<List<JobRecordModel>> watchRecordsByEmployee(String employeeId) {
     // Busca todos os registros e filtra localmente
     return watchAll().map((records) {
       return records.where((record) {
-        return record.employees.any((employee) => employee.employeeId == workerId);
+        return record.employees.any((employee) => employee.employeeId == employeeId);
       }).toList();
     });
   }

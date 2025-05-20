@@ -5,20 +5,22 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/home/presentation/screens/home_screen.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/screens/employees_screen.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/screens/employee_details_screen.dart';
+import 'package:timesheet_app_web/src/features/employee/presentation/screens/employees_placeholder.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_selector_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/settings_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/database_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_create_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_records_screen.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_details_screen.dart';
+import 'package:timesheet_app_web/src/demo/week_grouping_demo.dart';
 
 part 'routes.g.dart';
 
 enum AppRoute {
   login('/login'),
   home('/'),
+  // Rotas de funcionários foram removidas
   employees('/employees'),
   employeeDetails('/employees/:id'),
   settings('/settings'),
@@ -27,7 +29,9 @@ enum AppRoute {
   database('/settings/database'),
   jobRecordCreate('/job-record-create'),
   jobRecords('/job-records'),
-  timesheetList('/timesheets');
+  timesheetList('/timesheets'),
+  jobRecordDetails('/job-records/:id'),
+  weekGroupingDemo('/demo/week-grouping');
 
   const AppRoute(this.path);
   final String path;
@@ -87,14 +91,14 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(
         path: AppRoute.employees.path,
         name: AppRoute.employees.name,
-        builder: (context, state) => const EmployeesScreen(),
+        builder: (context, state) => const EmployeesPlaceholder(),
       ),
       GoRoute(
         path: AppRoute.employeeDetails.path,
         name: AppRoute.employeeDetails.name,
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return EmployeeDetailsScreen(employeeId: id);
+          return EmployeeDetailsPlaceholder(employeeId: id);
         },
       ),
       GoRoute(
@@ -131,6 +135,19 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.timesheetList.path,
         name: AppRoute.timesheetList.name,
         builder: (context, state) => const JobRecordsScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.jobRecordDetails.path,
+        name: AppRoute.jobRecordDetails.name,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return JobRecordDetailsScreen(recordId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoute.weekGroupingDemo.path,
+        name: AppRoute.weekGroupingDemo.name,
+        builder: (context, state) => const WeekGroupingDemo(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

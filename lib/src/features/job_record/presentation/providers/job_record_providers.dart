@@ -52,14 +52,14 @@ Stream<List<JobRecordModel>> jobRecordsByUserStream(JobRecordsByUserStreamRef re
 
 /// Provider para obter registros por funcionário
 @riverpod
-Future<List<JobRecordModel>> jobRecordsByWorker(JobRecordsByWorkerRef ref, String workerId) {
-  return ref.watch(jobRecordRepositoryProvider).getRecordsByWorker(workerId);
+Future<List<JobRecordModel>> jobRecordsByEmployee(JobRecordsByEmployeeRef ref, String employeeId) {
+  return ref.watch(jobRecordRepositoryProvider).getRecordsByEmployee(employeeId);
 }
 
 /// Provider para observar registros por funcionário em tempo real
 @riverpod
-Stream<List<JobRecordModel>> jobRecordsByWorkerStream(JobRecordsByWorkerStreamRef ref, String workerId) {
-  return ref.watch(jobRecordRepositoryProvider).watchRecordsByWorker(workerId);
+Stream<List<JobRecordModel>> jobRecordsByEmployeeStream(JobRecordsByEmployeeStreamRef ref, String employeeId) {
+  return ref.watch(jobRecordRepositoryProvider).watchRecordsByEmployee(employeeId);
 }
 
 /// Provider para gerenciar o estado de um registro

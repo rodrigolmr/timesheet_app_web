@@ -8,9 +8,9 @@ abstract class JobRecordRepository implements BaseRepository<JobRecordModel> {
   /// Stream de registros por usuário
   Stream<List<JobRecordModel>> watchRecordsByUser(String userId);
   
-  /// Busca registros por funcionário
-  Future<List<JobRecordModel>> getRecordsByWorker(String workerId);
+  /// Busca registros por funcionário (ID do funcionário)
+  Future<List<JobRecordModel>> getRecordsByEmployee(String employeeId);
   
-  /// Stream de registros por funcionário
-  Stream<List<JobRecordModel>> watchRecordsByWorker(String workerId);
+  /// Stream de registros por funcionário (ID do funcionário)
+  Stream<List<JobRecordModel>> watchRecordsByEmployee(String employeeId);
 }

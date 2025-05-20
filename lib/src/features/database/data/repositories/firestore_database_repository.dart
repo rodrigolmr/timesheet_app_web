@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timesheet_app_web/src/features/database/data/models/database_stats_model.dart';
 import 'package:timesheet_app_web/src/features/database/domain/repositories/database_repository.dart';
@@ -319,5 +320,270 @@ class FirestoreDatabaseRepository implements DatabaseRepository {
   Future<void> clearCache() async {
     // Clear Firestore cache
     await _firestore.clearPersistence();
+  }
+  
+  @override
+  Future<int> importCollection(String collectionName, String csvData, {bool overwrite = false}) async {
+    if (!_collections.contains(collectionName)) {
+      throw Exception('Collection not found');
+    }
+    
+    // Parse CSV data
+    final lines = csvData.split('\n');
+    if (lines.isEmpty) {
+      return 0;
+    }
+    
+    // Extract headers from first line
+    final headers = lines[0].split(',');
+    if (headers.isEmpty) {
+      return 0;
+    }
+    
+    // Validate headers against collection fields
+    final validFields = _collectionFields[collectionName] ?? [];
+    final invalidHeaders = headers.where((h) => !validFields.contains(h.trim())).toList();
+    
+    if (invalidHeaders.isNotEmpty) {
+      throw Exception('Invalid headers: ${invalidHeaders.join(', ')}');
+    }
+    
+    int importedCount = 0;
+    final batch = _firestore.batch();
+    
+    // Process data rows
+    for (int i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+      
+      final values = _parseCSVLine(line);
+      if (values.length != headers.length) {
+        print('Skipping line $i: Column count mismatch');
+        continue;
+      }
+      
+      // Create document data
+      final data = <String, dynamic>{};
+      for (int j = 0; j < headers.length; j++) {
+        final header = headers[j].trim();
+        final value = values[j].trim();
+        
+        // Skip empty values
+        if (value.isEmpty) continue;
+        
+        // Convert values to appropriate types
+        if (header == 'created_at' || header == 'updated_at' || header == 'date') {
+          try {
+            data[header] = DateTime.parse(value);
+          } catch (_) {
+            data[header] = value;
+          }
+        } else if (value == 'true' || value == 'false') {
+          data[header] = value == 'true';
+        } else if (double.tryParse(value) != null) {
+          data[header] = double.parse(value);
+        } else if (header == 'employees' || value.startsWith('[') && value.endsWith(']')) {
+          // Tentar converter JSON string para objeto
+          try {
+            data[header] = jsonDecode(value);
+          } catch (_) {
+            data[header] = value;
+          }
+        } else {
+          data[header] = value;
+        }
+      }
+      
+      // Add timestamps if missing
+      final timestamp = DateTime.now();
+      if (!data.containsKey('created_at')) {
+        data['created_at'] = timestamp;
+      }
+      if (!data.containsKey('updated_at')) {
+        data['updated_at'] = timestamp;
+      }
+      
+      // Determine document ID
+      String? docId = data['id'] as String?;
+      if (docId != null) {
+        data.remove('id');
+        if (overwrite) {
+          // Update existing document
+          batch.set(_firestore.collection(collectionName).doc(docId), data, SetOptions(merge: true));
+        } else {
+          // Check if document exists
+          final doc = await _firestore.collection(collectionName).doc(docId).get();
+          if (!doc.exists) {
+            batch.set(_firestore.collection(collectionName).doc(docId), data);
+          } else {
+            print('Skipping existing document: $docId');
+            continue;
+          }
+        }
+      } else {
+        // Create new document with auto-generated ID
+        batch.set(_firestore.collection(collectionName).doc(), data);
+      }
+      
+      importedCount++;
+      
+      // Commit batch every 500 documents to avoid hitting size limits
+      if (importedCount % 500 == 0) {
+        await batch.commit();
+      }
+    }
+    
+    // Commit remaining documents
+    if (importedCount % 500 != 0) {
+      await batch.commit();
+    }
+    
+    return importedCount;
+  }
+  
+  // Helper para analisar linha CSV com campos entre aspas
+  List<String> _parseCSVLine(String line) {
+    List<String> result = [];
+    bool inQuotes = false;
+    String currentValue = '';
+    
+    for (int i = 0; i < line.length; i++) {
+      final char = line[i];
+      
+      if (char == '"') {
+        // Se encontrarmos aspas, alternamos o estado
+        inQuotes = !inQuotes;
+        currentValue += char;
+      } else if (char == ',' && !inQuotes) {
+        // Se for uma vírgula fora de aspas, finalizou um campo
+        result.add(currentValue);
+        currentValue = '';
+      } else {
+        // Qualquer outro caractere
+        currentValue += char;
+      }
+    }
+    
+    // Adiciona o último campo
+    if (currentValue.isNotEmpty) {
+      result.add(currentValue);
+    }
+    
+    return result;
+  }
+  
+  @override
+  Future<int> importJson(String collectionName, String jsonData, {bool overwrite = false}) async {
+    if (!_collections.contains(collectionName)) {
+      throw Exception('Collection not found');
+    }
+    
+    try {
+      // Parse JSON data
+      final List<dynamic> documents = jsonDecode(jsonData) as List<dynamic>;
+      if (documents.isEmpty) {
+        return 0;
+      }
+      
+      // Validate documents
+      for (final doc in documents) {
+        if (doc is! Map<String, dynamic>) {
+          throw Exception('Invalid document format: not an object');
+        }
+        
+        // Validate fields against collection schema
+        final validFields = _collectionFields[collectionName] ?? [];
+        final docFields = doc.keys.toList();
+        final invalidFields = docFields.where((f) => 
+            !validFields.contains(f) && 
+            f != 'id' && // ID é permitido especialmente
+            f != 'employees' // employees é um campo especial de array
+        ).toList();
+        
+        if (invalidFields.isNotEmpty) {
+          print('Warning: Document contains invalid fields: ${invalidFields.join(', ')}');
+        }
+      }
+      
+      int importedCount = 0;
+      final batch = _firestore.batch();
+      
+      // Process documents
+      for (final doc in documents) {
+        final data = Map<String, dynamic>.from(doc as Map<String, dynamic>);
+        
+        // Add timestamps if missing
+        final timestamp = DateTime.now();
+        if (!data.containsKey('created_at')) {
+          data['created_at'] = timestamp;
+        } else if (data['created_at'] is String) {
+          // Convert string to DateTime
+          try {
+            data['created_at'] = DateTime.parse(data['created_at'] as String);
+          } catch (_) {
+            data['created_at'] = timestamp;
+          }
+        }
+        
+        if (!data.containsKey('updated_at')) {
+          data['updated_at'] = timestamp;
+        } else if (data['updated_at'] is String) {
+          // Convert string to DateTime
+          try {
+            data['updated_at'] = DateTime.parse(data['updated_at'] as String);
+          } catch (_) {
+            data['updated_at'] = timestamp;
+          }
+        }
+        
+        // Convert date field if it's a string
+        if (data.containsKey('date') && data['date'] is String) {
+          try {
+            data['date'] = DateTime.parse(data['date'] as String);
+          } catch (_) {
+            // Keep as is if parsing fails
+          }
+        }
+        
+        // Determine document ID
+        String? docId = data['id'] as String?;
+        if (docId != null) {
+          data.remove('id');
+          if (overwrite) {
+            // Update existing document
+            batch.set(_firestore.collection(collectionName).doc(docId), data, SetOptions(merge: true));
+          } else {
+            // Check if document exists
+            final doc = await _firestore.collection(collectionName).doc(docId).get();
+            if (!doc.exists) {
+              batch.set(_firestore.collection(collectionName).doc(docId), data);
+            } else {
+              print('Skipping existing document: $docId');
+              continue;
+            }
+          }
+        } else {
+          // Create new document with auto-generated ID
+          batch.set(_firestore.collection(collectionName).doc(), data);
+        }
+        
+        importedCount++;
+        
+        // Commit batch every 500 documents to avoid hitting size limits
+        if (importedCount % 500 == 0) {
+          await batch.commit();
+        }
+      }
+      
+      // Commit remaining documents
+      if (importedCount % 500 != 0) {
+        await batch.commit();
+      }
+      
+      return importedCount;
+    } catch (e) {
+      print('Error importing JSON data: $e');
+      rethrow;
+    }
   }
 }

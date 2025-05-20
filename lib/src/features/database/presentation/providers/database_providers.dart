@@ -154,4 +154,31 @@ class DatabaseOperations extends _$DatabaseOperations {
       rethrow;
     }
   }
+  
+  Future<int> importData(String collectionName, String data, {bool isJson = true, bool overwrite = false}) async {
+    state = const AsyncLoading();
+    try {
+      final importedCount = isJson 
+          ? await ref.read(databaseRepositoryProvider).importJson(
+              collectionName, 
+              data,
+              overwrite: overwrite,
+            )
+          : await ref.read(databaseRepositoryProvider).importCollection(
+              collectionName, 
+              data,
+              overwrite: overwrite,
+            );
+      
+      state = AsyncData('Imported $importedCount documents to $collectionName');
+      // Refresh data
+      ref.invalidate(databaseStatsProvider);
+      ref.invalidate(collectionDetailsProvider(collectionName));
+      ref.invalidate(collectionDocumentsProvider(collectionName));
+      return importedCount;
+    } catch (e, stackTrace) {
+      state = AsyncError(e, stackTrace);
+      rethrow;
+    }
+  }
 }

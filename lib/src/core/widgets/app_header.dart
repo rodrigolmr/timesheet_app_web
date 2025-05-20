@@ -118,6 +118,9 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                       case 'home':
                         context.go(AppRoute.home.path);
                         break;
+                      case 'demo':
+                        context.go(AppRoute.weekGroupingDemo.path);
+                        break;
                       case 'logout':
                         _confirmLogout(context, ref);
                         break;
@@ -131,6 +134,16 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                           Icon(Icons.home, size: 20, color: colors.primary),
                           SizedBox(width: dimensions.spacingS),
                           Text('Home', style: textStyles.body),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'demo',
+                      child: Row(
+                        children: [
+                          Icon(Icons.view_week, size: 20, color: colors.secondary),
+                          SizedBox(width: dimensions.spacingS),
+                          Text('Week Grouping Demo', style: textStyles.body),
                         ],
                       ),
                     ),
@@ -313,6 +326,9 @@ class _AppHeaderWithTabs extends AppHeader {
                       case 'home':
                         context.go(AppRoute.home.path);
                         break;
+                      case 'demo':
+                        context.go(AppRoute.weekGroupingDemo.path);
+                        break;
                       case 'logout':
                         _confirmLogout(context, ref);
                         break;
@@ -326,6 +342,16 @@ class _AppHeaderWithTabs extends AppHeader {
                           Icon(Icons.home, size: 20, color: colors.primary),
                           SizedBox(width: dimensions.spacingS),
                           Text('Home', style: textStyles.body),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'demo',
+                      child: Row(
+                        children: [
+                          Icon(Icons.view_week, size: 20, color: colors.secondary),
+                          SizedBox(width: dimensions.spacingS),
+                          Text('Week Grouping Demo', style: textStyles.body),
                         ],
                       ),
                     ),

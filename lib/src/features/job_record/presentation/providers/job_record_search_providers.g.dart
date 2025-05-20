@@ -26,7 +26,7 @@ final cachedJobRecordsProvider = StreamProvider<List<JobRecordModel>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CachedJobRecordsRef = StreamProviderRef<List<JobRecordModel>>;
-String _$searchJobRecordsHash() => r'95ac6601bd2293027fb7948fd0ec9b9d79888ed1';
+String _$searchJobRecordsHash() => r'b776ff3adb44054e6b8064964d67ba2c0466b690';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -70,16 +70,12 @@ class SearchJobRecordsFamily extends Family<List<JobRecordModel>> {
   SearchJobRecordsProvider call({
     required String query,
     String? userId,
-    String? workerId,
-    InvalidType status,
     String? location,
     JobRecordSortOption? sortOption,
   }) {
     return SearchJobRecordsProvider(
       query: query,
       userId: userId,
-      workerId: workerId,
-      status: status,
       location: location,
       sortOption: sortOption,
     );
@@ -92,8 +88,6 @@ class SearchJobRecordsFamily extends Family<List<JobRecordModel>> {
     return call(
       query: provider.query,
       userId: provider.userId,
-      workerId: provider.workerId,
-      status: provider.status,
       location: provider.location,
       sortOption: provider.sortOption,
     );
@@ -125,8 +119,6 @@ class SearchJobRecordsProvider
   SearchJobRecordsProvider({
     required String query,
     String? userId,
-    String? workerId,
-    InvalidType status,
     String? location,
     JobRecordSortOption? sortOption,
   }) : this._internal(
@@ -134,8 +126,6 @@ class SearchJobRecordsProvider
            ref as SearchJobRecordsRef,
            query: query,
            userId: userId,
-           workerId: workerId,
-           status: status,
            location: location,
            sortOption: sortOption,
          ),
@@ -150,8 +140,6 @@ class SearchJobRecordsProvider
              SearchJobRecordsFamily._allTransitiveDependencies,
          query: query,
          userId: userId,
-         workerId: workerId,
-         status: status,
          location: location,
          sortOption: sortOption,
        );
@@ -165,16 +153,12 @@ class SearchJobRecordsProvider
     required super.from,
     required this.query,
     required this.userId,
-    required this.workerId,
-    required this.status,
     required this.location,
     required this.sortOption,
   }) : super.internal();
 
   final String query;
   final String? userId;
-  final String? workerId;
-  final InvalidType status;
   final String? location;
   final JobRecordSortOption? sortOption;
 
@@ -193,8 +177,6 @@ class SearchJobRecordsProvider
         debugGetCreateSourceHash: null,
         query: query,
         userId: userId,
-        workerId: workerId,
-        status: status,
         location: location,
         sortOption: sortOption,
       ),
@@ -211,8 +193,6 @@ class SearchJobRecordsProvider
     return other is SearchJobRecordsProvider &&
         other.query == query &&
         other.userId == userId &&
-        other.workerId == workerId &&
-        other.status == status &&
         other.location == location &&
         other.sortOption == sortOption;
   }
@@ -222,8 +202,6 @@ class SearchJobRecordsProvider
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
     hash = _SystemHash.combine(hash, query.hashCode);
     hash = _SystemHash.combine(hash, userId.hashCode);
-    hash = _SystemHash.combine(hash, workerId.hashCode);
-    hash = _SystemHash.combine(hash, status.hashCode);
     hash = _SystemHash.combine(hash, location.hashCode);
     hash = _SystemHash.combine(hash, sortOption.hashCode);
 
@@ -239,12 +217,6 @@ mixin SearchJobRecordsRef on AutoDisposeProviderRef<List<JobRecordModel>> {
 
   /// The parameter `userId` of this provider.
   String? get userId;
-
-  /// The parameter `workerId` of this provider.
-  String? get workerId;
-
-  /// The parameter `status` of this provider.
-  InvalidType get status;
 
   /// The parameter `location` of this provider.
   String? get location;
@@ -263,10 +235,6 @@ class _SearchJobRecordsProviderElement
   @override
   String? get userId => (origin as SearchJobRecordsProvider).userId;
   @override
-  String? get workerId => (origin as SearchJobRecordsProvider).workerId;
-  @override
-  InvalidType get status => (origin as SearchJobRecordsProvider).status;
-  @override
   String? get location => (origin as SearchJobRecordsProvider).location;
   @override
   JobRecordSortOption? get sortOption =>
@@ -274,7 +242,7 @@ class _SearchJobRecordsProviderElement
 }
 
 String _$jobRecordSearchResultsHash() =>
-    r'14e1675132450728c4a4c231920ecbb4b896c8ad';
+    r'195a5b04b07d94835ab1f89022743b6fb5f7366f';
 
 /// Provider que combina a consulta e os filtros para fornecer resultados de pesquisa
 ///
@@ -317,7 +285,7 @@ final jobRecordSearchQueryProvider =
 
 typedef _$JobRecordSearchQuery = AutoDisposeNotifier<String>;
 String _$jobRecordSearchFiltersHash() =>
-    r'553ad08ddb5e0042ab411bc5fd0b6ea65481b281';
+    r'876a3b78504ea2f154b0f4a34fb9a81fb51316d7';
 
 /// Provider para o estado dos filtros de pesquisa de registros de trabalho
 ///
@@ -325,13 +293,7 @@ String _$jobRecordSearchFiltersHash() =>
 @ProviderFor(JobRecordSearchFilters)
 final jobRecordSearchFiltersProvider = AutoDisposeNotifierProvider<
   JobRecordSearchFilters,
-  ({
-    String? userId,
-    String? workerId,
-    JobStatus? status,
-    String? location,
-    JobRecordSortOption sortOption,
-  })
+  ({String? userId, String? location, JobRecordSortOption sortOption})
 >.internal(
   JobRecordSearchFilters.new,
   name: r'jobRecordSearchFiltersProvider',
@@ -345,13 +307,7 @@ final jobRecordSearchFiltersProvider = AutoDisposeNotifierProvider<
 
 typedef _$JobRecordSearchFilters =
     AutoDisposeNotifier<
-      ({
-        String? userId,
-        String? workerId,
-        JobStatus? status,
-        String? location,
-        JobRecordSortOption sortOption,
-      })
+      ({String? userId, String? location, JobRecordSortOption sortOption})
     >;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

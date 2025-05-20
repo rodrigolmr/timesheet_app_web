@@ -603,7 +603,7 @@ class _DocumentDetailsProviderElement
 }
 
 String _$databaseOperationsHash() =>
-    r'9616938f7a746f1f122598f3feb86884803810de';
+    r'7c5e26a110b8bc6a0719fd44cc7edd4ced005ee0';
 
 /// See also [DatabaseOperations].
 @ProviderFor(DatabaseOperations)

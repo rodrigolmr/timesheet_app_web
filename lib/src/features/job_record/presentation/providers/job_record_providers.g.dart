@@ -631,37 +631,37 @@ class _JobRecordsByUserStreamProviderElement
   String get userId => (origin as JobRecordsByUserStreamProvider).userId;
 }
 
-String _$jobRecordsByWorkerHash() =>
-    r'3205367109f59afd834eada22b84590830a149dc';
+String _$jobRecordsByEmployeeHash() =>
+    r'b80a5b38ba39302d4bbe70ffd672865779ce7f65';
 
 /// Provider para obter registros por funcionário
 ///
-/// Copied from [jobRecordsByWorker].
-@ProviderFor(jobRecordsByWorker)
-const jobRecordsByWorkerProvider = JobRecordsByWorkerFamily();
+/// Copied from [jobRecordsByEmployee].
+@ProviderFor(jobRecordsByEmployee)
+const jobRecordsByEmployeeProvider = JobRecordsByEmployeeFamily();
 
 /// Provider para obter registros por funcionário
 ///
-/// Copied from [jobRecordsByWorker].
-class JobRecordsByWorkerFamily
+/// Copied from [jobRecordsByEmployee].
+class JobRecordsByEmployeeFamily
     extends Family<AsyncValue<List<JobRecordModel>>> {
   /// Provider para obter registros por funcionário
   ///
-  /// Copied from [jobRecordsByWorker].
-  const JobRecordsByWorkerFamily();
+  /// Copied from [jobRecordsByEmployee].
+  const JobRecordsByEmployeeFamily();
 
   /// Provider para obter registros por funcionário
   ///
-  /// Copied from [jobRecordsByWorker].
-  JobRecordsByWorkerProvider call(String workerId) {
-    return JobRecordsByWorkerProvider(workerId);
+  /// Copied from [jobRecordsByEmployee].
+  JobRecordsByEmployeeProvider call(String employeeId) {
+    return JobRecordsByEmployeeProvider(employeeId);
   }
 
   @override
-  JobRecordsByWorkerProvider getProviderOverride(
-    covariant JobRecordsByWorkerProvider provider,
+  JobRecordsByEmployeeProvider getProviderOverride(
+    covariant JobRecordsByEmployeeProvider provider,
   ) {
-    return call(provider.workerId);
+    return call(provider.employeeId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -676,77 +676,79 @@ class JobRecordsByWorkerFamily
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'jobRecordsByWorkerProvider';
+  String? get name => r'jobRecordsByEmployeeProvider';
 }
 
 /// Provider para obter registros por funcionário
 ///
-/// Copied from [jobRecordsByWorker].
-class JobRecordsByWorkerProvider
+/// Copied from [jobRecordsByEmployee].
+class JobRecordsByEmployeeProvider
     extends AutoDisposeFutureProvider<List<JobRecordModel>> {
   /// Provider para obter registros por funcionário
   ///
-  /// Copied from [jobRecordsByWorker].
-  JobRecordsByWorkerProvider(String workerId)
+  /// Copied from [jobRecordsByEmployee].
+  JobRecordsByEmployeeProvider(String employeeId)
     : this._internal(
-        (ref) => jobRecordsByWorker(ref as JobRecordsByWorkerRef, workerId),
-        from: jobRecordsByWorkerProvider,
-        name: r'jobRecordsByWorkerProvider',
+        (ref) =>
+            jobRecordsByEmployee(ref as JobRecordsByEmployeeRef, employeeId),
+        from: jobRecordsByEmployeeProvider,
+        name: r'jobRecordsByEmployeeProvider',
         debugGetCreateSourceHash:
             const bool.fromEnvironment('dart.vm.product')
                 ? null
-                : _$jobRecordsByWorkerHash,
-        dependencies: JobRecordsByWorkerFamily._dependencies,
+                : _$jobRecordsByEmployeeHash,
+        dependencies: JobRecordsByEmployeeFamily._dependencies,
         allTransitiveDependencies:
-            JobRecordsByWorkerFamily._allTransitiveDependencies,
-        workerId: workerId,
+            JobRecordsByEmployeeFamily._allTransitiveDependencies,
+        employeeId: employeeId,
       );
 
-  JobRecordsByWorkerProvider._internal(
+  JobRecordsByEmployeeProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.workerId,
+    required this.employeeId,
   }) : super.internal();
 
-  final String workerId;
+  final String employeeId;
 
   @override
   Override overrideWith(
-    FutureOr<List<JobRecordModel>> Function(JobRecordsByWorkerRef provider)
+    FutureOr<List<JobRecordModel>> Function(JobRecordsByEmployeeRef provider)
     create,
   ) {
     return ProviderOverride(
       origin: this,
-      override: JobRecordsByWorkerProvider._internal(
-        (ref) => create(ref as JobRecordsByWorkerRef),
+      override: JobRecordsByEmployeeProvider._internal(
+        (ref) => create(ref as JobRecordsByEmployeeRef),
         from: from,
         name: null,
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        workerId: workerId,
+        employeeId: employeeId,
       ),
     );
   }
 
   @override
   AutoDisposeFutureProviderElement<List<JobRecordModel>> createElement() {
-    return _JobRecordsByWorkerProviderElement(this);
+    return _JobRecordsByEmployeeProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is JobRecordsByWorkerProvider && other.workerId == workerId;
+    return other is JobRecordsByEmployeeProvider &&
+        other.employeeId == employeeId;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, workerId.hashCode);
+    hash = _SystemHash.combine(hash, employeeId.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -754,52 +756,52 @@ class JobRecordsByWorkerProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin JobRecordsByWorkerRef
+mixin JobRecordsByEmployeeRef
     on AutoDisposeFutureProviderRef<List<JobRecordModel>> {
-  /// The parameter `workerId` of this provider.
-  String get workerId;
+  /// The parameter `employeeId` of this provider.
+  String get employeeId;
 }
 
-class _JobRecordsByWorkerProviderElement
+class _JobRecordsByEmployeeProviderElement
     extends AutoDisposeFutureProviderElement<List<JobRecordModel>>
-    with JobRecordsByWorkerRef {
-  _JobRecordsByWorkerProviderElement(super.provider);
+    with JobRecordsByEmployeeRef {
+  _JobRecordsByEmployeeProviderElement(super.provider);
 
   @override
-  String get workerId => (origin as JobRecordsByWorkerProvider).workerId;
+  String get employeeId => (origin as JobRecordsByEmployeeProvider).employeeId;
 }
 
-String _$jobRecordsByWorkerStreamHash() =>
-    r'439904e7cae0cc92daab958b2201eebe0c39e33b';
+String _$jobRecordsByEmployeeStreamHash() =>
+    r'285308a9af800449fc6aa48a7c69c4309ca92616';
 
 /// Provider para observar registros por funcionário em tempo real
 ///
-/// Copied from [jobRecordsByWorkerStream].
-@ProviderFor(jobRecordsByWorkerStream)
-const jobRecordsByWorkerStreamProvider = JobRecordsByWorkerStreamFamily();
+/// Copied from [jobRecordsByEmployeeStream].
+@ProviderFor(jobRecordsByEmployeeStream)
+const jobRecordsByEmployeeStreamProvider = JobRecordsByEmployeeStreamFamily();
 
 /// Provider para observar registros por funcionário em tempo real
 ///
-/// Copied from [jobRecordsByWorkerStream].
-class JobRecordsByWorkerStreamFamily
+/// Copied from [jobRecordsByEmployeeStream].
+class JobRecordsByEmployeeStreamFamily
     extends Family<AsyncValue<List<JobRecordModel>>> {
   /// Provider para observar registros por funcionário em tempo real
   ///
-  /// Copied from [jobRecordsByWorkerStream].
-  const JobRecordsByWorkerStreamFamily();
+  /// Copied from [jobRecordsByEmployeeStream].
+  const JobRecordsByEmployeeStreamFamily();
 
   /// Provider para observar registros por funcionário em tempo real
   ///
-  /// Copied from [jobRecordsByWorkerStream].
-  JobRecordsByWorkerStreamProvider call(String workerId) {
-    return JobRecordsByWorkerStreamProvider(workerId);
+  /// Copied from [jobRecordsByEmployeeStream].
+  JobRecordsByEmployeeStreamProvider call(String employeeId) {
+    return JobRecordsByEmployeeStreamProvider(employeeId);
   }
 
   @override
-  JobRecordsByWorkerStreamProvider getProviderOverride(
-    covariant JobRecordsByWorkerStreamProvider provider,
+  JobRecordsByEmployeeStreamProvider getProviderOverride(
+    covariant JobRecordsByEmployeeStreamProvider provider,
   ) {
-    return call(provider.workerId);
+    return call(provider.employeeId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -814,81 +816,83 @@ class JobRecordsByWorkerStreamFamily
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'jobRecordsByWorkerStreamProvider';
+  String? get name => r'jobRecordsByEmployeeStreamProvider';
 }
 
 /// Provider para observar registros por funcionário em tempo real
 ///
-/// Copied from [jobRecordsByWorkerStream].
-class JobRecordsByWorkerStreamProvider
+/// Copied from [jobRecordsByEmployeeStream].
+class JobRecordsByEmployeeStreamProvider
     extends AutoDisposeStreamProvider<List<JobRecordModel>> {
   /// Provider para observar registros por funcionário em tempo real
   ///
-  /// Copied from [jobRecordsByWorkerStream].
-  JobRecordsByWorkerStreamProvider(String workerId)
+  /// Copied from [jobRecordsByEmployeeStream].
+  JobRecordsByEmployeeStreamProvider(String employeeId)
     : this._internal(
-        (ref) => jobRecordsByWorkerStream(
-          ref as JobRecordsByWorkerStreamRef,
-          workerId,
+        (ref) => jobRecordsByEmployeeStream(
+          ref as JobRecordsByEmployeeStreamRef,
+          employeeId,
         ),
-        from: jobRecordsByWorkerStreamProvider,
-        name: r'jobRecordsByWorkerStreamProvider',
+        from: jobRecordsByEmployeeStreamProvider,
+        name: r'jobRecordsByEmployeeStreamProvider',
         debugGetCreateSourceHash:
             const bool.fromEnvironment('dart.vm.product')
                 ? null
-                : _$jobRecordsByWorkerStreamHash,
-        dependencies: JobRecordsByWorkerStreamFamily._dependencies,
+                : _$jobRecordsByEmployeeStreamHash,
+        dependencies: JobRecordsByEmployeeStreamFamily._dependencies,
         allTransitiveDependencies:
-            JobRecordsByWorkerStreamFamily._allTransitiveDependencies,
-        workerId: workerId,
+            JobRecordsByEmployeeStreamFamily._allTransitiveDependencies,
+        employeeId: employeeId,
       );
 
-  JobRecordsByWorkerStreamProvider._internal(
+  JobRecordsByEmployeeStreamProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.workerId,
+    required this.employeeId,
   }) : super.internal();
 
-  final String workerId;
+  final String employeeId;
 
   @override
   Override overrideWith(
-    Stream<List<JobRecordModel>> Function(JobRecordsByWorkerStreamRef provider)
+    Stream<List<JobRecordModel>> Function(
+      JobRecordsByEmployeeStreamRef provider,
+    )
     create,
   ) {
     return ProviderOverride(
       origin: this,
-      override: JobRecordsByWorkerStreamProvider._internal(
-        (ref) => create(ref as JobRecordsByWorkerStreamRef),
+      override: JobRecordsByEmployeeStreamProvider._internal(
+        (ref) => create(ref as JobRecordsByEmployeeStreamRef),
         from: from,
         name: null,
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        workerId: workerId,
+        employeeId: employeeId,
       ),
     );
   }
 
   @override
   AutoDisposeStreamProviderElement<List<JobRecordModel>> createElement() {
-    return _JobRecordsByWorkerStreamProviderElement(this);
+    return _JobRecordsByEmployeeStreamProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is JobRecordsByWorkerStreamProvider &&
-        other.workerId == workerId;
+    return other is JobRecordsByEmployeeStreamProvider &&
+        other.employeeId == employeeId;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, workerId.hashCode);
+    hash = _SystemHash.combine(hash, employeeId.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -896,19 +900,20 @@ class JobRecordsByWorkerStreamProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin JobRecordsByWorkerStreamRef
+mixin JobRecordsByEmployeeStreamRef
     on AutoDisposeStreamProviderRef<List<JobRecordModel>> {
-  /// The parameter `workerId` of this provider.
-  String get workerId;
+  /// The parameter `employeeId` of this provider.
+  String get employeeId;
 }
 
-class _JobRecordsByWorkerStreamProviderElement
+class _JobRecordsByEmployeeStreamProviderElement
     extends AutoDisposeStreamProviderElement<List<JobRecordModel>>
-    with JobRecordsByWorkerStreamRef {
-  _JobRecordsByWorkerStreamProviderElement(super.provider);
+    with JobRecordsByEmployeeStreamRef {
+  _JobRecordsByEmployeeStreamProviderElement(super.provider);
 
   @override
-  String get workerId => (origin as JobRecordsByWorkerStreamProvider).workerId;
+  String get employeeId =>
+      (origin as JobRecordsByEmployeeStreamProvider).employeeId;
 }
 
 String _$jobRecordStateHash() => r'48b228befd9ade7d0683b25bb9799c55d5c77e5b';
