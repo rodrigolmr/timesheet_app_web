@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'timesheet_create_providers.dart';
+part of 'job_record_create_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -26,25 +26,25 @@ final currentStepNotifierProvider =
     );
 
 typedef _$CurrentStepNotifier = Notifier<int>;
-String _$timesheetFormStateHash() =>
-    r'6b487e6f3c4fb40a6461b00ba00483c5262fee9f';
+String _$jobRecordFormStateHash() =>
+    r'61cf0a4afd8e0661b715b9e4bab688c14488efa9';
 
-/// Provider para gerenciar o estado do timesheet em criação (sem draft)
+/// Provider para gerenciar o estado do job record em criação
 ///
-/// Copied from [TimesheetFormState].
-@ProviderFor(TimesheetFormState)
-final timesheetFormStateProvider =
-    NotifierProvider<TimesheetFormState, JobRecordModel>.internal(
-      TimesheetFormState.new,
-      name: r'timesheetFormStateProvider',
+/// Copied from [JobRecordFormState].
+@ProviderFor(JobRecordFormState)
+final jobRecordFormStateProvider =
+    NotifierProvider<JobRecordFormState, JobRecordModel>.internal(
+      JobRecordFormState.new,
+      name: r'jobRecordFormStateProvider',
       debugGetCreateSourceHash:
           const bool.fromEnvironment('dart.vm.product')
               ? null
-              : _$timesheetFormStateHash,
+              : _$jobRecordFormStateHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$TimesheetFormState = Notifier<JobRecordModel>;
+typedef _$JobRecordFormState = Notifier<JobRecordModel>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

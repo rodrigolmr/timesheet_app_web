@@ -30,6 +30,12 @@ class JobRecordModel with _$JobRecordModel {
     // Notas adicionais
     @Default('') String notes,
     
+    // Campos usados na tela de listagem
+    @Default('') String workerId,
+    @Default('') String companyCardId,
+    @Default('pending') String status,
+    @Default(0.0) double hours,
+    
     // Campos de controle
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -42,21 +48,25 @@ class JobRecordModel with _$JobRecordModel {
     final data = doc.data()!;
     return JobRecordModel(
       id: doc.id,
-      userId: data['user_id'] as String,
-      jobName: data['job_name'] as String,
-      date: (data['date'] as Timestamp).toDate(),
-      territorialManager: data['territorial_manager'] as String,
-      jobSize: data['job_size'] as String,
-      material: data['material'] as String,
-      jobDescription: data['job_description'] as String,
-      foreman: data['foreman'] as String,
-      vehicle: data['vehicle'] as String,
-      employees: (data['employees'] as List<dynamic>)
+      userId: data['user_id'] as String? ?? '',
+      jobName: data['job_name'] as String? ?? 'Untitled Job',
+      date: data['date'] != null ? (data['date'] as Timestamp).toDate() : DateTime.now(),
+      territorialManager: data['territorial_manager'] as String? ?? '',
+      jobSize: data['job_size'] as String? ?? '',
+      material: data['material'] as String? ?? '',
+      jobDescription: data['job_description'] as String? ?? '',
+      foreman: data['foreman'] as String? ?? '',
+      vehicle: data['vehicle'] as String? ?? '',
+      employees: data['employees'] != null ? (data['employees'] as List<dynamic>)
           .map((e) => JobEmployeeModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      notes: data['notes'] ?? '',
-      createdAt: (data['created_at'] as Timestamp).toDate(),
-      updatedAt: (data['updated_at'] as Timestamp).toDate(),
+          .toList() : [],
+      notes: data['notes'] as String? ?? '',
+      workerId: data['worker_id'] as String? ?? '',
+      companyCardId: data['company_card_id'] as String? ?? '',
+      status: data['status'] as String? ?? 'pending',
+      hours: data['hours'] != null ? (data['hours'] as num).toDouble() : 0.0,
+      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : DateTime.now(),
+      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : DateTime.now(),
     );
   }
 
@@ -73,6 +83,10 @@ class JobRecordModel with _$JobRecordModel {
       'vehicle': vehicle,
       'employees': employees.map((e) => e.toFirestore()).toList(),
       'notes': notes,
+      'worker_id': workerId,
+      'company_card_id': companyCardId,
+      'status': status,
+      'hours': hours,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

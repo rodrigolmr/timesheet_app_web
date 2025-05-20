@@ -5,9 +5,9 @@ import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_employee_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/step1_header_form.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step1_header_form.dart';
 
-part 'timesheet_create_providers.g.dart';
+part 'job_record_create_providers.g.dart';
 
 /// Provider for Step1 form GlobalKey
 final step1FormKeyProvider = Provider((ref) => GlobalKey<Step1HeaderFormState>());
@@ -35,23 +35,23 @@ class CurrentStepNotifier extends _$CurrentStepNotifier {
   }
 }
 
-/// Provider para gerenciar o estado do timesheet em criação (sem draft)
+/// Provider para gerenciar o estado do job record em criação
 @Riverpod(keepAlive: true)
-class TimesheetFormState extends _$TimesheetFormState {
+class JobRecordFormState extends _$JobRecordFormState {
   
   @override
   JobRecordModel build() {
-    developer.log('=== BUILDING TimesheetFormState ===', name: 'TimesheetFormState');
+    developer.log('=== BUILDING JobRecordFormState ===', name: 'JobRecordFormState');
     
     // Get current user ID - use ref.read to avoid unnecessary rebuilds
     final authState = ref.read(authStateProvider);
     final userId = authState.valueOrNull?.uid ?? '';
     
     // Log the build
-    developer.log('Building new TimesheetFormState with userId: $userId', 
-      name: 'TimesheetFormState');
+    developer.log('Building new JobRecordFormState with userId: $userId', 
+      name: 'JobRecordFormState');
     
-    // Return empty timesheet data
+    // Return empty job record data
     final model = JobRecordModel(
       id: '',
       userId: userId,
@@ -70,18 +70,18 @@ class TimesheetFormState extends _$TimesheetFormState {
     );
     
     developer.log('Built initial model: jobName="${model.jobName}", date="${model.date}"', 
-      name: 'TimesheetFormState');
+      name: 'JobRecordFormState');
     return model;
   }
 
   /// Updates header data (step 1)
   void updateHeader(Map<String, dynamic> headerData) {
-    developer.log('=== UPDATE HEADER START ===', name: 'TimesheetFormState');
-    developer.log('Input data: $headerData', name: 'TimesheetFormState');
+    developer.log('=== UPDATE HEADER START ===', name: 'JobRecordFormState');
+    developer.log('Input data: $headerData', name: 'JobRecordFormState');
     
     final previousState = state;
     developer.log('Previous state: JobName="${previousState.jobName}", Date="${previousState.date}"', 
-      name: 'TimesheetFormState');
+      name: 'JobRecordFormState');
     
     state = state.copyWith(
       jobName: headerData['jobName'] ?? state.jobName,
@@ -92,19 +92,20 @@ class TimesheetFormState extends _$TimesheetFormState {
       jobDescription: headerData['jobDescription'] ?? state.jobDescription,
       foreman: headerData['foreman'] ?? state.foreman,
       vehicle: headerData['vehicle'] ?? state.vehicle,
+      notes: headerData['notes'] ?? state.notes,
       updatedAt: DateTime.now(),
     );
     
     developer.log('New state: JobName="${state.jobName}", Date="${state.date}"', 
-      name: 'TimesheetFormState');
+      name: 'JobRecordFormState');
     developer.log('Full state: {jobName: "${state.jobName}", date: "${state.date}", territorialManager: "${state.territorialManager}", jobSize: "${state.jobSize}", material: "${state.material}", jobDescription: "${state.jobDescription}", foreman: "${state.foreman}", vehicle: "${state.vehicle}"}', 
-      name: 'TimesheetFormState');
-    developer.log('=== UPDATE HEADER END ===', name: 'TimesheetFormState');
+      name: 'JobRecordFormState');
+    developer.log('=== UPDATE HEADER END ===', name: 'JobRecordFormState');
   }
 
   /// Clears header data (step 1) fields
   void clearHeaderData() {
-    developer.log('Clearing header data', name: 'TimesheetFormState');
+    developer.log('Clearing header data', name: 'JobRecordFormState');
     
     // Get current user ID - use ref.read to avoid unnecessary rebuilds
     final authState = ref.read(authStateProvider);
@@ -118,31 +119,32 @@ class TimesheetFormState extends _$TimesheetFormState {
       jobDescription: '',
       foreman: '',
       vehicle: '',
+      notes: '',
       updatedAt: DateTime.now(),
       // Keep date and employees intact
     );
     
-    developer.log('Header data cleared', name: 'TimesheetFormState');
+    developer.log('Header data cleared', name: 'JobRecordFormState');
   }
 
   /// Adds an employee
   void addEmployee(JobEmployeeModel employee) {
-    developer.log('Adding employee', name: 'TimesheetFormState');
+    developer.log('Adding employee', name: 'JobRecordFormState');
     
     state = state.copyWith(
       employees: [...state.employees, employee],
       updatedAt: DateTime.now(),
     );
     
-    developer.log('Employee added. Total employees: ${state.employees.length}', name: 'TimesheetFormState');
+    developer.log('Employee added. Total employees: ${state.employees.length}', name: 'JobRecordFormState');
   }
 
   /// Updates an existing employee
   void updateEmployee(int index, JobEmployeeModel employee) {
-    developer.log('Updating employee at index $index', name: 'TimesheetFormState');
+    developer.log('Updating employee at index $index', name: 'JobRecordFormState');
     
     if (index < 0 || index >= state.employees.length) {
-      developer.log('Invalid employee index: $index', name: 'TimesheetFormState');
+      developer.log('Invalid employee index: $index', name: 'JobRecordFormState');
       return;
     }
     
@@ -154,15 +156,15 @@ class TimesheetFormState extends _$TimesheetFormState {
       updatedAt: DateTime.now(),
     );
     
-    developer.log('Employee updated at index $index', name: 'TimesheetFormState');
+    developer.log('Employee updated at index $index', name: 'JobRecordFormState');
   }
 
   /// Removes an employee
   void removeEmployee(int index) {
-    developer.log('Removing employee at index $index', name: 'TimesheetFormState');
+    developer.log('Removing employee at index $index', name: 'JobRecordFormState');
     
     if (index < 0 || index >= state.employees.length) {
-      developer.log('Invalid employee index: $index', name: 'TimesheetFormState');
+      developer.log('Invalid employee index: $index', name: 'JobRecordFormState');
       return;
     }
     
@@ -174,12 +176,12 @@ class TimesheetFormState extends _$TimesheetFormState {
       updatedAt: DateTime.now(),
     );
     
-    developer.log('Employee removed. Total employees: ${state.employees.length}', name: 'TimesheetFormState');
+    developer.log('Employee removed. Total employees: ${state.employees.length}', name: 'JobRecordFormState');
   }
 
-  /// Submits the timesheet directly to job_records collection
-  Future<bool> submitTimesheet() async {
-    developer.log('Submitting timesheet...', name: 'TimesheetFormState');
+  /// Submits the job record directly to job_records collection
+  Future<bool> submitJobRecord() async {
+    developer.log('Submitting job record...', name: 'JobRecordFormState');
     
     try {
       // Validations
@@ -195,14 +197,14 @@ class TimesheetFormState extends _$TimesheetFormState {
       final repository = ref.read(jobRecordRepositoryProvider);
       final id = await repository.create(state);
       
-      developer.log('Timesheet created with ID: $id', name: 'TimesheetFormState');
+      developer.log('Job record created with ID: $id', name: 'JobRecordFormState');
       
       // Reset form after successful submission
       ref.invalidateSelf();
       
       return true;
     } catch (e, stackTrace) {
-      developer.log('Error submitting timesheet', error: e, stackTrace: stackTrace, name: 'TimesheetFormState');
+      developer.log('Error submitting job record', error: e, stackTrace: stackTrace, name: 'JobRecordFormState');
       throw e;
     }
   }
@@ -210,7 +212,7 @@ class TimesheetFormState extends _$TimesheetFormState {
 
   /// Resets the form to initial state
   void resetForm() {
-    developer.log('Resetting form', name: 'TimesheetFormState');
+    developer.log('Resetting form', name: 'JobRecordFormState');
     ref.invalidateSelf();
   }
 }

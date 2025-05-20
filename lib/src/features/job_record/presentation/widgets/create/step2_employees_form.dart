@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_employee_model.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_create_providers.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/add_employee_form.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/add_employee_form.dart';
 
 class Step2EmployeesForm extends ConsumerStatefulWidget {
   const Step2EmployeesForm({super.key});
@@ -18,9 +18,17 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
   JobEmployeeModel? _employeeToEdit;
   bool _showAddForm = false;
 
+  // Format number without .0 if it's a whole number
+  String _formatNumber(double value) {
+    if (value == value.toInt()) {
+      return value.toInt().toString();
+    }
+    return value.toStringAsFixed(1);
+  }
+
   void _handleAddOrUpdate(JobEmployeeModel employee) {
     if (_editingIndex != null) {
-      ref.read(timesheetFormStateProvider.notifier).updateEmployee(_editingIndex!, employee);
+      ref.read(jobRecordFormStateProvider.notifier).updateEmployee(_editingIndex!, employee);
       // When updating, close the form
       setState(() {
         _editingIndex = null;
@@ -28,7 +36,7 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
         _showAddForm = false;
       });
     } else {
-      ref.read(timesheetFormStateProvider.notifier).addEmployee(employee);
+      ref.read(jobRecordFormStateProvider.notifier).addEmployee(employee);
       // When adding, keep the form open
       setState(() {
         _employeeToEdit = null; // Reset for next entry
@@ -54,7 +62,7 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
 
   @override
   Widget build(BuildContext context) {
-    final formState = ref.watch(timesheetFormStateProvider);
+    final formState = ref.watch(jobRecordFormStateProvider);
     final employees = formState.employees;
     
     final bool isDesktop = context.isDesktop;
@@ -353,7 +361,7 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              employee.hours.toStringAsFixed(1),
+                              _formatNumber(employee.hours),
                               style: context.textStyles.body,
                               textAlign: TextAlign.center,
                             ),
@@ -363,7 +371,7 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
                               flex: 1,
                               child: Text(
                                 employee.travelHours > 0 
-                                  ? employee.travelHours.toStringAsFixed(1)
+                                  ? _formatNumber(employee.travelHours)
                                   : '-',
                                 style: context.textStyles.body,
                                 textAlign: TextAlign.center,
@@ -373,7 +381,7 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
                               flex: 1,
                               child: Text(
                                 employee.meal > 0 
-                                  ? employee.meal.toStringAsFixed(1)
+                                  ? _formatNumber(employee.meal)
                                   : '-',
                                 style: context.textStyles.body,
                                 textAlign: TextAlign.center,
@@ -398,7 +406,7 @@ class _Step2EmployeesFormState extends ConsumerState<Step2EmployeesForm> {
                                       _editEmployee(index, employee);
                                       break;
                                     case 'delete':
-                                      ref.read(timesheetFormStateProvider.notifier).removeEmployee(index);
+                                      ref.read(jobRecordFormStateProvider.notifier).removeEmployee(index);
                                       break;
                                   }
                                 },

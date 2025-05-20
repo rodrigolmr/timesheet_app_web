@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 
-class TimesheetStepper extends StatelessWidget {
+class JobRecordStepper extends StatelessWidget {
   final int currentStep;
   final Function(int) onStepTapped;
 
-  const TimesheetStepper({
+  const JobRecordStepper({
     super.key,
     required this.currentStep,
     required this.onStepTapped,

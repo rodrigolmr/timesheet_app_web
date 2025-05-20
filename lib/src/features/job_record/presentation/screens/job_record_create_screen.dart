@@ -7,20 +7,20 @@ import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_create_providers.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/timesheet_stepper.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/step1_header_form.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/step2_employees_form.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/widgets/step3_review_form.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/job_record_stepper.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step1_header_form.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step2_employees_form.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step3_review_form.dart';
 
-class TimesheetCreateScreen extends ConsumerStatefulWidget {
-  const TimesheetCreateScreen({super.key});
+class JobRecordCreateScreen extends ConsumerStatefulWidget {
+  const JobRecordCreateScreen({super.key});
 
   @override
-  ConsumerState<TimesheetCreateScreen> createState() => _TimesheetCreateScreenState();
+  ConsumerState<JobRecordCreateScreen> createState() => _JobRecordCreateScreenState();
 }
 
-class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
+class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
   
   Widget _buildCurrentStep(int currentStep) {
     switch (currentStep) {
@@ -41,9 +41,9 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
   
   void _handleNext() async {
     final currentStep = ref.read(currentStepNotifierProvider);
-    final formState = ref.read(timesheetFormStateProvider);
+    final formState = ref.read(jobRecordFormStateProvider);
     
-    developer.log('=== HANDLE NEXT - Step $currentStep ===', name: 'TimesheetCreateScreen');
+    developer.log('=== HANDLE NEXT - Step $currentStep ===', name: 'JobRecordCreateScreen');
     
     if (currentStep == 2) {
       // Validate before submit
@@ -67,8 +67,8 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
         return;
       }
       
-      // Submit the timesheet
-      await _submitTimesheet();
+      // Submit the job record
+      await _submitJobRecord();
     } else {
       // Validate current step
       bool canProceed = false;
@@ -83,9 +83,9 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
           await Future.delayed(Duration(milliseconds: 100));
           
           // Verify state before navigation
-          final savedState = ref.read(timesheetFormStateProvider);
+          final savedState = ref.read(jobRecordFormStateProvider);
           developer.log('State before navigation - JobName: "${savedState.jobName}", Date: "${savedState.date}"', 
-            name: 'TimesheetCreateScreen');
+            name: 'JobRecordCreateScreen');
         }
       } else if (currentStep == 1) {
         // Validate employees
@@ -103,12 +103,12 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
       
       if (canProceed) {
         ref.read(currentStepNotifierProvider.notifier).nextStep();
-        developer.log('Moving to step ${currentStep + 1}', name: 'TimesheetCreateScreen');
+        developer.log('Moving to step ${currentStep + 1}', name: 'JobRecordCreateScreen');
       }
     }
   }
   
-  Future<void> _submitTimesheet() async {
+  Future<void> _submitJobRecord() async {
     // Show confirmation dialog first
     final shouldSubmit = await showDialog<bool>(
       context: context,
@@ -118,11 +118,11 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
           borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
         ),
         title: Text(
-          'Submit Timesheet',
+          'Submit Job Record',
           style: context.textStyles.title,
         ),
         content: Text(
-          'Are you ready to submit this timesheet? Once submitted, it cannot be edited.',
+          'Are you ready to submit this job record? Once submitted, it cannot be edited.',
           style: context.textStyles.body,
         ),
         actions: [
@@ -167,7 +167,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
                 ),
                 SizedBox(height: context.dimensions.spacingM),
                 Text(
-                  'Submitting timesheet...',
+                  'Submitting job record...',
                   style: context.textStyles.body,
                 ),
                 SizedBox(height: context.dimensions.spacingS),
@@ -183,7 +183,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
         ),
       );
       
-      final success = await ref.read(timesheetFormStateProvider.notifier).submitTimesheet();
+      final success = await ref.read(jobRecordFormStateProvider.notifier).submitJobRecord();
       
       // Close loading dialog
       if (mounted) {
@@ -194,7 +194,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Timesheet submitted successfully!'),
+              content: Text('Job record submitted successfully!'),
               backgroundColor: context.colors.success,
             ),
           );
@@ -204,7 +204,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
         }
       }
     } catch (e, stackTrace) {
-      developer.log('Error submitting timesheet', error: e, stackTrace: stackTrace, name: 'TimesheetCreateScreen');
+      developer.log('Error submitting job record', error: e, stackTrace: stackTrace, name: 'JobRecordCreateScreen');
       
       // Close loading dialog if still open
       if (mounted) {
@@ -221,7 +221,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
             action: SnackBarAction(
               label: 'Retry',
               textColor: context.colors.onError,
-              onPressed: () => _submitTimesheet(),
+              onPressed: () => _submitJobRecord(),
             ),
           ),
         );
@@ -231,13 +231,13 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
   
   String _getErrorMessage(dynamic error) {
     if (error.toString().contains('permission')) {
-      return 'You do not have permission to submit timesheets';
+      return 'You do not have permission to submit job records';
     } else if (error.toString().contains('network')) {
       return 'Network error. Please check your connection';
     } else if (error.toString().contains('required fields')) {
       return 'Please fill all required fields';
     } else {
-      return 'Failed to submit timesheet. Please try again';
+      return 'Failed to submit job record. Please try again';
     }
   }
   
@@ -250,7 +250,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
           borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
         ),
         title: Text(
-          'Cancel Timesheet',
+          'Cancel Job Record',
           style: context.textStyles.title,
         ),
         content: Text(
@@ -268,7 +268,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              ref.read(timesheetFormStateProvider.notifier).resetForm();
+              ref.read(jobRecordFormStateProvider.notifier).resetForm();
               context.go(AppRoute.home.path);
             },
             style: TextButton.styleFrom(
@@ -295,7 +295,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              ref.read(timesheetFormStateProvider.notifier).clearHeaderData();
+              ref.read(jobRecordFormStateProvider.notifier).clearHeaderData();
               
               // Clear error states in the form
               final step1FormKey = ref.read(step1FormKeyProvider);
@@ -322,7 +322,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
     
     return Scaffold(
       appBar: AppHeader(
-        title: 'Create Timesheet',
+        title: 'Create Job Record',
         showBackButton: true,
         onBackPressed: () => context.go(AppRoute.home.path),
       ),
@@ -337,7 +337,7 @@ class _TimesheetCreateScreenState extends ConsumerState<TimesheetCreateScreen> {
                   bottom: 2, // Reduzido ao mínimo
                 ),
                 child: ResponsiveContainer(
-                  child: TimesheetStepper(
+                  child: JobRecordStepper(
                     currentStep: currentStep,
                     onStepTapped: (step) {
                       ref.read(currentStepNotifierProvider.notifier).setStep(step);

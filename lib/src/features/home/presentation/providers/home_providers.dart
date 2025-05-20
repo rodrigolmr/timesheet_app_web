@@ -28,10 +28,18 @@ class HomeNavigationItem {
 List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
   return [
     HomeNavigationItem(
-      title: 'Timesheet',
-      description: 'Track time and manage timesheets',
-      icon: Icons.timer,
-      route: AppRoute.timesheetCreate.path,
+      title: 'Create Job Record',
+      description: 'Create new job records',
+      icon: Icons.add_chart,
+      route: AppRoute.jobRecordCreate.path,
+      categoryName: 'timesheet',
+      isActive: true,
+    ),
+    HomeNavigationItem(
+      title: 'Job Records',
+      description: 'View and manage all job records',
+      icon: Icons.view_list,
+      route: AppRoute.jobRecords.path,
       categoryName: 'timesheet',
       isActive: true,
     ),

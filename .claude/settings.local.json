@@ -13,7 +13,12 @@
       "Bash(flutter analyze:*)",
       "Bash(sed:*)",
       "Bash(cp:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(dart analyze:*)",
+      "Bash(ls:*)",
+      "Bash(mv:*)",
+      "Bash(rg:*)",
+      "Bash(flutter pub run build_runner build:*)"
     ],
     "deny": []
   }

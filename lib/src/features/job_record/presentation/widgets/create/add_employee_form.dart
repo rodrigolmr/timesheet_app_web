@@ -19,11 +19,30 @@ class TimeTextInputFormatter extends TextInputFormatter {
     final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     final buffer = StringBuffer();
     
-    for (int i = 0; i < newText.length && i < 4; i++) {
-      if (i == 2) {
+    // Handle intelligent formatting
+    if (newText.length == 3) {
+      // For 3 digits like "700", interpret as "7:00"
+      final firstDigit = int.parse(newText[0]);
+      
+      // If first digit is 3-9, assume it's single digit hour (e.g., 7 for 7:00)
+      if (firstDigit >= 3 && firstDigit <= 9) {
+        buffer.write(newText[0]);
         buffer.write(':');
+        buffer.write(newText.substring(1, 3));
+      } else {
+        // Otherwise handle normally (e.g., 130 -> 1:30)
+        buffer.write(newText[0]);
+        buffer.write(':');
+        buffer.write(newText.substring(1, 3));
       }
-      buffer.write(newText[i]);
+    } else {
+      // For other length inputs, format normally
+      for (int i = 0; i < newText.length && i < 4; i++) {
+        if (i == 2) {
+          buffer.write(':');
+        }
+        buffer.write(newText[i]);
+      }
     }
     
     final formattedText = buffer.toString();

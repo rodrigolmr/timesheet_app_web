@@ -6,7 +6,7 @@ import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/providers/timesheet_create_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 
 class Step1HeaderForm extends ConsumerStatefulWidget {
@@ -28,7 +28,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   late TextEditingController _vehicleController;
   
   DateTime? _selectedDate;
-  bool _dateWasModified = false;
+  bool _dateWasModified = false; // Track if user selected a date
   bool _initialized = false;
   
   // Validation states
@@ -54,7 +54,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   bool validateForm() {
     setState(() {
       _jobNameHasError = _jobNameController.text.trim().isEmpty;
-      _dateHasError = !_dateWasModified;
+      _dateHasError = _selectedDate == null;
       _jobDescriptionHasError = _jobDescriptionController.text.trim().isEmpty;
     });
     
@@ -81,9 +81,19 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController.text = formState.jobDescription;
     _foremanController.text = formState.foreman;
     _vehicleController.text = formState.vehicle;
-    // Load the date from formState
-    _selectedDate = formState.date;
-    _dateWasModified = true; // Date is always present in JobRecordModel
+    // Check if formState has a date set - don't pre-fill if it's the default (today)
+    final today = DateTime.now();
+    final formDate = formState.date;
+    // Only load the date if it's not today (indicating it was previously selected)
+    if (formDate.year != today.year || 
+        formDate.month != today.month || 
+        formDate.day != today.day) {
+      _selectedDate = formDate;
+      _dateWasModified = true;
+    } else {
+      _selectedDate = null;
+      _dateWasModified = false;
+    }
     
     // Clear errors when reloading data (like after Clear button)
     clearErrors();
@@ -117,9 +127,10 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
         }
       });
       
+      final currentFormState = ref.read(jobRecordFormStateProvider);
       final headerData = {
         'jobName': _jobNameController.text,
-        'date': _selectedDate ?? DateTime.now(),
+        'date': _selectedDate ?? currentFormState.date, // Keep existing date if none selected
         'territorialManager': _territorialManagerController.text,
         'jobSize': _jobSizeController.text,
         'material': _materialController.text,
@@ -129,13 +140,13 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
       };
       
       headerData[field] = value;
-      ref.read(timesheetFormStateProvider.notifier).updateHeader(headerData);
+      ref.read(jobRecordFormStateProvider.notifier).updateHeader(headerData);
       
       developer.log('Updated form field: $field with value: $value', name: 'Step1HeaderForm');
       developer.log('Full header data: $headerData', name: 'Step1HeaderForm');
       
       // Read back the state to verify it was saved
-      final savedState = ref.read(timesheetFormStateProvider);
+      final savedState = ref.read(jobRecordFormStateProvider);
       developer.log('Saved state - JobName: ${savedState.jobName}, Date: ${savedState.date}', name: 'Step1HeaderForm');
     } catch (e, stackTrace) {
       developer.log('Error updating form', error: e, stackTrace: stackTrace, name: 'Step1HeaderForm');
@@ -152,7 +163,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
 
   @override
   Widget build(BuildContext context) {
-    final formState = ref.watch(timesheetFormStateProvider);
+    final formState = ref.watch(jobRecordFormStateProvider);
     
     // Initialize controllers on first build
     if (!_initialized) {
@@ -221,6 +232,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                       label: 'Date',
                       hintText: 'Select date',
                       initialDate: _selectedDate,
+                      dateFormat: intl.DateFormat('M/d/yy, EEEE'),
                       hasError: _dateHasError,
                       errorText: null,
                       onClearError: () {

@@ -11,7 +11,8 @@ import 'package:timesheet_app_web/src/features/settings/presentation/screens/the
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_selector_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/settings_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/database_screen.dart';
-import 'package:timesheet_app_web/src/features/timesheet_create/presentation/screens/timesheet_create_screen.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_create_screen.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_records_screen.dart';
 
 part 'routes.g.dart';
 
@@ -24,7 +25,9 @@ enum AppRoute {
   themeSettings('/settings/theme'),
   themeSelector('/settings/theme-selector'),
   database('/settings/database'),
-  timesheetCreate('/timesheet/create');
+  jobRecordCreate('/job-record-create'),
+  jobRecords('/job-records'),
+  timesheetList('/timesheets');
 
   const AppRoute(this.path);
   final String path;
@@ -115,9 +118,19 @@ GoRouter goRouter(GoRouterRef ref) {
         builder: (context, state) => const DatabaseScreen(),
       ),
       GoRoute(
-        path: AppRoute.timesheetCreate.path,
-        name: AppRoute.timesheetCreate.name,
-        builder: (context, state) => const TimesheetCreateScreen(),
+        path: AppRoute.jobRecordCreate.path,
+        name: AppRoute.jobRecordCreate.name,
+        builder: (context, state) => const JobRecordCreateScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.jobRecords.path,
+        name: AppRoute.jobRecords.name,
+        builder: (context, state) => const JobRecordsScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.timesheetList.path,
+        name: AppRoute.timesheetList.name,
+        builder: (context, state) => const JobRecordsScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

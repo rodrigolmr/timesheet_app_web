@@ -17,8 +17,15 @@ class JobEmployeeModel with _$JobEmployeeModel {
     required double meal,
   }) = _JobEmployeeModel;
 
-  factory JobEmployeeModel.fromJson(Map<String, dynamic> json) => 
-      _$JobEmployeeModelFromJson(json);
+  factory JobEmployeeModel.fromJson(Map<String, dynamic> json) => _$JobEmployeeModelFromJson({
+    'employeeId': json['employee_id'] as String? ?? '',
+    'employeeName': json['employee_name'] as String? ?? 'Unknown Employee',
+    'startTime': json['start_time'] as String? ?? '00:00',
+    'finishTime': json['finish_time'] as String? ?? '00:00',
+    'hours': json['hours'] != null ? (json['hours'] as num).toDouble() : 0.0,
+    'travelHours': json['travel_hours'] != null ? (json['travel_hours'] as num).toDouble() : 0.0,
+    'meal': json['meal'] != null ? (json['meal'] as num).toDouble() : 0.0,
+  });
 
   Map<String, dynamic> toFirestore() {
     return {
@@ -31,4 +38,15 @@ class JobEmployeeModel with _$JobEmployeeModel {
       'meal': meal,
     };
   }
+
+  // Necessário para Freezed
+  Map<String, dynamic> toJson() => {
+    'employee_id': employeeId,
+    'employee_name': employeeName,
+    'start_time': startTime,
+    'finish_time': finishTime,
+    'hours': hours,
+    'travel_hours': travelHours,
+    'meal': meal,
+  };
 }
