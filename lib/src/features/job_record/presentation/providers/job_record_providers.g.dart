@@ -49,29 +49,28 @@ final jobRecordsProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef JobRecordsRef = AutoDisposeFutureProviderRef<List<JobRecordModel>>;
-String _$jobRecordsStreamHash() => r'af8ce693247ef94255727bd938e054120e52cda8';
+String _$jobRecordsStreamHash() => r'93ba948234dd92ef1ed416e2491c10c0cdd705b9';
 
-/// Provider para observar todos os registros em tempo real
+/// Provider para observar todos os registros em tempo real com cache
 ///
 /// Copied from [jobRecordsStream].
 @ProviderFor(jobRecordsStream)
-final jobRecordsStreamProvider =
-    AutoDisposeStreamProvider<List<JobRecordModel>>.internal(
-      jobRecordsStream,
-      name: r'jobRecordsStreamProvider',
-      debugGetCreateSourceHash:
-          const bool.fromEnvironment('dart.vm.product')
-              ? null
-              : _$jobRecordsStreamHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+final jobRecordsStreamProvider = StreamProvider<List<JobRecordModel>>.internal(
+  jobRecordsStream,
+  name: r'jobRecordsStreamProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$jobRecordsStreamHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef JobRecordsStreamRef =
-    AutoDisposeStreamProviderRef<List<JobRecordModel>>;
-String _$jobRecordHash() => r'df5a778e89642f56ae36df24e0745736babffa95';
+typedef JobRecordsStreamRef = StreamProviderRef<List<JobRecordModel>>;
+String _$jobRecordsDateRangeStreamHash() =>
+    r'6f86b9f9c9b4a64ee457977447f74f5fc106c0d9';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -94,21 +93,407 @@ class _SystemHash {
   }
 }
 
+/// Provider para observar registros filtrados por intervalo de data
+///
+/// Copied from [jobRecordsDateRangeStream].
+@ProviderFor(jobRecordsDateRangeStream)
+const jobRecordsDateRangeStreamProvider = JobRecordsDateRangeStreamFamily();
+
+/// Provider para observar registros filtrados por intervalo de data
+///
+/// Copied from [jobRecordsDateRangeStream].
+class JobRecordsDateRangeStreamFamily
+    extends Family<AsyncValue<List<JobRecordModel>>> {
+  /// Provider para observar registros filtrados por intervalo de data
+  ///
+  /// Copied from [jobRecordsDateRangeStream].
+  const JobRecordsDateRangeStreamFamily();
+
+  /// Provider para observar registros filtrados por intervalo de data
+  ///
+  /// Copied from [jobRecordsDateRangeStream].
+  JobRecordsDateRangeStreamProvider call({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    return JobRecordsDateRangeStreamProvider(
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  @override
+  JobRecordsDateRangeStreamProvider getProviderOverride(
+    covariant JobRecordsDateRangeStreamProvider provider,
+  ) {
+    return call(startDate: provider.startDate, endDate: provider.endDate);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'jobRecordsDateRangeStreamProvider';
+}
+
+/// Provider para observar registros filtrados por intervalo de data
+///
+/// Copied from [jobRecordsDateRangeStream].
+class JobRecordsDateRangeStreamProvider
+    extends AutoDisposeStreamProvider<List<JobRecordModel>> {
+  /// Provider para observar registros filtrados por intervalo de data
+  ///
+  /// Copied from [jobRecordsDateRangeStream].
+  JobRecordsDateRangeStreamProvider({DateTime? startDate, DateTime? endDate})
+    : this._internal(
+        (ref) => jobRecordsDateRangeStream(
+          ref as JobRecordsDateRangeStreamRef,
+          startDate: startDate,
+          endDate: endDate,
+        ),
+        from: jobRecordsDateRangeStreamProvider,
+        name: r'jobRecordsDateRangeStreamProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$jobRecordsDateRangeStreamHash,
+        dependencies: JobRecordsDateRangeStreamFamily._dependencies,
+        allTransitiveDependencies:
+            JobRecordsDateRangeStreamFamily._allTransitiveDependencies,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+  JobRecordsDateRangeStreamProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.startDate,
+    required this.endDate,
+  }) : super.internal();
+
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  @override
+  Override overrideWith(
+    Stream<List<JobRecordModel>> Function(JobRecordsDateRangeStreamRef provider)
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: JobRecordsDateRangeStreamProvider._internal(
+        (ref) => create(ref as JobRecordsDateRangeStreamRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        startDate: startDate,
+        endDate: endDate,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<List<JobRecordModel>> createElement() {
+    return _JobRecordsDateRangeStreamProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is JobRecordsDateRangeStreamProvider &&
+        other.startDate == startDate &&
+        other.endDate == endDate;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, startDate.hashCode);
+    hash = _SystemHash.combine(hash, endDate.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin JobRecordsDateRangeStreamRef
+    on AutoDisposeStreamProviderRef<List<JobRecordModel>> {
+  /// The parameter `startDate` of this provider.
+  DateTime? get startDate;
+
+  /// The parameter `endDate` of this provider.
+  DateTime? get endDate;
+}
+
+class _JobRecordsDateRangeStreamProviderElement
+    extends AutoDisposeStreamProviderElement<List<JobRecordModel>>
+    with JobRecordsDateRangeStreamRef {
+  _JobRecordsDateRangeStreamProviderElement(super.provider);
+
+  @override
+  DateTime? get startDate =>
+      (origin as JobRecordsDateRangeStreamProvider).startDate;
+  @override
+  DateTime? get endDate =>
+      (origin as JobRecordsDateRangeStreamProvider).endDate;
+}
+
+String _$jobRecordsSearchStreamHash() =>
+    r'8fdc6962c0c78b0cb551ef81e35baea2ba86e231';
+
+/// Provider unificado para aplicar todos os filtros
+///
+/// Copied from [jobRecordsSearchStream].
+@ProviderFor(jobRecordsSearchStream)
+const jobRecordsSearchStreamProvider = JobRecordsSearchStreamFamily();
+
+/// Provider unificado para aplicar todos os filtros
+///
+/// Copied from [jobRecordsSearchStream].
+class JobRecordsSearchStreamFamily
+    extends Family<AsyncValue<List<JobRecordModel>>> {
+  /// Provider unificado para aplicar todos os filtros
+  ///
+  /// Copied from [jobRecordsSearchStream].
+  const JobRecordsSearchStreamFamily();
+
+  /// Provider unificado para aplicar todos os filtros
+  ///
+  /// Copied from [jobRecordsSearchStream].
+  JobRecordsSearchStreamProvider call({
+    required String searchQuery,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? creatorId,
+  }) {
+    return JobRecordsSearchStreamProvider(
+      searchQuery: searchQuery,
+      startDate: startDate,
+      endDate: endDate,
+      creatorId: creatorId,
+    );
+  }
+
+  @override
+  JobRecordsSearchStreamProvider getProviderOverride(
+    covariant JobRecordsSearchStreamProvider provider,
+  ) {
+    return call(
+      searchQuery: provider.searchQuery,
+      startDate: provider.startDate,
+      endDate: provider.endDate,
+      creatorId: provider.creatorId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'jobRecordsSearchStreamProvider';
+}
+
+/// Provider unificado para aplicar todos os filtros
+///
+/// Copied from [jobRecordsSearchStream].
+class JobRecordsSearchStreamProvider
+    extends AutoDisposeStreamProvider<List<JobRecordModel>> {
+  /// Provider unificado para aplicar todos os filtros
+  ///
+  /// Copied from [jobRecordsSearchStream].
+  JobRecordsSearchStreamProvider({
+    required String searchQuery,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? creatorId,
+  }) : this._internal(
+         (ref) => jobRecordsSearchStream(
+           ref as JobRecordsSearchStreamRef,
+           searchQuery: searchQuery,
+           startDate: startDate,
+           endDate: endDate,
+           creatorId: creatorId,
+         ),
+         from: jobRecordsSearchStreamProvider,
+         name: r'jobRecordsSearchStreamProvider',
+         debugGetCreateSourceHash:
+             const bool.fromEnvironment('dart.vm.product')
+                 ? null
+                 : _$jobRecordsSearchStreamHash,
+         dependencies: JobRecordsSearchStreamFamily._dependencies,
+         allTransitiveDependencies:
+             JobRecordsSearchStreamFamily._allTransitiveDependencies,
+         searchQuery: searchQuery,
+         startDate: startDate,
+         endDate: endDate,
+         creatorId: creatorId,
+       );
+
+  JobRecordsSearchStreamProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.searchQuery,
+    required this.startDate,
+    required this.endDate,
+    required this.creatorId,
+  }) : super.internal();
+
+  final String searchQuery;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String? creatorId;
+
+  @override
+  Override overrideWith(
+    Stream<List<JobRecordModel>> Function(JobRecordsSearchStreamRef provider)
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: JobRecordsSearchStreamProvider._internal(
+        (ref) => create(ref as JobRecordsSearchStreamRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        searchQuery: searchQuery,
+        startDate: startDate,
+        endDate: endDate,
+        creatorId: creatorId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<List<JobRecordModel>> createElement() {
+    return _JobRecordsSearchStreamProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is JobRecordsSearchStreamProvider &&
+        other.searchQuery == searchQuery &&
+        other.startDate == startDate &&
+        other.endDate == endDate &&
+        other.creatorId == creatorId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, searchQuery.hashCode);
+    hash = _SystemHash.combine(hash, startDate.hashCode);
+    hash = _SystemHash.combine(hash, endDate.hashCode);
+    hash = _SystemHash.combine(hash, creatorId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin JobRecordsSearchStreamRef
+    on AutoDisposeStreamProviderRef<List<JobRecordModel>> {
+  /// The parameter `searchQuery` of this provider.
+  String get searchQuery;
+
+  /// The parameter `startDate` of this provider.
+  DateTime? get startDate;
+
+  /// The parameter `endDate` of this provider.
+  DateTime? get endDate;
+
+  /// The parameter `creatorId` of this provider.
+  String? get creatorId;
+}
+
+class _JobRecordsSearchStreamProviderElement
+    extends AutoDisposeStreamProviderElement<List<JobRecordModel>>
+    with JobRecordsSearchStreamRef {
+  _JobRecordsSearchStreamProviderElement(super.provider);
+
+  @override
+  String get searchQuery =>
+      (origin as JobRecordsSearchStreamProvider).searchQuery;
+  @override
+  DateTime? get startDate =>
+      (origin as JobRecordsSearchStreamProvider).startDate;
+  @override
+  DateTime? get endDate => (origin as JobRecordsSearchStreamProvider).endDate;
+  @override
+  String? get creatorId => (origin as JobRecordsSearchStreamProvider).creatorId;
+}
+
+String _$jobRecordCreatorsHash() => r'8e1747f0f4c47bf2df6dd3397e740a559c1e3118';
+
+/// Provider para obter a lista de criadores dos job records com names
+///
+/// Copied from [jobRecordCreators].
+@ProviderFor(jobRecordCreators)
+final jobRecordCreatorsProvider =
+    FutureProvider<List<({String id, String name})>>.internal(
+      jobRecordCreators,
+      name: r'jobRecordCreatorsProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$jobRecordCreatorsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef JobRecordCreatorsRef =
+    FutureProviderRef<List<({String id, String name})>>;
+String _$jobRecordHash() => r'df5a778e89642f56ae36df24e0745736babffa95';
+
+/// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
 /// Provider para obter um registro específico por ID
 ///
 /// Copied from [jobRecord].
 @ProviderFor(jobRecord)
 const jobRecordProvider = JobRecordFamily();
 
+/// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
 /// Provider para obter um registro específico por ID
 ///
 /// Copied from [jobRecord].
 class JobRecordFamily extends Family<AsyncValue<JobRecordModel?>> {
+  /// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
   /// Provider para obter um registro específico por ID
   ///
   /// Copied from [jobRecord].
   const JobRecordFamily();
 
+  /// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
   /// Provider para obter um registro específico por ID
   ///
   /// Copied from [jobRecord].
@@ -136,10 +521,12 @@ class JobRecordFamily extends Family<AsyncValue<JobRecordModel?>> {
   String? get name => r'jobRecordProvider';
 }
 
+/// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
 /// Provider para obter um registro específico por ID
 ///
 /// Copied from [jobRecord].
 class JobRecordProvider extends AutoDisposeFutureProvider<JobRecordModel?> {
+  /// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
   /// Provider para obter um registro específico por ID
   ///
   /// Copied from [jobRecord].

@@ -4,92 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
-import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
+import 'package:timesheet_app_web/src/core/utils/date_utils.dart';
 import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
+import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_card.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_filters.dart';
 
-// Classe para representar uma semana com registros
-class WeekGroup {
-  final String weekId;
-  final DateTime startDate; // Sexta-feira
-  final DateTime endDate;   // Quinta-feira
-  final List<JobRecordModel> records;
-  
-  WeekGroup(this.weekId, this.startDate, this.records)
-      : endDate = startDate.add(const Duration(days: 6));
-      
-  String get weekRange {
-    final dateFormat = DateFormat('MMM d');
-    return '${dateFormat.format(startDate)} - ${dateFormat.format(endDate)}';
-  }
-  
-  String get weekTitle {
-    final now = DateTime.now();
-    final thisWeekId = _getWeekId(now);
-    final lastWeekId = _getWeekId(now.subtract(const Duration(days: 7)));
-    
-    if (weekId == thisWeekId) {
-      return 'This Week';
-    } else if (weekId == lastWeekId) {
-      return 'Last Week';
-    } else {
-      // Formato mais compacto para economia de espaço
-      return 'Week ${startDate.day}-${endDate.day} ${DateFormat('MMM').format(startDate)}';
-    }
-  }
-}
-
-// Identificador único para semana de sexta a quinta
-String _getWeekId(DateTime date) {
-  // Primeiro, determinamos a sexta-feira da semana atual
-  DateTime fridayOfWeek;
-  
-  // Dia da semana: 1=seg, 2=ter, 3=qua, 4=qui, 5=sex, 6=sab, 7=dom
-  final dayOfWeek = date.weekday;
-  
-  if (dayOfWeek == 5) { // É sexta-feira
-    fridayOfWeek = date; // A própria data já é sexta
-  } else if (dayOfWeek < 5) { // É segunda a quinta
-    // Voltar para a sexta anterior
-    fridayOfWeek = date.subtract(Duration(days: dayOfWeek + 2));
-  } else { // É sábado ou domingo
-    // Voltar para a sexta mais recente
-    fridayOfWeek = date.subtract(Duration(days: dayOfWeek - 5));
-  }
-  
-  // Criamos um ID único baseado no ano e dia do ano da sexta-feira
-  final dayOfYear = _getDayOfYear(fridayOfWeek);
-  final weekNumber = ((dayOfYear - 1) / 7).floor() + 1;
-  
-  // Formatar como AAAASS (ano+semana)
-  return '${fridayOfWeek.year}${weekNumber.toString().padLeft(2, '0')}';
-}
-
-// Auxiliar: calcula o dia do ano (1-366)
-int _getDayOfYear(DateTime date) {
-  final startOfYear = DateTime(date.year, 1, 1);
-  return date.difference(startOfYear).inDays + 1;
-}
-
-// Obter data inicial (sexta-feira) da semana com base no ID da semana
-DateTime _getWeekStartDateFromId(String weekId) {
-  // Extrair ano e número da semana do ID
-  final year = int.parse(weekId.substring(0, 4));
-  final weekNumber = int.parse(weekId.substring(4));
-  
-  // Primeiro dia do ano
-  final firstDayOfYear = DateTime(year, 1, 1);
-  
-  // Encontrar a primeira sexta-feira do ano
-  final firstDayWeekday = firstDayOfYear.weekday;
-  final daysUntilFirstFriday = (5 - firstDayWeekday + 7) % 7; // 5 = sexta-feira
-  final firstFriday = firstDayOfYear.add(Duration(days: daysUntilFirstFriday));
-  
-  // Adicionar as semanas restantes (n-1 semanas)
-  return firstFriday.add(Duration(days: (weekNumber - 1) * 7));
-}
 
 class JobRecordsScreen extends ConsumerStatefulWidget {
   static const routePath = '/job-records';
@@ -102,130 +24,203 @@ class JobRecordsScreen extends ConsumerStatefulWidget {
 }
 
 class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
+  // Controladores para o filtro de data
+  final _dateRangeController = TextEditingController();
+  final _searchController = TextEditingController();
+  final _dateFormat = DateFormat('MM/dd/yyyy');
+  DateTimeRange? _selectedDateRange;
+  String _searchQuery = '';
+  String? _selectedCreator;
+  bool _filtersExpanded = false; // Estado para controlar se os filtros estão expandidos
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Iniciar sem datas pré-selecionadas, mas manter o visual
+    _selectedDateRange = null;
+    _dateRangeController.text = '';
+  }
+
+  @override
+  void dispose() {
+    _dateRangeController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final textStyles = context.textStyles;
-
     return Scaffold(
-      appBar: AppHeader(
-        title: 'Job Records',
-        actionIcon: Icons.add,
-        onActionPressed: () => context.push('/job-record-create'),
-      ),
-      body: Column(
-        children: [
-          // Records list
-          Expanded(
-            child: _buildRecordsList(),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/job-record-create'),
-        backgroundColor: colors.primary,
-        // Tamanho responsivo para telas pequenas
-        mini: context.responsive<bool>(
-          xs: true, // Mini para telas pequenas
-          sm: true,
-          md: false, // Tamanho normal para telas maiores
-        ),
-        child: const Icon(Icons.add),
-      ),
-      // Adiciona padding no FAB para evitar sobreposição
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+      floatingActionButton: _buildFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  // Agrupa registros por semana (sexta a quinta)
-  List<WeekGroup> _groupRecordsByWeek(List<JobRecordModel> records) {
-    // Mapa para agrupar registros por ID de semana
-    final Map<String, List<JobRecordModel>> groupedByWeekId = {};
-    
-    // Agrupar registros por ID de semana
-    for (final record in records) {
-      final weekId = _getWeekId(record.date);
-      
-      if (!groupedByWeekId.containsKey(weekId)) {
-        groupedByWeekId[weekId] = [];
-      }
-      
-      groupedByWeekId[weekId]!.add(record);
-    }
-    
-    // Converter para lista de WeekGroup
-    final List<WeekGroup> result = [];
-    for (final weekId in groupedByWeekId.keys) {
-      // Obter data inicial da semana a partir do ID
-      final startDate = _getWeekStartDateFromId(weekId);
-      
-      // Ordenar registros dentro da semana por data (mais recente primeiro)
-      final weekRecords = groupedByWeekId[weekId]!;
-      weekRecords.sort((a, b) => b.date.compareTo(a.date));
-      
-      // Adicionar à lista de resultado
-      result.add(WeekGroup(weekId, startDate, weekRecords));
-    }
-    
-    // Ordenar semanas (mais recente primeiro)
-    result.sort((a, b) => b.startDate.compareTo(a.startDate));
-    
-    return result;
+  PreferredSizeWidget _buildAppBar() {
+    return AppHeader(
+      title: 'Job Records',
+      actionIcon: Icons.add,
+      onActionPressed: () => context.push('/job-record-create'),
+    );
   }
 
+  Widget _buildBody() {
+    return Column(
+      children: [
+        _buildFilters(),
+        Expanded(
+          child: _buildRecordsList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilters() {
+    return JobRecordFilters(
+      dateRangeController: _dateRangeController,
+      searchController: _searchController,
+      dateFormat: _dateFormat,
+      selectedDateRange: _selectedDateRange,
+      searchQuery: _searchQuery,
+      selectedCreator: _selectedCreator,
+      filtersExpanded: _filtersExpanded,
+      onDateRangeChanged: (dateRange) {
+        setState(() {
+          _selectedDateRange = dateRange;
+          if (dateRange != null) {
+            _dateRangeController.text = '${_dateFormat.format(dateRange.start)} - ${_dateFormat.format(dateRange.end)}';
+          }
+        });
+      },
+      onSearchChanged: (query) {
+        setState(() {
+          _searchQuery = query.trim();
+        });
+      },
+      onCreatorChanged: (creator) {
+        setState(() {
+          _selectedCreator = creator;
+        });
+      },
+      onExpandedChanged: (expanded) {
+        setState(() {
+          _filtersExpanded = expanded;
+        });
+      },
+      onClearFilters: _clearAllFilters,
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    return FloatingActionButton(
+      onPressed: () => context.push('/job-record-create'),
+      backgroundColor: context.colors.primary,
+      mini: context.responsive<bool>(
+        xs: true,
+        sm: true,
+        md: false,
+      ),
+      child: const Icon(Icons.add),
+    );
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _selectedCreator = null;
+      
+      // Limpar datas completamente
+      _selectedDateRange = null;
+      _dateRangeController.text = '';
+    });
+  }
+
+
+
+
+
   Widget _buildRecordsList() {
-    final AsyncValue<List<JobRecordModel>> recordsAsync;
-    
-    // Use jobRecordsStreamProvider para obter os registros em tempo real
-    recordsAsync = ref.watch(jobRecordsStreamProvider);
+    final recordsAsync = ref.watch(
+      jobRecordsSearchStreamProvider(
+        searchQuery: _searchQuery,
+        startDate: _selectedDateRange?.start,
+        endDate: _selectedDateRange?.end,
+        creatorId: _selectedCreator,
+      )
+    );
 
     return recordsAsync.when(
       data: (records) {
         if (records.isEmpty) {
-          return _buildEmptyState('No records found');
+          return _buildEmptyState(_buildEmptyMessage());
         }
         
-        // Agrupar registros por semana usando a nova abordagem
-        final weekGroups = _groupRecordsByWeek(records);
+        // Group records by week using the utils
+        final weekGroups = groupRecordsByWeek(records);
 
-        return ResponsiveContainer(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(
-              vertical: context.responsive<double>(xs: 4, sm: 6, md: 8),
-              horizontal: context.responsive<double>(xs: 0, sm: 2, md: 6),
-            ),
-            itemCount: weekGroups.length,
-            itemBuilder: (context, weekIndex) {
-              final weekGroup = weekGroups[weekIndex];
-              
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Cabeçalho minimalista (apenas uma linha com separador)
-                  _buildMinimalHeader(weekGroup),
-                  
-                  // Registros desta semana - com espaçamento mínimo
-                  ...weekGroup.records.map((record) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2.0),
-                    child: JobRecordCard(record: record),
-                  )),
-                  
-                  // Espaçador entre semanas
-                  SizedBox(height: context.responsive<double>(xs: 8, sm: 10, md: 12)),
-                ],
-              );
-            },
-          ),
-        );
+        return _buildWeekGroupsList(weekGroups);
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(
-        child: Text(
-          'Error loading records: $error',
-          style: context.textStyles.body.copyWith(
-            color: context.colors.error,
-          ),
+      error: (error, _) => _buildErrorState(error),
+    );
+  }
+
+  String _buildEmptyMessage() {
+    String message = 'No records found';
+    if (_searchQuery.isNotEmpty) {
+      message += ' matching "$_searchQuery"';
+    }
+    if (_selectedDateRange != null) {
+      message += ' in selected date range';
+    }
+    if (_selectedCreator != null) {
+      message += ' for selected creator';
+    }
+    return message;
+  }
+
+  Widget _buildWeekGroupsList(List<WeekGroup> weekGroups) {
+    return ResponsiveContainer(
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(
+          vertical: context.responsive<double>(xs: 4, sm: 6, md: 8),
+          horizontal: context.responsive<double>(xs: 0, sm: 2, md: 6),
+        ),
+        itemCount: weekGroups.length,
+        itemBuilder: (context, weekIndex) {
+          final weekGroup = weekGroups[weekIndex];
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildMinimalHeader(weekGroup),
+              
+              // Records for this week with minimal spacing
+              ...weekGroup.records.map((record) => Padding(
+                padding: const EdgeInsets.only(bottom: 2.0),
+                child: JobRecordCard(record: record),
+              )),
+              
+              // Spacer between weeks
+              SizedBox(height: context.responsive<double>(xs: 8, sm: 10, md: 12)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorState(Object error) {
+    return Center(
+      child: Text(
+        'Error loading records: $error',
+        style: context.textStyles.body.copyWith(
+          color: context.colors.error,
         ),
       ),
     );

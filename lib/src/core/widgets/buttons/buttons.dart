@@ -8,6 +8,10 @@
 /// - IconButton: Para ações com ícones apenas
 /// - FloatingActionButton: Para ações flutuantes principais
 /// 
+/// Componentes customizados para casos específicos:
+/// - AppActionButton: Para botões de ação em toolbars
+/// - AppCompactActionButton: Para botões compactos com estilo contextual
+/// 
 /// Exemplos de uso com o sistema de tema:
 /// 
 /// ```dart
@@ -20,9 +24,12 @@
 ///   child: Text('Save'),
 /// )
 /// 
-/// IconButton(
-///   icon: Icon(Icons.edit),
+/// AppCompactActionButton(
+///   icon: Icons.clear,
+///   tooltip: 'Clear filters',
 ///   onPressed: () {},
-///   color: context.colors.primary,
 /// )
 /// ```
+
+export 'app_action_button.dart';
+export 'compact_action_button.dart';

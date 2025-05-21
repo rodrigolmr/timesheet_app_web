@@ -1,8 +1,10 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:timesheet_app_web/src/core/providers/firebase_providers.dart';
+import 'package:timesheet_app_web/src/core/utils/week_utils.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/repositories/firestore_job_record_repository.dart';
 import 'package:timesheet_app_web/src/features/job_record/domain/repositories/job_record_repository.dart';
+import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 
 part 'job_record_providers.g.dart';
 
@@ -20,11 +22,168 @@ Future<List<JobRecordModel>> jobRecords(JobRecordsRef ref) {
   return ref.watch(jobRecordRepositoryProvider).getAll();
 }
 
-/// Provider para observar todos os registros em tempo real
-@riverpod
+/// Provider para observar todos os registros em tempo real com cache
+@Riverpod(keepAlive: true)
 Stream<List<JobRecordModel>> jobRecordsStream(JobRecordsStreamRef ref) {
   return ref.watch(jobRecordRepositoryProvider).watchAll();
 }
+
+/// Provider para observar registros filtrados por intervalo de data
+@riverpod
+Stream<List<JobRecordModel>> jobRecordsDateRangeStream(
+  JobRecordsDateRangeStreamRef ref, 
+  {DateTime? startDate, DateTime? endDate}
+) {
+  // Observa o provider de todos os registros e aplica filtro
+  return ref.watch(jobRecordsStreamProvider.stream).map((records) {
+    // Se ambas as datas estão nulas, retornamos todos os registros
+    if (startDate == null && endDate == null) {
+      return records;
+    }
+    
+    // Aplica o filtro nos registros
+    return records.where((record) {
+      // Se startDate está definido e o registro é anterior, excluir
+      if (startDate != null && record.date.isBefore(startDate)) {
+        return false;
+      }
+      
+      // Se endDate está definido, incluir até o final do dia
+      if (endDate != null) {
+        final endOfDay = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+        if (record.date.isAfter(endOfDay)) {
+          return false;
+        }
+      }
+      
+      return true;
+    }).toList();
+  });
+}
+
+/// Provider unificado para aplicar todos os filtros
+@riverpod
+Stream<List<JobRecordModel>> jobRecordsSearchStream(
+  JobRecordsSearchStreamRef ref,
+  {required String searchQuery, DateTime? startDate, DateTime? endDate, String? creatorId}
+) async* {
+  // Função para aplicar filtros
+  List<JobRecordModel> applyFilters(List<JobRecordModel> allRecords) {
+    var result = allRecords;
+    
+    // Filtro por data
+    if (startDate != null || endDate != null) {
+      result = result.where((record) {
+        if (startDate != null && record.date.isBefore(startDate)) {
+          return false;
+        }
+        if (endDate != null) {
+          final endOfDay = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+          if (record.date.isAfter(endOfDay)) {
+            return false;
+          }
+        }
+        return true;
+      }).toList();
+    }
+    
+    // Filtro por criador
+    if (creatorId != null && creatorId.isNotEmpty) {
+      result = result.where((record) => record.userId == creatorId).toList();
+    }
+    
+    // Filtro por texto/busca
+    if (searchQuery.trim().isNotEmpty) {
+      final searchTerms = searchQuery.toLowerCase().split(' ')
+        .where((term) => term.isNotEmpty)
+        .toList();
+        
+      result = result.where((record) {
+        // Todos os termos devem estar presentes 
+        return searchTerms.every((term) => _recordContainsSearchTerm(record, term));
+      }).toList();
+    }
+    
+    return result;
+  }
+
+  // Tenta obter dados já carregados primeiro
+  try {
+    final cachedRecords = ref.read(jobRecordsStreamProvider.future);
+    if (cachedRecords is Future<List<JobRecordModel>>) {
+      final records = await cachedRecords;
+      yield applyFilters(records);
+    }
+  } catch (e) {
+    // Se não há dados em cache, continua para o stream
+  }
+
+  // Continua ouvindo o stream para futuras atualizações
+  await for (final allRecords in ref.watch(jobRecordsStreamProvider.stream)) {
+    yield applyFilters(allRecords);
+  }
+}
+
+/// Verifica se um registro contém um termo de busca em qualquer um de seus campos
+bool _recordContainsSearchTerm(JobRecordModel record, String term) {
+  // Convertemos o termo para minúsculas para uma comparação sem distinção de maiúsculas/minúsculas
+  final lowercaseTerm = term.toLowerCase();
+  
+  // Verificamos cada campo do registro
+  if (record.jobName.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.territorialManager.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.jobSize.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.material.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.jobDescription.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.foreman.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.vehicle.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.notes.toLowerCase().contains(lowercaseTerm)) return true;
+  if (record.userId.toLowerCase().contains(lowercaseTerm)) return true;
+  
+  // Verificamos também os funcionários
+  for (final employee in record.employees) {
+    if (employee.employeeName.toLowerCase().contains(lowercaseTerm)) return true;
+    // Verificamos outros valores numéricos convertendo para string
+    if (employee.hours.toString().contains(lowercaseTerm)) return true;
+    if (employee.travelHours.toString().contains(lowercaseTerm)) return true;
+    if (employee.startTime.toLowerCase().contains(lowercaseTerm)) return true;
+    if (employee.finishTime.toLowerCase().contains(lowercaseTerm)) return true;
+  }
+  
+  // Se não encontramos o termo em nenhum campo, retornamos falso
+  return false;
+}
+
+/// Provider para obter a lista de criadores dos job records com names
+@Riverpod(keepAlive: true)
+Future<List<({String id, String name})>> jobRecordCreators(JobRecordCreatorsRef ref) async {
+  // Busca todos os registros uma vez
+  final records = await ref.watch(jobRecordsProvider.future);
+  
+  // Extraímos os IDs únicos dos criadores
+  final creatorIds = records.map((record) => record.userId).toSet().toList();
+  
+  // Lista para armazenar criadores com nomes
+  final List<({String id, String name})> creatorsWithNames = [];
+  
+  // Buscar todos os usuários uma vez só
+  final allUsers = await ref.read(usersProvider.future);
+  final usersMap = { for (var user in allUsers) user.id: user };
+  
+  // Para cada ID, buscar informações do usuário
+  for (final creatorId in creatorIds) {
+    final user = usersMap[creatorId];
+    final name = user != null ? '${user.firstName} ${user.lastName}' : 'Unknown User';
+    creatorsWithNames.add((id: creatorId, name: name));
+  }
+  
+  // Ordenar por nome para consistência
+  creatorsWithNames.sort((a, b) => a.name.compareTo(b.name));
+  
+  return creatorsWithNames;
+}
+
+/// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md
 
 /// Provider para obter um registro específico por ID
 @riverpod

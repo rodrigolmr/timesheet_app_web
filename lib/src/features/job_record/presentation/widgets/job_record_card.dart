@@ -80,8 +80,8 @@ class JobRecordCard extends ConsumerWidget {
               width: cardWidth,
               height: cardHeight,
               decoration: BoxDecoration(
-                color: colors.surface.withOpacity(0.8),
-                border: Border.all(color: colors.primary, width: 1),
+                color: colors.surface, // Fundo neutro sem amarelo
+                border: Border.all(color: colors.secondary, width: 1), // Mantém a borda dos inputs
                 borderRadius: BorderRadius.circular(4),
               ),
               clipBehavior: Clip.antiAlias,
@@ -91,7 +91,7 @@ class JobRecordCard extends ConsumerWidget {
                   Container(
                     width: dateWidth,
                     decoration: BoxDecoration(
-                      color: colors.primary.withOpacity(0.1),
+                      color: colors.primary.withOpacity(0.2), // Cor primária com opacidade 0.2
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(3),
                         bottomLeft: Radius.circular(3),
@@ -136,6 +136,7 @@ class JobRecordCard extends ConsumerWidget {
                   Expanded(
                     child: Container(
                       alignment: Alignment.center,
+                      color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
                       padding: EdgeInsets.symmetric(
                         horizontal: context.responsive<double>(xs: 4, sm: 6, md: 8),
                       ),
@@ -162,6 +163,7 @@ class JobRecordCard extends ConsumerWidget {
                   Container(
                     width: creatorWidth,
                     alignment: Alignment.center,
+                    color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: FutureBuilder<({String firstName, String lastName})>(
                       future: _getCreatorNames(ref, record.userId),
