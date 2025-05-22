@@ -49,6 +49,160 @@ final jobRecordsProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef JobRecordsRef = AutoDisposeFutureProviderRef<List<JobRecordModel>>;
+String _$jobRecordByIdHash() => r'60497656bdd345a7b08ae8a3658926306f8fd516';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// Provider para obter um registro específico por ID
+///
+/// Copied from [jobRecordById].
+@ProviderFor(jobRecordById)
+const jobRecordByIdProvider = JobRecordByIdFamily();
+
+/// Provider para obter um registro específico por ID
+///
+/// Copied from [jobRecordById].
+class JobRecordByIdFamily extends Family<AsyncValue<JobRecordModel?>> {
+  /// Provider para obter um registro específico por ID
+  ///
+  /// Copied from [jobRecordById].
+  const JobRecordByIdFamily();
+
+  /// Provider para obter um registro específico por ID
+  ///
+  /// Copied from [jobRecordById].
+  JobRecordByIdProvider call(String id) {
+    return JobRecordByIdProvider(id);
+  }
+
+  @override
+  JobRecordByIdProvider getProviderOverride(
+    covariant JobRecordByIdProvider provider,
+  ) {
+    return call(provider.id);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'jobRecordByIdProvider';
+}
+
+/// Provider para obter um registro específico por ID
+///
+/// Copied from [jobRecordById].
+class JobRecordByIdProvider extends AutoDisposeFutureProvider<JobRecordModel?> {
+  /// Provider para obter um registro específico por ID
+  ///
+  /// Copied from [jobRecordById].
+  JobRecordByIdProvider(String id)
+    : this._internal(
+        (ref) => jobRecordById(ref as JobRecordByIdRef, id),
+        from: jobRecordByIdProvider,
+        name: r'jobRecordByIdProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$jobRecordByIdHash,
+        dependencies: JobRecordByIdFamily._dependencies,
+        allTransitiveDependencies:
+            JobRecordByIdFamily._allTransitiveDependencies,
+        id: id,
+      );
+
+  JobRecordByIdProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    FutureOr<JobRecordModel?> Function(JobRecordByIdRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: JobRecordByIdProvider._internal(
+        (ref) => create(ref as JobRecordByIdRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<JobRecordModel?> createElement() {
+    return _JobRecordByIdProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is JobRecordByIdProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin JobRecordByIdRef on AutoDisposeFutureProviderRef<JobRecordModel?> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _JobRecordByIdProviderElement
+    extends AutoDisposeFutureProviderElement<JobRecordModel?>
+    with JobRecordByIdRef {
+  _JobRecordByIdProviderElement(super.provider);
+
+  @override
+  String get id => (origin as JobRecordByIdProvider).id;
+}
+
 String _$jobRecordsStreamHash() => r'93ba948234dd92ef1ed416e2491c10c0cdd705b9';
 
 /// Provider para observar todos os registros em tempo real com cache
@@ -71,27 +225,6 @@ final jobRecordsStreamProvider = StreamProvider<List<JobRecordModel>>.internal(
 typedef JobRecordsStreamRef = StreamProviderRef<List<JobRecordModel>>;
 String _$jobRecordsDateRangeStreamHash() =>
     r'6f86b9f9c9b4a64ee457977447f74f5fc106c0d9';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
 
 /// Provider para observar registros filtrados por intervalo de data
 ///
@@ -451,7 +584,7 @@ class _JobRecordsSearchStreamProviderElement
   String? get creatorId => (origin as JobRecordsSearchStreamProvider).creatorId;
 }
 
-String _$jobRecordCreatorsHash() => r'8e1747f0f4c47bf2df6dd3397e740a559c1e3118';
+String _$jobRecordCreatorsHash() => r'0046c117e71cd53b0afc415be884ac06d9e6370c';
 
 /// Provider para obter a lista de criadores dos job records com names
 ///
@@ -1303,6 +1436,28 @@ class _JobRecordsByEmployeeStreamProviderElement
       (origin as JobRecordsByEmployeeStreamProvider).employeeId;
 }
 
+String _$jobRecordSelectionHash() =>
+    r'2eeee13f2aa19e7326b50d02dc84e694acd2da6d';
+
+/// Provider notifier para gerenciar seleção múltipla
+///
+/// Copied from [JobRecordSelection].
+@ProviderFor(JobRecordSelection)
+final jobRecordSelectionProvider = AutoDisposeNotifierProvider<
+  JobRecordSelection,
+  JobRecordSelectionState
+>.internal(
+  JobRecordSelection.new,
+  name: r'jobRecordSelectionProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$jobRecordSelectionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$JobRecordSelection = AutoDisposeNotifier<JobRecordSelectionState>;
 String _$jobRecordStateHash() => r'48b228befd9ade7d0683b25bb9799c55d5c77e5b';
 
 abstract class _$JobRecordState

@@ -81,24 +81,19 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController.text = formState.jobDescription;
     _foremanController.text = formState.foreman;
     _vehicleController.text = formState.vehicle;
-    // Check if formState has a date set - don't pre-fill if it's the default (today)
-    final today = DateTime.now();
-    final formDate = formState.date;
-    // Only load the date if it's not today (indicating it was previously selected)
-    if (formDate.year != today.year || 
-        formDate.month != today.month || 
-        formDate.day != today.day) {
-      _selectedDate = formDate;
-      _dateWasModified = true;
-    } else {
-      _selectedDate = null;
-      _dateWasModified = false;
-    }
+    // Load the date from form state - in edit mode we always want to load the existing date
+    _selectedDate = formState.date;
+    _dateWasModified = true;
     
     // Clear errors when reloading data (like after Clear button)
     clearErrors();
     
     developer.log('Form data loaded successfully', name: 'Step1HeaderForm');
+    
+    // Force rebuild to ensure UI reflects the loaded data
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -165,9 +160,13 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   Widget build(BuildContext context) {
     final formState = ref.watch(jobRecordFormStateProvider);
     
-    // Initialize controllers on first build
-    if (!_initialized) {
-      developer.log('First build - initializing form data', name: 'Step1HeaderForm');
+    // Load form data whenever the provider changes (for editing mode)
+    // But avoid unnecessary reloads by checking if data actually changed
+    if (!_initialized || 
+        _jobNameController.text != formState.jobName ||
+        _territorialManagerController.text != formState.territorialManager ||
+        _jobDescriptionController.text != formState.jobDescription) {
+      developer.log('Loading form data - initialized: $_initialized', name: 'Step1HeaderForm');
       _loadFormData(formState);
       _initialized = true;
     }

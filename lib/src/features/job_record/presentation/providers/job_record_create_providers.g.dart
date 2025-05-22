@@ -6,6 +6,22 @@ part of 'job_record_create_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+String _$isEditModeHash() => r'fc6e38292766771797a801a17e4b4adcc529e9f4';
+
+/// Provider para indicar se estamos em modo de edição
+///
+/// Copied from [IsEditMode].
+@ProviderFor(IsEditMode)
+final isEditModeProvider = NotifierProvider<IsEditMode, bool>.internal(
+  IsEditMode.new,
+  name: r'isEditModeProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$isEditModeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$IsEditMode = Notifier<bool>;
 String _$currentStepNotifierHash() =>
     r'87b9caed6a5fa61d68de0a00ad5cdc14625a7e04';
 
@@ -27,7 +43,7 @@ final currentStepNotifierProvider =
 
 typedef _$CurrentStepNotifier = Notifier<int>;
 String _$jobRecordFormStateHash() =>
-    r'61cf0a4afd8e0661b715b9e4bab688c14488efa9';
+    r'fa28256a73b8536694935bb7f366d8d8243a572d';
 
 /// Provider para gerenciar o estado do job record em criação
 ///

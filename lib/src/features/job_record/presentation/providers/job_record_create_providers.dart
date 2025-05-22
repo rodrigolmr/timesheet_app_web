@@ -12,6 +12,17 @@ part 'job_record_create_providers.g.dart';
 /// Provider for Step1 form GlobalKey
 final step1FormKeyProvider = Provider((ref) => GlobalKey<Step1HeaderFormState>());
 
+/// Provider para indicar se estamos em modo de edição
+@Riverpod(keepAlive: true)
+class IsEditMode extends _$IsEditMode {
+  @override
+  bool build() => false;
+
+  void setEditMode(bool isEditing) {
+    state = isEditing;
+  }
+}
+
 /// Provider para gerenciar o step atual do formulário
 @Riverpod(keepAlive: true)
 class CurrentStepNotifier extends _$CurrentStepNotifier {
@@ -179,9 +190,20 @@ class JobRecordFormState extends _$JobRecordFormState {
     developer.log('Employee removed. Total employees: ${state.employees.length}', name: 'JobRecordFormState');
   }
 
-  /// Submits the job record directly to job_records collection
-  Future<bool> submitJobRecord() async {
-    developer.log('Submitting job record...', name: 'JobRecordFormState');
+  /// Loads data from an existing record for editing
+  void loadFromExistingRecord(JobRecordModel record) {
+    developer.log('Loading existing record for editing: ${record.id}', name: 'JobRecordFormState');
+    
+    state = record.copyWith(
+      updatedAt: DateTime.now(),
+    );
+    
+    developer.log('Record loaded successfully', name: 'JobRecordFormState');
+  }
+
+  /// Submits the job record (create or update)
+  Future<bool> submitJobRecord({String? editRecordId}) async {
+    developer.log('Submitting job record... Edit ID: $editRecordId', name: 'JobRecordFormState');
     
     try {
       // Validations
@@ -193,11 +215,19 @@ class JobRecordFormState extends _$JobRecordFormState {
         throw Exception('At least one employee is required');
       }
       
-      // Save directly to job_records
       final repository = ref.read(jobRecordRepositoryProvider);
-      final id = await repository.create(state);
       
-      developer.log('Job record created with ID: $id', name: 'JobRecordFormState');
+      if (editRecordId != null) {
+        // Update existing record
+        await repository.update(editRecordId, state.copyWith(
+          updatedAt: DateTime.now(),
+        ));
+        developer.log('Job record updated with ID: $editRecordId', name: 'JobRecordFormState');
+      } else {
+        // Create new record
+        final id = await repository.create(state);
+        developer.log('Job record created with ID: $id', name: 'JobRecordFormState');
+      }
       
       // Reset form after successful submission
       ref.invalidateSelf();

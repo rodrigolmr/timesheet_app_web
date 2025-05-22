@@ -11,6 +11,7 @@ class NavigationCard extends ConsumerWidget {
   final String route;
   final Color? color;
   final bool isActive;
+  final VoidCallback? onTap;
 
   const NavigationCard({
     super.key,
@@ -20,6 +21,7 @@ class NavigationCard extends ConsumerWidget {
     required this.route,
     this.color,
     this.isActive = true,
+    this.onTap,
   });
 
   @override
@@ -57,7 +59,7 @@ class NavigationCard extends ConsumerWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: isEnabled
-                ? () => context.go(route)
+                ? (onTap ?? () => context.go(route))
                 : null,
             splashColor: cardColor.withOpacity(0.1),
             highlightColor: cardColor.withOpacity(0.05),

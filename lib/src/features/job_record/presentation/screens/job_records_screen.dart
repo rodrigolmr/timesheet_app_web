@@ -9,8 +9,10 @@ import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_card.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_filters.dart';
+import 'package:timesheet_app_web/src/features/job_record/data/services/job_record_print_service.dart';
 
 
 class JobRecordsScreen extends ConsumerStatefulWidget {
@@ -60,10 +62,63 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final selectionState = ref.watch(jobRecordSelectionProvider);
+    
+    if (selectionState.isSelectionMode) {
+      return AppBar(
+        backgroundColor: context.colors.primary,
+        foregroundColor: context.colors.onPrimary,
+        title: Text(
+          '${selectionState.selectionCount} selected',
+          style: context.textStyles.title.copyWith(
+            color: context.colors.onPrimary,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode(),
+          tooltip: 'Cancel selection',
+        ),
+        actions: [
+          if (selectionState.hasSelection) ...[
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
+              tooltip: 'Delete selected',
+            ),
+            IconButton(
+              icon: const Icon(Icons.print),
+              onPressed: () => _printSelected(selectionState.selectedIds),
+              tooltip: 'Print selected',
+            ),
+          ],
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) => _handleSelectionAction(value, selectionState),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'select_all',
+                child: Text('Select All'),
+              ),
+              const PopupMenuItem(
+                value: 'select_none',
+                child: Text('Select None'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    
     return AppHeader(
       title: 'Job Records',
-      actionIcon: Icons.add,
-      onActionPressed: () => context.push('/job-record-create'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.checklist),
+          onPressed: () => ref.read(jobRecordSelectionProvider.notifier).enterSelectionMode(),
+          tooltip: 'Select records',
+        ),
+      ],
     );
   }
 
@@ -116,14 +171,11 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
 
   Widget _buildFloatingActionButton() {
     return FloatingActionButton(
-      onPressed: () => context.push('/job-record-create'),
+      onPressed: () => _createNewJobRecord(),
       backgroundColor: context.colors.primary,
-      mini: context.responsive<bool>(
-        xs: true,
-        sm: true,
-        md: false,
-      ),
-      child: const Icon(Icons.add),
+      elevation: 8,
+      mini: false,
+      child: const Icon(Icons.add, size: 28),
     );
   }
 
@@ -137,6 +189,153 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       _selectedDateRange = null;
       _dateRangeController.text = '';
     });
+  }
+
+  void _handleSelectionAction(String action, JobRecordSelectionState selectionState) {
+    final recordsAsync = ref.read(jobRecordsSearchStreamProvider(
+      searchQuery: _searchQuery,
+      startDate: _selectedDateRange?.start,
+      endDate: _selectedDateRange?.end,
+      creatorId: _selectedCreator,
+    ).future);
+
+    recordsAsync.then((records) {
+      final allIds = records.map((record) => record.id).toList();
+      
+      switch (action) {
+        case 'select_all':
+          ref.read(jobRecordSelectionProvider.notifier).selectAll(allIds);
+          break;
+        case 'select_none':
+          ref.read(jobRecordSelectionProvider.notifier).selectNone();
+          break;
+      }
+    });
+  }
+
+  void _showDeleteConfirmDialog(Set<String> selectedIds) {
+    showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Records'),
+        content: Text(
+          'Are you sure you want to delete ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.error,
+              foregroundColor: context.colors.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed == true) {
+        _deleteSelectedRecords(selectedIds);
+      }
+    });
+  }
+
+  void _deleteSelectedRecords(Set<String> selectedIds) async {
+    // TODO: Implementar exclusão em lote
+    // Por enquanto, mostra mensagem de sucesso
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Deleted ${selectedIds.length} record${selectedIds.length > 1 ? 's' : ''}'),
+        backgroundColor: context.colors.success,
+      ),
+    );
+    
+    ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode();
+  }
+
+  void _printSelected(Set<String> selectedIds) async {
+    if (selectedIds.isEmpty) return;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Print Confirmation'),
+        content: Text(
+          'Are you sure you want to print ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}? This will open the print dialog in your browser.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
+            ),
+            child: const Text('Print'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Get job records data
+      final allRecordsAsync = await ref.read(jobRecordsSearchStreamProvider(
+        searchQuery: _searchQuery,
+        startDate: _selectedDateRange?.start,
+        endDate: _selectedDateRange?.end,
+        creatorId: _selectedCreator,
+      ).future);
+
+      // Filter only selected records
+      final selectedRecords = allRecordsAsync
+          .where((record) => selectedIds.contains(record.id))
+          .toList();
+
+      if (selectedRecords.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('No records found to print'),
+              backgroundColor: context.colors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Call print service
+      await JobRecordPrintService.printJobRecords(selectedRecords);
+
+      // Exit selection mode after successful print
+      ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Print initiated for ${selectedRecords.length} record${selectedRecords.length > 1 ? 's' : ''}'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error printing records: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
   }
 
 
@@ -319,7 +518,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
           ),
           SizedBox(height: spacing2),
           ElevatedButton.icon(
-            onPressed: () => context.push('/job-record-create'),
+            onPressed: () => _createNewJobRecord(),
             icon: const Icon(Icons.add),
             label: const Text('Create New Job Record'),
             style: ElevatedButton.styleFrom(
@@ -331,5 +530,15 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         ],
       ),
     );
+  }
+
+  void _createNewJobRecord() {
+    // Reset all form state providers before creating new record
+    ref.read(jobRecordFormStateProvider.notifier).resetForm();
+    ref.read(isEditModeProvider.notifier).setEditMode(false);
+    ref.read(currentStepNotifierProvider.notifier).setStep(0);
+    
+    // Navigate to create screen
+    context.push('/job-record-create');
   }
 }

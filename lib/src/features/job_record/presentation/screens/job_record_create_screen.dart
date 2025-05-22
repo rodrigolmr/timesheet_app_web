@@ -8,19 +8,64 @@ import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/job_record_stepper.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step1_header_form.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step2_employees_form.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/create/step3_review_form.dart';
 
 class JobRecordCreateScreen extends ConsumerStatefulWidget {
-  const JobRecordCreateScreen({super.key});
+  final String? editRecordId;
+  
+  const JobRecordCreateScreen({
+    super.key,
+    this.editRecordId,
+  });
 
   @override
   ConsumerState<JobRecordCreateScreen> createState() => _JobRecordCreateScreenState();
 }
 
 class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
+  bool _isInitialized = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Initialize form with existing data if editing
+    if (widget.editRecordId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(isEditModeProvider.notifier).setEditMode(true);
+        _loadExistingRecord();
+      });
+    } else {
+      // Ensure we're not in edit mode for new records
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(isEditModeProvider.notifier).setEditMode(false);
+      });
+    }
+  }
+  
+  void _loadExistingRecord() {
+    final recordAsync = ref.read(jobRecordByIdProvider(widget.editRecordId!));
+    recordAsync.when(
+      data: (record) {
+        if (record != null && !_isInitialized) {
+          ref.read(jobRecordFormStateProvider.notifier).loadFromExistingRecord(record);
+          _isInitialized = true;
+        }
+      },
+      loading: () {},
+      error: (error, stack) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading job record: $error'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      },
+    );
+  }
   
   Widget _buildCurrentStep(int currentStep) {
     switch (currentStep) {
@@ -122,7 +167,9 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
           style: context.textStyles.title,
         ),
         content: Text(
-          'Are you ready to submit this job record? Once submitted, it cannot be edited.',
+          widget.editRecordId != null 
+            ? 'Are you ready to save changes to this job record?'
+            : 'Are you ready to submit this job record? Once submitted, it cannot be edited.',
           style: context.textStyles.body,
         ),
         actions: [
@@ -131,7 +178,7 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
             style: TextButton.styleFrom(
               foregroundColor: context.colors.textSecondary,
             ),
-            child: Text('Review Again'),
+            child: Text(widget.editRecordId != null ? 'Review Again' : 'Review Again'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -139,7 +186,7 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
               backgroundColor: context.colors.primary,
               foregroundColor: context.colors.onPrimary,
             ),
-            child: Text('Submit'),
+            child: Text(widget.editRecordId != null ? 'Save' : 'Submit'),
           ),
         ],
       ),
@@ -167,7 +214,9 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
                 ),
                 SizedBox(height: context.dimensions.spacingM),
                 Text(
-                  'Submitting job record...',
+                  widget.editRecordId != null 
+                    ? 'Saving changes...' 
+                    : 'Submitting job record...',
                   style: context.textStyles.body,
                 ),
                 SizedBox(height: context.dimensions.spacingS),
@@ -183,7 +232,9 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
         ),
       );
       
-      final success = await ref.read(jobRecordFormStateProvider.notifier).submitJobRecord();
+      final success = await ref.read(jobRecordFormStateProvider.notifier).submitJobRecord(
+        editRecordId: widget.editRecordId,
+      );
       
       // Close loading dialog
       if (mounted) {
@@ -194,12 +245,15 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Job record submitted successfully!'),
+              content: Text(widget.editRecordId != null 
+                ? 'Job record updated successfully!' 
+                : 'Job record submitted successfully!'),
               backgroundColor: context.colors.success,
             ),
           );
           
-          // Navigate back to home
+          // Reset edit mode and navigate back to home
+          ref.read(isEditModeProvider.notifier).setEditMode(false);
           context.go(AppRoute.home.path);
         }
       }
@@ -269,6 +323,7 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(jobRecordFormStateProvider.notifier).resetForm();
+              ref.read(isEditModeProvider.notifier).setEditMode(false);
               context.go(AppRoute.home.path);
             },
             style: TextButton.styleFrom(
@@ -320,9 +375,74 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
   Widget build(BuildContext context) {
     final currentStep = ref.watch(currentStepNotifierProvider);
     
+    // If editing, show loading while data loads
+    if (widget.editRecordId != null && !_isInitialized) {
+      final recordAsync = ref.watch(jobRecordByIdProvider(widget.editRecordId!));
+      return recordAsync.when(
+        data: (record) {
+          if (record != null && !_isInitialized) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(jobRecordFormStateProvider.notifier).loadFromExistingRecord(record);
+              _isInitialized = true;
+            });
+          }
+          return _buildContent(context, currentStep);
+        },
+        loading: () => Scaffold(
+          appBar: AppHeader(
+            title: 'Loading Job Record',
+            showBackButton: true,
+            onBackPressed: () => context.go(AppRoute.home.path),
+          ),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, stack) => Scaffold(
+          appBar: AppHeader(
+            title: 'Error',
+            showBackButton: true,
+            onBackPressed: () => context.go(AppRoute.home.path),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: context.colors.error,
+                ),
+                SizedBox(height: context.dimensions.spacingM),
+                Text(
+                  'Error loading job record',
+                  style: context.textStyles.title,
+                ),
+                SizedBox(height: context.dimensions.spacingS),
+                Text(
+                  error.toString(),
+                  style: context.textStyles.body.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: context.dimensions.spacingL),
+                ElevatedButton(
+                  onPressed: () => context.go(AppRoute.home.path),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return _buildContent(context, currentStep);
+  }
+  
+  Widget _buildContent(BuildContext context, int currentStep) {
     return Scaffold(
       appBar: AppHeader(
-        title: 'Create Job Record',
+        title: widget.editRecordId != null ? 'Edit Job Record' : 'Create Job Record',
         showBackButton: true,
         onBackPressed: () => context.go(AppRoute.home.path),
       ),

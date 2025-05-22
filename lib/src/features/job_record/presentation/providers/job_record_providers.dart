@@ -8,6 +8,96 @@ import 'package:timesheet_app_web/src/features/user/presentation/providers/user_
 
 part 'job_record_providers.g.dart';
 
+/// Estado para gerenciar seleção múltipla de job records
+class JobRecordSelectionState {
+  const JobRecordSelectionState({
+    this.isSelectionMode = false,
+    this.selectedIds = const <String>{},
+  });
+
+  final bool isSelectionMode;
+  final Set<String> selectedIds;
+
+  JobRecordSelectionState copyWith({
+    bool? isSelectionMode,
+    Set<String>? selectedIds,
+  }) {
+    return JobRecordSelectionState(
+      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      selectedIds: selectedIds ?? this.selectedIds,
+    );
+  }
+
+  bool get hasSelection => selectedIds.isNotEmpty;
+  int get selectionCount => selectedIds.length;
+  
+  bool isSelected(String id) => selectedIds.contains(id);
+}
+
+/// Provider notifier para gerenciar seleção múltipla
+@riverpod
+class JobRecordSelection extends _$JobRecordSelection {
+  @override
+  JobRecordSelectionState build() {
+    return const JobRecordSelectionState();
+  }
+
+  /// Entra no modo de seleção
+  void enterSelectionMode() {
+    state = state.copyWith(
+      isSelectionMode: true,
+      selectedIds: <String>{},
+    );
+  }
+
+  /// Sai do modo de seleção
+  void exitSelectionMode() {
+    state = const JobRecordSelectionState();
+  }
+
+  /// Seleciona ou deseleciona um registro
+  void toggleSelection(String id) {
+    if (!state.isSelectionMode) return;
+    
+    final newSelectedIds = Set<String>.from(state.selectedIds);
+    if (newSelectedIds.contains(id)) {
+      newSelectedIds.remove(id);
+    } else {
+      newSelectedIds.add(id);
+    }
+    
+    state = state.copyWith(selectedIds: newSelectedIds);
+  }
+
+  /// Seleciona todos os registros visíveis
+  void selectAll(List<String> allRecordIds) {
+    if (!state.isSelectionMode) return;
+    
+    state = state.copyWith(
+      selectedIds: Set<String>.from(allRecordIds),
+    );
+  }
+
+  /// Deseleciona todos
+  void selectNone() {
+    if (!state.isSelectionMode) return;
+    
+    state = state.copyWith(selectedIds: <String>{});
+  }
+
+  /// Remove registros selecionados do estado após exclusão
+  void removeDeletedRecords(Set<String> deletedIds) {
+    final newSelectedIds = Set<String>.from(state.selectedIds);
+    newSelectedIds.removeAll(deletedIds);
+    
+    state = state.copyWith(
+      selectedIds: newSelectedIds,
+      // Sai do modo seleção se não há mais nada selecionado
+      isSelectionMode: newSelectedIds.isNotEmpty || state.isSelectionMode,
+    );
+  }
+}
+
 /// Provider que fornece o repositório de registros de trabalho
 @riverpod
 JobRecordRepository jobRecordRepository(JobRecordRepositoryRef ref) {
@@ -20,6 +110,12 @@ JobRecordRepository jobRecordRepository(JobRecordRepositoryRef ref) {
 @riverpod
 Future<List<JobRecordModel>> jobRecords(JobRecordsRef ref) {
   return ref.watch(jobRecordRepositoryProvider).getAll();
+}
+
+/// Provider para obter um registro específico por ID
+@riverpod
+Future<JobRecordModel?> jobRecordById(JobRecordByIdRef ref, String id) {
+  return ref.watch(jobRecordRepositoryProvider).getById(id);
 }
 
 /// Provider para observar todos os registros em tempo real com cache
@@ -157,30 +253,54 @@ bool _recordContainsSearchTerm(JobRecordModel record, String term) {
 /// Provider para obter a lista de criadores dos job records com names
 @Riverpod(keepAlive: true)
 Future<List<({String id, String name})>> jobRecordCreators(JobRecordCreatorsRef ref) async {
-  // Busca todos os registros uma vez
-  final records = await ref.watch(jobRecordsProvider.future);
-  
-  // Extraímos os IDs únicos dos criadores
-  final creatorIds = records.map((record) => record.userId).toSet().toList();
-  
-  // Lista para armazenar criadores com nomes
-  final List<({String id, String name})> creatorsWithNames = [];
-  
-  // Buscar todos os usuários uma vez só
-  final allUsers = await ref.read(usersProvider.future);
-  final usersMap = { for (var user in allUsers) user.id: user };
-  
-  // Para cada ID, buscar informações do usuário
-  for (final creatorId in creatorIds) {
-    final user = usersMap[creatorId];
-    final name = user != null ? '${user.firstName} ${user.lastName}' : 'Unknown User';
-    creatorsWithNames.add((id: creatorId, name: name));
+  try {
+    // Busca todos os registros uma vez
+    final records = await ref.watch(jobRecordsProvider.future);
+    print('DEBUG: Found ${records.length} job records');
+    
+    // Extraímos os IDs únicos dos criadores
+    final creatorIds = records.map((record) => record.userId).toSet().toList();
+    print('DEBUG: Creator IDs from job records: $creatorIds');
+    
+    // Lista para armazenar criadores com nomes
+    final List<({String id, String name})> creatorsWithNames = [];
+    
+    // Buscar todos os usuários uma vez só
+    final allUsers = await ref.read(usersProvider.future);
+    print('DEBUG: Found ${allUsers.length} users');
+    print('DEBUG: User IDs: ${allUsers.map((u) => u.id).toList()}');
+    final usersMap = { for (var user in allUsers) user.id: user };
+    
+    // Para cada ID, buscar informações do usuário
+    for (final creatorId in creatorIds) {
+      // Busca por ID ou authUid (igual ao job_record_card.dart)
+      var user = usersMap[creatorId];
+      if (user == null) {
+        // Tenta buscar por authUid
+        try {
+          user = allUsers.firstWhere((u) => u.authUid == creatorId);
+        } catch (e) {
+          user = null;
+        }
+      }
+                   
+      if (user != null) {
+        final name = '${user.firstName} ${user.lastName}'.trim();
+        print('DEBUG: Found user for ID $creatorId: $name');
+        creatorsWithNames.add((id: creatorId, name: name));
+      } else {
+        print('DEBUG: NO USER FOUND for ID: $creatorId');
+        creatorsWithNames.add((id: creatorId, name: 'Unknown User'));
+      }
+    }
+    
+    print('DEBUG: Final creators list: ${creatorsWithNames.map((c) => '${c.id}: ${c.name}').toList()}');
+    return creatorsWithNames..sort((a, b) => a.name.compareTo(b.name));
+  } catch (e) {
+    print('DEBUG: Error in jobRecordCreators: $e');
+    // Em caso de erro, retorna lista vazia
+    return [];
   }
-  
-  // Ordenar por nome para consistência
-  creatorsWithNames.sort((a, b) => a.name.compareTo(b.name));
-  
-  return creatorsWithNames;
 }
 
 /// Provider para agrupar registros por semana removido - usando agrupamento direto no widget conforme GUIDE.md

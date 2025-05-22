@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 
 class JobRecordCard extends ConsumerWidget {
@@ -24,6 +25,10 @@ class JobRecordCard extends ConsumerWidget {
     final month = DateFormat('MMM').format(date);
     final colors = context.colors;
     final textStyles = context.textStyles;
+    
+    // Watch selection state
+    final selectionState = ref.watch(jobRecordSelectionProvider);
+    final isSelected = selectionState.isSelected(record.id);
     
     // Make the card width responsive to the screen size
     final cardWidth = context.responsive<double>(
@@ -75,13 +80,26 @@ class JobRecordCard extends ConsumerWidget {
         child: SizedBox(
           width: cardWidth,
           child: GestureDetector(
-            onTap: onTap ?? () => context.push('/job-records/${record.id}'),
+            onTap: () {
+              if (selectionState.isSelectionMode) {
+                ref.read(jobRecordSelectionProvider.notifier).toggleSelection(record.id);
+              } else {
+                if (onTap != null) {
+                  onTap!();
+                } else {
+                  context.push('/job-records/${record.id}');
+                }
+              }
+            },
             child: Container(
               width: cardWidth,
               height: cardHeight,
               decoration: BoxDecoration(
-                color: colors.surface, // Fundo neutro sem amarelo
-                border: Border.all(color: colors.secondary, width: 1), // Mantém a borda dos inputs
+                color: isSelected ? colors.primary.withOpacity(0.1) : colors.surface,
+                border: Border.all(
+                  color: isSelected ? colors.primary : colors.secondary, 
+                  width: isSelected ? 2 : 1,
+                ),
                 borderRadius: BorderRadius.circular(4),
               ),
               clipBehavior: Clip.antiAlias,
@@ -163,7 +181,13 @@ class JobRecordCard extends ConsumerWidget {
                   Container(
                     width: creatorWidth,
                     alignment: Alignment.center,
-                    color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
+                    decoration: BoxDecoration(
+                      color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
+                      borderRadius: selectionState.isSelectionMode ? null : const BorderRadius.only(
+                        topRight: Radius.circular(3),
+                        bottomRight: Radius.circular(3),
+                      ),
+                    ),
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: FutureBuilder<({String firstName, String lastName})>(
                       future: _getCreatorNames(ref, record.userId),
@@ -202,6 +226,32 @@ class JobRecordCard extends ConsumerWidget {
                       },
                     ),
                   ),
+                  
+                  // Checkbox para modo de seleção
+                  if (selectionState.isSelectionMode)
+                    Container(
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: colors.surfaceAccent.withOpacity(0.85),
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(3),
+                          bottomRight: Radius.circular(3),
+                        ),
+                      ),
+                      child: Center(
+                        child: Checkbox(
+                          value: isSelected,
+                          onChanged: (value) {
+                            ref.read(jobRecordSelectionProvider.notifier).toggleSelection(record.id);
+                          },
+                          activeColor: colors.primary,
+                          side: BorderSide(
+                            color: colors.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -22,8 +22,13 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
     super.initState();
     // Initialize with existing notes if any
     final formState = ref.read(jobRecordFormStateProvider);
+    final isEditMode = ref.read(isEditModeProvider);
+    
     _notesController.text = formState.notes;
-    _showNotesField = formState.notes.isNotEmpty;
+    
+    // In edit mode, always start with notes field closed even if there are notes
+    // In create mode, show field if there are existing notes
+    _showNotesField = isEditMode ? false : formState.notes.isNotEmpty;
   }
 
   @override
@@ -750,18 +755,6 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
           ],
         ),
     ];
-
-    // Adiciona linhas em branco extras
-    for (int i = 0; i < 4; i++) {
-      rows.add(
-        TableRow(
-          children: [
-            for (int c = 0; c < 6; c++)
-              _buildDataCell('', fontSize: baseFontSize, textAlign: TextAlign.left),
-          ],
-        ),
-      );
-    }
 
     return SizedBox(
       width: double.infinity,

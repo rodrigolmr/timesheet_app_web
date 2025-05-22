@@ -28,6 +28,7 @@ enum AppRoute {
   themeSelector('/settings/theme-selector'),
   database('/settings/database'),
   jobRecordCreate('/job-record-create'),
+  jobRecordEdit('/job-records/edit/:id'),
   jobRecords('/job-records'),
   timesheetList('/timesheets'),
   jobRecordDetails('/job-records/:id'),
@@ -125,6 +126,14 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.jobRecordCreate.path,
         name: AppRoute.jobRecordCreate.name,
         builder: (context, state) => const JobRecordCreateScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.jobRecordEdit.path,
+        name: AppRoute.jobRecordEdit.name,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return JobRecordCreateScreen(editRecordId: id);
+        },
       ),
       GoRoute(
         path: AppRoute.jobRecords.path,
