@@ -9,7 +9,7 @@ part 'user_search_providers.g.dart';
 @Riverpod(keepAlive: true)
 Stream<List<UserModel>> cachedUsers(CachedUsersRef ref) {
   // Usamos o stream existente com a persistência do Firestore
-  return ref.watch(usersStreamProvider);
+  return ref.read(usersStreamProvider.stream);
 }
 
 /// Enumeração para ordenação de usuários

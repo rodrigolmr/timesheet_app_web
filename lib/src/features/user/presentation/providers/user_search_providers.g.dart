@@ -6,7 +6,7 @@ part of 'user_search_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$cachedUsersHash() => r'2b5e443c03b99ad8f7279b4711c8ec03d33ba131';
+String _$cachedUsersHash() => r'6730ecda7329e5beadc34b4a99ab803ab4b54792';
 
 /// Provider para armazenar todos os usuários em cache
 ///

@@ -10,6 +10,9 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   /// Título principal exibido no cabeçalho
   final String title;
   
+  /// Subtítulo opcional exibido no cabeçalho
+  final String? subtitle;
+  
   /// Ícone para o botão de ação principal (à direita)
   final IconData? actionIcon;
   
@@ -47,6 +50,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   const AppHeader({
     Key? key,
     required this.title,
+    this.subtitle,
     this.actionIcon,
     this.onActionPressed,
     this.actionTooltip,

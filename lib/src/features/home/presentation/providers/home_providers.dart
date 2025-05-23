@@ -44,6 +44,14 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       isActive: true,
     ),
     HomeNavigationItem(
+      title: 'Document Scanner',
+      description: 'Scan documents and receipts',
+      icon: Icons.document_scanner,
+      route: AppRoute.documentScanner.path,
+      categoryName: 'scanner',
+      isActive: true,
+    ),
+    HomeNavigationItem(
       title: 'Expenses',
       description: 'Manage and submit expense reports',
       icon: Icons.receipt_long,

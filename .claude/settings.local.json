@@ -19,7 +19,9 @@
       "Bash(mv:*)",
       "Bash(rg:*)",
       "Bash(flutter pub run build_runner build:*)",
-      "Bash(flutter pub:*)"
+      "Bash(flutter pub:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(git log:*)"
     ],
     "deny": []
   }

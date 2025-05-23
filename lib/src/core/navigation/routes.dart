@@ -14,6 +14,7 @@ import 'package:timesheet_app_web/src/features/job_record/presentation/screens/j
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_records_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_details_screen.dart';
 import 'package:timesheet_app_web/src/demo/week_grouping_demo.dart';
+import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_scanner_screen.dart';
 
 part 'routes.g.dart';
 
@@ -32,7 +33,8 @@ enum AppRoute {
   jobRecords('/job-records'),
   timesheetList('/timesheets'),
   jobRecordDetails('/job-records/:id'),
-  weekGroupingDemo('/demo/week-grouping');
+  weekGroupingDemo('/demo/week-grouping'),
+  documentScanner('/scanner');
 
   const AppRoute(this.path);
   final String path;
@@ -157,6 +159,11 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.weekGroupingDemo.path,
         name: AppRoute.weekGroupingDemo.name,
         builder: (context, state) => const WeekGroupingDemo(),
+      ),
+      GoRoute(
+        path: AppRoute.documentScanner.path,
+        name: AppRoute.documentScanner.name,
+        builder: (context, state) => const DocumentScannerScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

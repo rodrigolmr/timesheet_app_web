@@ -7,7 +7,7 @@ part of 'home_providers.dart';
 // **************************************************************************
 
 String _$homeNavigationItemsHash() =>
-    r'f9d45368dd846b3f0c121d80dacbc0cfe43773e7';
+    r'db052ac234ce1e6e6f54d4ef7cf987c4bbfb0130';
 
 /// Provider for home navigation items
 ///
