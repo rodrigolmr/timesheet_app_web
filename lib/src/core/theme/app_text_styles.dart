@@ -44,6 +44,8 @@ class AppTextStyles {
   // Material 3 style mapping
   TextStyle get titleLarge => title;
   TextStyle get titleMedium => subtitle;
+  TextStyle get titleSmall => caption;
+  TextStyle get headlineSmall => headline.copyWith(fontSize: 20);
   TextStyle get bodyMedium => body;
   TextStyle get labelMedium => inputLabel;
   TextStyle get labelSmall => inputFloatingLabel;

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timesheet_app_web/src/core/config/firebase_options.dart';
 import 'package:timesheet_app_web/src/core/theme/theme.dart';
 import 'package:timesheet_app_web/src/core/navigation/routes.dart';
+// import 'package:timesheet_app_web/src/core/services/app_initialization.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,15 @@ void main() async {
   
   // Inicializa o SharedPreferences para persistência de tema
   final prefs = await SharedPreferences.getInstance();
+  
+  // Inicializa os serviços da aplicação (removido temporariamente)
+  // try {
+  //   await AppInitializationService.initialize();
+  //   print('Main: Application services initialized successfully');
+  // } catch (e) {
+  //   print('Main: Warning - Some services failed to initialize: $e');
+  //   // Continue with the app even if some services fail
+  // }
   
   runApp(
     // Envolve o aplicativo com o ProviderScope para habilitar o Riverpod

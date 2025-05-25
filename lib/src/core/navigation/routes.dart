@@ -9,12 +9,12 @@ import 'package:timesheet_app_web/src/features/employee/presentation/screens/emp
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_selector_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/settings_screen.dart';
+// import 'package:timesheet_app_web/src/features/settings/presentation/screens/image_processing_debug_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/database_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_create_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_records_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_details_screen.dart';
 import 'package:timesheet_app_web/src/demo/week_grouping_demo.dart';
-import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_scanner_screen.dart';
 
 part 'routes.g.dart';
 
@@ -27,6 +27,7 @@ enum AppRoute {
   settings('/settings'),
   themeSettings('/settings/theme'),
   themeSelector('/settings/theme-selector'),
+  imageProcessingDebug('/settings/image-processing-debug'),
   database('/settings/database'),
   jobRecordCreate('/job-record-create'),
   jobRecordEdit('/job-records/edit/:id'),
@@ -34,7 +35,7 @@ enum AppRoute {
   timesheetList('/timesheets'),
   jobRecordDetails('/job-records/:id'),
   weekGroupingDemo('/demo/week-grouping'),
-  documentScanner('/scanner');
+;
 
   const AppRoute(this.path);
   final String path;
@@ -119,6 +120,11 @@ GoRouter goRouter(GoRouterRef ref) {
         name: AppRoute.themeSelector.name,
         builder: (context, state) => const ThemeSelectorScreen(),
       ),
+      // GoRoute(
+      //   path: AppRoute.imageProcessingDebug.path,
+      //   name: AppRoute.imageProcessingDebug.name,
+      //   builder: (context, state) => const ImageProcessingDebugScreen(),
+      // ),
       GoRoute(
         path: AppRoute.database.path,
         name: AppRoute.database.name,
@@ -159,11 +165,6 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.weekGroupingDemo.path,
         name: AppRoute.weekGroupingDemo.name,
         builder: (context, state) => const WeekGroupingDemo(),
-      ),
-      GoRoute(
-        path: AppRoute.documentScanner.path,
-        name: AppRoute.documentScanner.name,
-        builder: (context, state) => const DocumentScannerScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

@@ -159,6 +159,14 @@ class SettingsScreen extends ConsumerWidget {
       ),
       // Advanced
       NavigationCard(
+        title: 'Image Processing',
+        description: 'Debug info',
+        icon: Icons.image_search,
+        route: '/settings/image-processing-debug',
+        color: context.colors.primary,
+        isActive: true,
+      ),
+      NavigationCard(
         title: 'Debug',
         description: 'Dev tools',
         icon: Icons.bug_report,
