@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_status.dart';
 
 part 'expense_model.freezed.dart';
 part 'expense_model.g.dart';
@@ -20,6 +21,11 @@ class ExpenseModel with _$ExpenseModel {
     required String description,
     required String imageUrl,
     
+    // Campos de status
+    @Default(ExpenseStatus.pending) ExpenseStatus status,
+    String? reviewerNote,
+    DateTime? reviewedAt,
+    
     // Campos de controle (sistema)
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -29,6 +35,10 @@ class ExpenseModel with _$ExpenseModel {
 
   factory ExpenseModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
+    print('ExpenseModel.fromFirestore - Document ID: ${doc.id}');
+    print('ExpenseModel.fromFirestore - Data: $data');
+    print('ExpenseModel.fromFirestore - user_id field: ${data['user_id']}');
+    
     return ExpenseModel(
       id: doc.id,
       userId: data['user_id'] as String,
@@ -37,6 +47,13 @@ class ExpenseModel with _$ExpenseModel {
       date: (data['date'] as Timestamp).toDate(),
       description: data['description'] as String,
       imageUrl: data['image_url'] as String,
+      status: data['status'] != null 
+          ? ExpenseStatus.values.firstWhere((e) => e.name == data['status'])
+          : ExpenseStatus.pending,
+      reviewerNote: data['reviewer_note'] as String?,
+      reviewedAt: data['reviewed_at'] != null 
+          ? (data['reviewed_at'] as Timestamp).toDate()
+          : null,
       createdAt: (data['created_at'] as Timestamp).toDate(),
       updatedAt: (data['updated_at'] as Timestamp).toDate(),
     );
@@ -50,6 +67,9 @@ class ExpenseModel with _$ExpenseModel {
       'date': Timestamp.fromDate(date),
       'description': description,
       'image_url': imageUrl,
+      'status': status.name,
+      if (reviewerNote != null) 'reviewer_note': reviewerNote,
+      if (reviewedAt != null) 'reviewed_at': Timestamp.fromDate(reviewedAt!),
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

@@ -1,5 +1,6 @@
 import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 import 'package:timesheet_app_web/src/features/expense/data/models/expense_model.dart';
+import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_status.dart';
 
 abstract class ExpenseRepository implements BaseRepository<ExpenseModel> {
   /// Busca despesas por status

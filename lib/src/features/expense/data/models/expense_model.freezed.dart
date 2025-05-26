@@ -29,7 +29,10 @@ mixin _$ExpenseModel {
   double get amount => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
-  String get imageUrl =>
+  String get imageUrl => throw _privateConstructorUsedError; // Campos de status
+  ExpenseStatus get status => throw _privateConstructorUsedError;
+  String? get reviewerNote => throw _privateConstructorUsedError;
+  DateTime? get reviewedAt =>
       throw _privateConstructorUsedError; // Campos de controle (sistema)
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
@@ -59,6 +62,9 @@ abstract class $ExpenseModelCopyWith<$Res> {
     DateTime date,
     String description,
     String imageUrl,
+    ExpenseStatus status,
+    String? reviewerNote,
+    DateTime? reviewedAt,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -86,6 +92,9 @@ class _$ExpenseModelCopyWithImpl<$Res, $Val extends ExpenseModel>
     Object? date = null,
     Object? description = null,
     Object? imageUrl = null,
+    Object? status = null,
+    Object? reviewerNote = freezed,
+    Object? reviewedAt = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -126,6 +135,21 @@ class _$ExpenseModelCopyWithImpl<$Res, $Val extends ExpenseModel>
                     ? _value.imageUrl
                     : imageUrl // ignore: cast_nullable_to_non_nullable
                         as String,
+            status:
+                null == status
+                    ? _value.status
+                    : status // ignore: cast_nullable_to_non_nullable
+                        as ExpenseStatus,
+            reviewerNote:
+                freezed == reviewerNote
+                    ? _value.reviewerNote
+                    : reviewerNote // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            reviewedAt:
+                freezed == reviewedAt
+                    ? _value.reviewedAt
+                    : reviewedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
@@ -159,6 +183,9 @@ abstract class _$$ExpenseModelImplCopyWith<$Res>
     DateTime date,
     String description,
     String imageUrl,
+    ExpenseStatus status,
+    String? reviewerNote,
+    DateTime? reviewedAt,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -185,6 +212,9 @@ class __$$ExpenseModelImplCopyWithImpl<$Res>
     Object? date = null,
     Object? description = null,
     Object? imageUrl = null,
+    Object? status = null,
+    Object? reviewerNote = freezed,
+    Object? reviewedAt = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -225,6 +255,21 @@ class __$$ExpenseModelImplCopyWithImpl<$Res>
                 ? _value.imageUrl
                 : imageUrl // ignore: cast_nullable_to_non_nullable
                     as String,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as ExpenseStatus,
+        reviewerNote:
+            freezed == reviewerNote
+                ? _value.reviewerNote
+                : reviewerNote // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        reviewedAt:
+            freezed == reviewedAt
+                ? _value.reviewedAt
+                : reviewedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
         createdAt:
             null == createdAt
                 ? _value.createdAt
@@ -251,6 +296,9 @@ class _$ExpenseModelImpl extends _ExpenseModel {
     required this.date,
     required this.description,
     required this.imageUrl,
+    this.status = ExpenseStatus.pending,
+    this.reviewerNote,
+    this.reviewedAt,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -274,6 +322,14 @@ class _$ExpenseModelImpl extends _ExpenseModel {
   final String description;
   @override
   final String imageUrl;
+  // Campos de status
+  @override
+  @JsonKey()
+  final ExpenseStatus status;
+  @override
+  final String? reviewerNote;
+  @override
+  final DateTime? reviewedAt;
   // Campos de controle (sistema)
   @override
   final DateTime createdAt;
@@ -282,7 +338,7 @@ class _$ExpenseModelImpl extends _ExpenseModel {
 
   @override
   String toString() {
-    return 'ExpenseModel(id: $id, userId: $userId, cardId: $cardId, amount: $amount, date: $date, description: $description, imageUrl: $imageUrl, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ExpenseModel(id: $id, userId: $userId, cardId: $cardId, amount: $amount, date: $date, description: $description, imageUrl: $imageUrl, status: $status, reviewerNote: $reviewerNote, reviewedAt: $reviewedAt, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -299,6 +355,11 @@ class _$ExpenseModelImpl extends _ExpenseModel {
                 other.description == description) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.reviewerNote, reviewerNote) ||
+                other.reviewerNote == reviewerNote) &&
+            (identical(other.reviewedAt, reviewedAt) ||
+                other.reviewedAt == reviewedAt) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -316,6 +377,9 @@ class _$ExpenseModelImpl extends _ExpenseModel {
     date,
     description,
     imageUrl,
+    status,
+    reviewerNote,
+    reviewedAt,
     createdAt,
     updatedAt,
   );
@@ -343,6 +407,9 @@ abstract class _ExpenseModel extends ExpenseModel {
     required final DateTime date,
     required final String description,
     required final String imageUrl,
+    final ExpenseStatus status,
+    final String? reviewerNote,
+    final DateTime? reviewedAt,
     required final DateTime createdAt,
     required final DateTime updatedAt,
   }) = _$ExpenseModelImpl;
@@ -365,7 +432,13 @@ abstract class _ExpenseModel extends ExpenseModel {
   @override
   String get description;
   @override
-  String get imageUrl; // Campos de controle (sistema)
+  String get imageUrl; // Campos de status
+  @override
+  ExpenseStatus get status;
+  @override
+  String? get reviewerNote;
+  @override
+  DateTime? get reviewedAt; // Campos de controle (sistema)
   @override
   DateTime get createdAt;
   @override

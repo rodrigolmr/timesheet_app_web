@@ -47,9 +47,9 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       title: 'Expenses',
       description: 'Manage and submit expense reports',
       icon: Icons.receipt_long,
-      route: '/expenses', // TODO: Update with AppRoute.expenses.path when route is added
+      route: AppRoute.expenses.path,
       categoryName: 'receipt',
-      isActive: false,
+      isActive: true,
     ),
     HomeNavigationItem(
       title: 'Company Cards',

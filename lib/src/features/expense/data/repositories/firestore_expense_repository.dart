@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timesheet_app_web/src/core/repositories/firestore_repository.dart';
 import 'package:timesheet_app_web/src/features/expense/data/models/expense_model.dart';
 import 'package:timesheet_app_web/src/features/expense/domain/repositories/expense_repository.dart';
+import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_status.dart';
 
 class FirestoreExpenseRepository extends FirestoreRepository<ExpenseModel>
     implements ExpenseRepository {

@@ -474,6 +474,139 @@ class _UsersByRoleProviderElement
   String get role => (origin as UsersByRoleProvider).role;
 }
 
+String _$userByAuthUidHash() => r'4cf7ba0fd327f1a1f24c36508859dbc448d576da';
+
+/// Provider para obter um usuário por auth UID
+///
+/// Copied from [userByAuthUid].
+@ProviderFor(userByAuthUid)
+const userByAuthUidProvider = UserByAuthUidFamily();
+
+/// Provider para obter um usuário por auth UID
+///
+/// Copied from [userByAuthUid].
+class UserByAuthUidFamily extends Family<AsyncValue<UserModel?>> {
+  /// Provider para obter um usuário por auth UID
+  ///
+  /// Copied from [userByAuthUid].
+  const UserByAuthUidFamily();
+
+  /// Provider para obter um usuário por auth UID
+  ///
+  /// Copied from [userByAuthUid].
+  UserByAuthUidProvider call(String authUid) {
+    return UserByAuthUidProvider(authUid);
+  }
+
+  @override
+  UserByAuthUidProvider getProviderOverride(
+    covariant UserByAuthUidProvider provider,
+  ) {
+    return call(provider.authUid);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'userByAuthUidProvider';
+}
+
+/// Provider para obter um usuário por auth UID
+///
+/// Copied from [userByAuthUid].
+class UserByAuthUidProvider extends AutoDisposeFutureProvider<UserModel?> {
+  /// Provider para obter um usuário por auth UID
+  ///
+  /// Copied from [userByAuthUid].
+  UserByAuthUidProvider(String authUid)
+    : this._internal(
+        (ref) => userByAuthUid(ref as UserByAuthUidRef, authUid),
+        from: userByAuthUidProvider,
+        name: r'userByAuthUidProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$userByAuthUidHash,
+        dependencies: UserByAuthUidFamily._dependencies,
+        allTransitiveDependencies:
+            UserByAuthUidFamily._allTransitiveDependencies,
+        authUid: authUid,
+      );
+
+  UserByAuthUidProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.authUid,
+  }) : super.internal();
+
+  final String authUid;
+
+  @override
+  Override overrideWith(
+    FutureOr<UserModel?> Function(UserByAuthUidRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: UserByAuthUidProvider._internal(
+        (ref) => create(ref as UserByAuthUidRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        authUid: authUid,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<UserModel?> createElement() {
+    return _UserByAuthUidProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UserByAuthUidProvider && other.authUid == authUid;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, authUid.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin UserByAuthUidRef on AutoDisposeFutureProviderRef<UserModel?> {
+  /// The parameter `authUid` of this provider.
+  String get authUid;
+}
+
+class _UserByAuthUidProviderElement
+    extends AutoDisposeFutureProviderElement<UserModel?>
+    with UserByAuthUidRef {
+  _UserByAuthUidProviderElement(super.provider);
+
+  @override
+  String get authUid => (origin as UserByAuthUidProvider).authUid;
+}
+
 String _$activeUsersHash() => r'd3ec54c0589e6809b6fd173c7e6f596cee14b466';
 
 /// Provider para obter usuários ativos

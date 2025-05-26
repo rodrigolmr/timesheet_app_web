@@ -3,6 +3,7 @@ import 'package:timesheet_app_web/src/core/providers/firebase_providers.dart';
 import 'package:timesheet_app_web/src/features/expense/data/models/expense_model.dart';
 import 'package:timesheet_app_web/src/features/expense/data/repositories/firestore_expense_repository.dart';
 import 'package:timesheet_app_web/src/features/expense/domain/repositories/expense_repository.dart';
+import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_status.dart';
 
 part 'expense_providers.g.dart';
 

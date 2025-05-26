@@ -370,7 +370,7 @@ class ExpensesByStatusFamily extends Family<AsyncValue<List<ExpenseModel>>> {
   /// Provider para obter despesas por status
   ///
   /// Copied from [expensesByStatus].
-  ExpensesByStatusProvider call(InvalidType status) {
+  ExpensesByStatusProvider call(ExpenseStatus status) {
     return ExpensesByStatusProvider(status);
   }
 
@@ -404,7 +404,7 @@ class ExpensesByStatusProvider
   /// Provider para obter despesas por status
   ///
   /// Copied from [expensesByStatus].
-  ExpensesByStatusProvider(InvalidType status)
+  ExpensesByStatusProvider(ExpenseStatus status)
     : this._internal(
         (ref) => expensesByStatus(ref as ExpensesByStatusRef, status),
         from: expensesByStatusProvider,
@@ -429,7 +429,7 @@ class ExpensesByStatusProvider
     required this.status,
   }) : super.internal();
 
-  final InvalidType status;
+  final ExpenseStatus status;
 
   @override
   Override overrideWith(
@@ -472,7 +472,7 @@ class ExpensesByStatusProvider
 // ignore: unused_element
 mixin ExpensesByStatusRef on AutoDisposeFutureProviderRef<List<ExpenseModel>> {
   /// The parameter `status` of this provider.
-  InvalidType get status;
+  ExpenseStatus get status;
 }
 
 class _ExpensesByStatusProviderElement
@@ -481,7 +481,7 @@ class _ExpensesByStatusProviderElement
   _ExpensesByStatusProviderElement(super.provider);
 
   @override
-  InvalidType get status => (origin as ExpensesByStatusProvider).status;
+  ExpenseStatus get status => (origin as ExpensesByStatusProvider).status;
 }
 
 String _$expensesByStatusStreamHash() =>
@@ -506,7 +506,7 @@ class ExpensesByStatusStreamFamily
   /// Provider para observar despesas por status em tempo real
   ///
   /// Copied from [expensesByStatusStream].
-  ExpensesByStatusStreamProvider call(InvalidType status) {
+  ExpensesByStatusStreamProvider call(ExpenseStatus status) {
     return ExpensesByStatusStreamProvider(status);
   }
 
@@ -540,7 +540,7 @@ class ExpensesByStatusStreamProvider
   /// Provider para observar despesas por status em tempo real
   ///
   /// Copied from [expensesByStatusStream].
-  ExpensesByStatusStreamProvider(InvalidType status)
+  ExpensesByStatusStreamProvider(ExpenseStatus status)
     : this._internal(
         (ref) =>
             expensesByStatusStream(ref as ExpensesByStatusStreamRef, status),
@@ -566,7 +566,7 @@ class ExpensesByStatusStreamProvider
     required this.status,
   }) : super.internal();
 
-  final InvalidType status;
+  final ExpenseStatus status;
 
   @override
   Override overrideWith(
@@ -611,7 +611,7 @@ class ExpensesByStatusStreamProvider
 mixin ExpensesByStatusStreamRef
     on AutoDisposeStreamProviderRef<List<ExpenseModel>> {
   /// The parameter `status` of this provider.
-  InvalidType get status;
+  ExpenseStatus get status;
 }
 
 class _ExpensesByStatusStreamProviderElement
@@ -620,7 +620,7 @@ class _ExpensesByStatusStreamProviderElement
   _ExpensesByStatusStreamProviderElement(super.provider);
 
   @override
-  InvalidType get status => (origin as ExpensesByStatusStreamProvider).status;
+  ExpenseStatus get status => (origin as ExpensesByStatusStreamProvider).status;
 }
 
 String _$pendingExpensesHash() => r'66119a08e8c8c372f2c62d09147dd64d4d6eb441';

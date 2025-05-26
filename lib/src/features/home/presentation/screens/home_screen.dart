@@ -31,6 +31,12 @@ class HomeScreen extends ConsumerWidget {
         tablet: _buildTabletLayout(context, ref),
         desktop: _buildDesktopLayout(context, ref),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go(AppRoute.documentScanner.path),
+        label: const Text('Test Scanner'),
+        icon: const Icon(Icons.document_scanner),
+        backgroundColor: context.colors.secondary,
+      ),
     );
   }
 

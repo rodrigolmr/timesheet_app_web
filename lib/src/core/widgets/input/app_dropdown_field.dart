@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/app_input_field_base.dart';
 
 /// Dropdown field padronizado para seleção de itens em uma lista
-class AppDropdownField<T> extends StatelessWidget {
+class AppDropdownField<T> extends StatefulWidget {
   /// Texto do rótulo do campo
   final String label;
 
@@ -74,148 +73,158 @@ class AppDropdownField<T> extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // Determinamos a altura efetiva para o dropdown - um pouco menor que o input padrão
-    final effectiveHeight = height ?? 52.0;
-    
-    // Construímos um padding específico para compensar o espaço do ícone de dropdown
-    final dropdownPadding = EdgeInsets.symmetric(
-      horizontal: context.dimensions.paddingMedium,
-      vertical: 0, // Ajustamos o vertical para centralizar melhor o conteúdo
-    );
+  State<AppDropdownField<T>> createState() => _AppDropdownFieldState<T>();
+}
 
-    // Criamos o container que terá a mesma aparência de um AppInputFieldBase
-    return Container(
-      width: maxWidth ?? double.infinity,
-      height: effectiveHeight,
-      decoration: hasError
-          ? BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: context.colors.error.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            )
-          : null,
-      child: DropdownButtonFormField<T>(
-        focusNode: focusNode,
-        value: value,
-        isExpanded: true,
-        alignment: AlignmentDirectional.center,
-        icon: Icon(
-          Icons.arrow_drop_down,
-          color: hasError 
-              ? context.colors.error 
-              : context.colors.onSurfaceVariant,
-        ),
-        
-        // Estilo do item selecionado no dropdown
-        style: context.textStyles.input.copyWith(
-          color: context.colors.textPrimary,
-        ),
-        dropdownColor: context.colors.surfaceAccent,
-        
-        // Widget exibido quando nenhum valor está selecionado
-        hint: Text(
-          hintText,
-          style: context.textStyles.inputHint.copyWith(
-            color: context.colors.onSurfaceVariant.withOpacity(0.6),
-          ),
-          textAlign: TextAlign.center,
-        ),
-        
-        // O que acontece quando o valor muda
-        onChanged: enabled 
-            ? (newValue) {
-                if (hasError && onClearError != null) {
-                  onClearError!();
-                }
-                if (onChanged != null) {
-                  onChanged!(newValue);
-                }
-              }
+class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
+  late FocusNode _focusNode;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Padding fixo para reservar espaço para o glow (igual ao AppInputFieldBase)
+    const glowPadding = 4.0;
+    
+    // Define o padding interno (igual ao AppInputFieldBase)
+    final effectiveContentPadding = EdgeInsets.symmetric(
+      horizontal: context.dimensions.paddingMedium,
+      vertical: context.dimensions.paddingSmall,
+    );
+    
+    return Padding(
+      padding: const EdgeInsets.all(glowPadding),
+      child: Container(
+        width: widget.maxWidth ?? double.infinity,
+        height: widget.height,
+        decoration: widget.hasError
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.colors.error.withOpacity(0.5),
+                    blurRadius: 6,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              )
             : null,
-        
-        // Transforma cada item da lista em um DropdownMenuItem
-        items: items.map((item) {
-          if (itemBuilder != null) {
-            return itemBuilder!(item);
-          }
-          
-          return DropdownMenuItem<T>(
-            value: item,
-            alignment: Alignment.center,
-            child: Text(
-              itemLabelBuilder != null 
-                  ? itemLabelBuilder!(item) 
-                  : item.toString(),
-              style: context.textStyles.input.copyWith(
-                color: context.colors.textPrimary,
+        child: DropdownButtonFormField<T>(
+          value: widget.value,
+          focusNode: _focusNode,
+          items: widget.items.map((item) {
+            return DropdownMenuItem<T>(
+              value: item,
+              child: widget.itemBuilder != null
+                  ? widget.itemBuilder!(item).child!
+                  : Text(
+                      widget.itemLabelBuilder != null
+                          ? widget.itemLabelBuilder!(item)
+                          : item.toString(),
+                      style: context.textStyles.bodyMedium.copyWith(
+                        color: context.colors.onSurface,
+                      ),
+                    ),
+            );
+          }).toList(),
+          onChanged: widget.enabled 
+              ? (newValue) {
+                  if (widget.hasError && widget.onClearError != null) {
+                    widget.onClearError!();
+                  }
+                  if (widget.onChanged != null) {
+                    widget.onChanged!(newValue);
+                  }
+                }
+              : null,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            labelStyle: context.textStyles.labelMedium.copyWith(
+              color: widget.hasError 
+                  ? context.colors.error 
+                  : _isFocused
+                      ? context.colors.primary 
+                      : context.colors.onSurfaceVariant,
+            ),
+            floatingLabelStyle: context.textStyles.labelSmall.copyWith(
+              color: widget.hasError ? context.colors.error : context.colors.primary,
+            ),
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            prefixText: widget.prefixText,
+            prefixIcon: widget.prefixIcon,
+            filled: true,
+            fillColor: !widget.enabled 
+                ? context.colors.surfaceVariant.withOpacity(0.5)
+                : context.colors.surfaceAccent.withOpacity(0.85), // Mantém sempre o amarelo do tema
+            errorText: widget.hasError && widget.errorText != null ? widget.errorText : null,
+            errorStyle: context.textStyles.labelSmall.copyWith(color: context.colors.error),
+            contentPadding: effectiveContentPadding,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: widget.hasError ? context.colors.error : context.colors.secondary,
+                width: 1,
               ),
-              textAlign: TextAlign.center,
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
             ),
-          );
-        }).toList(),
-        
-        // Aplicamos uma decoração consistente com outros campos
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: context.textStyles.inputLabel.copyWith(
-            color: hasError 
-                ? context.colors.error 
-                : (focusNode?.hasFocus ?? false) 
-                    ? context.colors.primary 
-                    : context.colors.onSurfaceVariant,
-          ),
-          floatingLabelStyle: context.textStyles.inputFloatingLabel.copyWith(
-            color: hasError ? context.colors.error : context.colors.primary,
-          ),
-          prefixText: prefixText,
-          prefixIcon: prefixIcon,
-          filled: true,
-          fillColor: !enabled 
-              ? context.colors.surfaceVariant.withOpacity(0.5)
-              : context.colors.surfaceAccent.withOpacity(0.85),
-          errorText: hasError && errorText != null ? errorText : null,
-          errorStyle: context.textStyles.inputFloatingLabel.copyWith(color: context.colors.error),
-          contentPadding: dropdownPadding,
-          floatingLabelAlignment: FloatingLabelAlignment.center,
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: hasError ? context.colors.error : context.colors.outline,
-              width: 1,
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: widget.hasError ? context.colors.error : context.colors.primary,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
             ),
-            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: hasError ? context.colors.error : context.colors.primary,
-              width: 2,
+            disabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: context.colors.secondary.withOpacity(0.3),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
             ),
-            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-          ),
-          disabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: context.colors.outline.withOpacity(0.5),
-              width: 1,
+            errorBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: context.colors.error,
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
             ),
-            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: context.colors.error,
-              width: 1,
+            focusedErrorBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: context.colors.error,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusMedium),
             ),
-            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
           ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: context.colors.error,
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: widget.enabled
+                ? context.colors.onSurfaceVariant
+                : context.colors.onSurfaceVariant.withOpacity(0.3),
+          ),
+          style: context.textStyles.bodyMedium.copyWith(
+            color: context.colors.onSurface,
+            height: null,
           ),
         ),
       ),

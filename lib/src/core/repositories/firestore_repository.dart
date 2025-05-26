@@ -24,9 +24,16 @@ abstract class FirestoreRepository<T> implements BaseRepository<T> {
 
   @override
   Future<T?> getById(String id) async {
+    print('FirestoreRepository.getById - Collection: $_collectionPath, ID: $id');
     final doc = await collection.doc(id).get();
-    if (!doc.exists) return null;
-    return fromFirestore(doc);
+    print('FirestoreRepository.getById - Document exists: ${doc.exists}');
+    if (!doc.exists) {
+      print('FirestoreRepository.getById - Document not found for ID: $id');
+      return null;
+    }
+    final entity = fromFirestore(doc);
+    print('FirestoreRepository.getById - Entity created: $entity');
+    return entity;
   }
 
   @override

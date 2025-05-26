@@ -46,6 +46,12 @@ Future<List<UserModel>> usersByRole(UsersByRoleRef ref, String role) {
   return ref.watch(userRepositoryProvider).getUsersByRole(role);
 }
 
+/// Provider para obter um usuário por auth UID
+@riverpod
+Future<UserModel?> userByAuthUid(UserByAuthUidRef ref, String authUid) {
+  return ref.watch(userRepositoryProvider).getUserByAuthUid(authUid);
+}
+
 /// Provider para obter usuários ativos
 @riverpod
 Future<List<UserModel>> activeUsers(ActiveUsersRef ref) async {
