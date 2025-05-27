@@ -8,6 +8,7 @@ import 'document_crop_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../services/heic_converter_web.dart' 
   if (dart.library.io) '../../services/heic_converter_stub.dart';
+import '../../../../core/widgets/static_loading_indicator.dart';
 
 class DocumentScannerScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? extra;
@@ -110,17 +111,15 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
             showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (context) => const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Converting HEIC image...'),
-                      ],
+              builder: (context) => Container(
+                color: Colors.black.withOpacity(0.7),
+                child: const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: StaticLoadingIndicator(
+                        message: 'Converting HEIC image...',
+                      ),
                     ),
                   ),
                 ),
@@ -229,21 +228,17 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
     // Show loading screen while the camera or gallery is being opened
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(
-              color: Colors.white,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Loading...',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white70,
+      body: Container(
+        color: Colors.black.withOpacity(0.7),
+        child: const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: StaticLoadingIndicator(
+                message: 'Loading...',
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

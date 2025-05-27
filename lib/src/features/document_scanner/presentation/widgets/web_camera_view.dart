@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:convert';
+import '../../../../core/widgets/static_loading_indicator.dart';
 
 class WebCameraView extends StatefulWidget {
   final Function(Uint8List) onImageCaptured;
@@ -185,7 +186,10 @@ class _WebCameraViewState extends State<WebCameraView> {
       return Container(
         color: Colors.black,
         child: const Center(
-          child: CircularProgressIndicator(),
+          child: StaticLoadingIndicator(
+            color: Colors.white,
+            message: 'Initializing camera...',
+          ),
         ),
       );
     }
@@ -252,9 +256,9 @@ class _WebCameraViewState extends State<WebCameraView> {
                     child: _isCapturing
                         ? const Padding(
                             padding: EdgeInsets.all(20.0),
-                            child: CircularProgressIndicator(
+                            child: StaticLoadingIndicator(
+                              size: 32,
                               color: Colors.black,
-                              strokeWidth: 3,
                             ),
                           )
                         : const Icon(

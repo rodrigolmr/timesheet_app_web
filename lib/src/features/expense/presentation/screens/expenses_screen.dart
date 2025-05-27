@@ -11,6 +11,7 @@ import 'package:timesheet_app_web/src/features/user/presentation/providers/user_
 import 'package:timesheet_app_web/src/features/company_card/presentation/providers/company_card_providers.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/widgets/expense_filters.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/widgets/create_expense_dialog.dart';
+import 'package:go_router/go_router.dart';
 
 // Group expenses by month
 class ExpensePeriod {
@@ -308,15 +309,18 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       orElse: () => '****',
     );
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.colors.outline.withOpacity(0.3)),
-      ),
-      child: Row(
+    return InkWell(
+      onTap: () => context.push('/expenses/${expense.id}'),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: context.colors.outline.withOpacity(0.3)),
+        ),
+        child: Row(
         children: [
           // Date
           SizedBox(
@@ -378,6 +382,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

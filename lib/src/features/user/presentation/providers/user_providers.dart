@@ -40,6 +40,12 @@ Stream<UserModel?> userStream(UserStreamRef ref, String id) {
   return ref.watch(userRepositoryProvider).watchById(id);
 }
 
+/// Provider para observar um usuário específico em tempo real (alternativo para telas)
+@riverpod
+Stream<UserModel?> userByIdStream(UserByIdStreamRef ref, String id) {
+  return ref.watch(userRepositoryProvider).watchById(id);
+}
+
 /// Provider para obter usuários por cargo
 @riverpod
 Future<List<UserModel>> usersByRole(UsersByRoleRef ref, String role) {

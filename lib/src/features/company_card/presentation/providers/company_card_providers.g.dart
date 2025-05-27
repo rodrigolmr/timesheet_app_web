@@ -360,6 +360,144 @@ class _CompanyCardStreamProviderElement
   String get id => (origin as CompanyCardStreamProvider).id;
 }
 
+String _$companyCardByIdStreamHash() =>
+    r'defaae113309ea9b2d7fd8d921bd04da96738475';
+
+/// Provider para observar um cartão específico em tempo real (alternativo para telas)
+///
+/// Copied from [companyCardByIdStream].
+@ProviderFor(companyCardByIdStream)
+const companyCardByIdStreamProvider = CompanyCardByIdStreamFamily();
+
+/// Provider para observar um cartão específico em tempo real (alternativo para telas)
+///
+/// Copied from [companyCardByIdStream].
+class CompanyCardByIdStreamFamily
+    extends Family<AsyncValue<CompanyCardModel?>> {
+  /// Provider para observar um cartão específico em tempo real (alternativo para telas)
+  ///
+  /// Copied from [companyCardByIdStream].
+  const CompanyCardByIdStreamFamily();
+
+  /// Provider para observar um cartão específico em tempo real (alternativo para telas)
+  ///
+  /// Copied from [companyCardByIdStream].
+  CompanyCardByIdStreamProvider call(String id) {
+    return CompanyCardByIdStreamProvider(id);
+  }
+
+  @override
+  CompanyCardByIdStreamProvider getProviderOverride(
+    covariant CompanyCardByIdStreamProvider provider,
+  ) {
+    return call(provider.id);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'companyCardByIdStreamProvider';
+}
+
+/// Provider para observar um cartão específico em tempo real (alternativo para telas)
+///
+/// Copied from [companyCardByIdStream].
+class CompanyCardByIdStreamProvider
+    extends AutoDisposeStreamProvider<CompanyCardModel?> {
+  /// Provider para observar um cartão específico em tempo real (alternativo para telas)
+  ///
+  /// Copied from [companyCardByIdStream].
+  CompanyCardByIdStreamProvider(String id)
+    : this._internal(
+        (ref) => companyCardByIdStream(ref as CompanyCardByIdStreamRef, id),
+        from: companyCardByIdStreamProvider,
+        name: r'companyCardByIdStreamProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$companyCardByIdStreamHash,
+        dependencies: CompanyCardByIdStreamFamily._dependencies,
+        allTransitiveDependencies:
+            CompanyCardByIdStreamFamily._allTransitiveDependencies,
+        id: id,
+      );
+
+  CompanyCardByIdStreamProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    Stream<CompanyCardModel?> Function(CompanyCardByIdStreamRef provider)
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: CompanyCardByIdStreamProvider._internal(
+        (ref) => create(ref as CompanyCardByIdStreamRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<CompanyCardModel?> createElement() {
+    return _CompanyCardByIdStreamProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CompanyCardByIdStreamProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin CompanyCardByIdStreamRef
+    on AutoDisposeStreamProviderRef<CompanyCardModel?> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _CompanyCardByIdStreamProviderElement
+    extends AutoDisposeStreamProviderElement<CompanyCardModel?>
+    with CompanyCardByIdStreamRef {
+  _CompanyCardByIdStreamProviderElement(super.provider);
+
+  @override
+  String get id => (origin as CompanyCardByIdStreamProvider).id;
+}
+
 String _$activeCompanyCardsHash() =>
     r'd25534e8c91eb979852ae18c2149ae25ff52471b';
 

@@ -39,6 +39,12 @@ Stream<ExpenseModel?> expenseStream(ExpenseStreamRef ref, String id) {
   return ref.watch(expenseRepositoryProvider).watchById(id);
 }
 
+/// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+@riverpod
+Stream<ExpenseModel?> expenseByIdStream(ExpenseByIdStreamRef ref, String id) {
+  return ref.watch(expenseRepositoryProvider).watchById(id);
+}
+
 /// Provider para obter despesas por status
 @riverpod
 Future<List<ExpenseModel>> expensesByStatus(ExpensesByStatusRef ref, ExpenseStatus status) {

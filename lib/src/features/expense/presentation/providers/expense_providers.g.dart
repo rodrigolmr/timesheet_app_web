@@ -350,6 +350,140 @@ class _ExpenseStreamProviderElement
   String get id => (origin as ExpenseStreamProvider).id;
 }
 
+String _$expenseByIdStreamHash() => r'791830cdff6e07cb9656925bf1337ac6639ad823';
+
+/// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+///
+/// Copied from [expenseByIdStream].
+@ProviderFor(expenseByIdStream)
+const expenseByIdStreamProvider = ExpenseByIdStreamFamily();
+
+/// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+///
+/// Copied from [expenseByIdStream].
+class ExpenseByIdStreamFamily extends Family<AsyncValue<ExpenseModel?>> {
+  /// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+  ///
+  /// Copied from [expenseByIdStream].
+  const ExpenseByIdStreamFamily();
+
+  /// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+  ///
+  /// Copied from [expenseByIdStream].
+  ExpenseByIdStreamProvider call(String id) {
+    return ExpenseByIdStreamProvider(id);
+  }
+
+  @override
+  ExpenseByIdStreamProvider getProviderOverride(
+    covariant ExpenseByIdStreamProvider provider,
+  ) {
+    return call(provider.id);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'expenseByIdStreamProvider';
+}
+
+/// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+///
+/// Copied from [expenseByIdStream].
+class ExpenseByIdStreamProvider
+    extends AutoDisposeStreamProvider<ExpenseModel?> {
+  /// Provider para observar uma despesa específica em tempo real (alternativo para telas)
+  ///
+  /// Copied from [expenseByIdStream].
+  ExpenseByIdStreamProvider(String id)
+    : this._internal(
+        (ref) => expenseByIdStream(ref as ExpenseByIdStreamRef, id),
+        from: expenseByIdStreamProvider,
+        name: r'expenseByIdStreamProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$expenseByIdStreamHash,
+        dependencies: ExpenseByIdStreamFamily._dependencies,
+        allTransitiveDependencies:
+            ExpenseByIdStreamFamily._allTransitiveDependencies,
+        id: id,
+      );
+
+  ExpenseByIdStreamProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    Stream<ExpenseModel?> Function(ExpenseByIdStreamRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: ExpenseByIdStreamProvider._internal(
+        (ref) => create(ref as ExpenseByIdStreamRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<ExpenseModel?> createElement() {
+    return _ExpenseByIdStreamProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ExpenseByIdStreamProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin ExpenseByIdStreamRef on AutoDisposeStreamProviderRef<ExpenseModel?> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _ExpenseByIdStreamProviderElement
+    extends AutoDisposeStreamProviderElement<ExpenseModel?>
+    with ExpenseByIdStreamRef {
+  _ExpenseByIdStreamProviderElement(super.provider);
+
+  @override
+  String get id => (origin as ExpenseByIdStreamProvider).id;
+}
+
 String _$expensesByStatusHash() => r'cfa47ad4f531473d60b42f4f69f33ee75179b863';
 
 /// Provider para obter despesas por status

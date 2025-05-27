@@ -342,6 +342,139 @@ class _UserStreamProviderElement
   String get id => (origin as UserStreamProvider).id;
 }
 
+String _$userByIdStreamHash() => r'6211c87a60835dfe0c1e26421d44561cea260b59';
+
+/// Provider para observar um usuário específico em tempo real (alternativo para telas)
+///
+/// Copied from [userByIdStream].
+@ProviderFor(userByIdStream)
+const userByIdStreamProvider = UserByIdStreamFamily();
+
+/// Provider para observar um usuário específico em tempo real (alternativo para telas)
+///
+/// Copied from [userByIdStream].
+class UserByIdStreamFamily extends Family<AsyncValue<UserModel?>> {
+  /// Provider para observar um usuário específico em tempo real (alternativo para telas)
+  ///
+  /// Copied from [userByIdStream].
+  const UserByIdStreamFamily();
+
+  /// Provider para observar um usuário específico em tempo real (alternativo para telas)
+  ///
+  /// Copied from [userByIdStream].
+  UserByIdStreamProvider call(String id) {
+    return UserByIdStreamProvider(id);
+  }
+
+  @override
+  UserByIdStreamProvider getProviderOverride(
+    covariant UserByIdStreamProvider provider,
+  ) {
+    return call(provider.id);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'userByIdStreamProvider';
+}
+
+/// Provider para observar um usuário específico em tempo real (alternativo para telas)
+///
+/// Copied from [userByIdStream].
+class UserByIdStreamProvider extends AutoDisposeStreamProvider<UserModel?> {
+  /// Provider para observar um usuário específico em tempo real (alternativo para telas)
+  ///
+  /// Copied from [userByIdStream].
+  UserByIdStreamProvider(String id)
+    : this._internal(
+        (ref) => userByIdStream(ref as UserByIdStreamRef, id),
+        from: userByIdStreamProvider,
+        name: r'userByIdStreamProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$userByIdStreamHash,
+        dependencies: UserByIdStreamFamily._dependencies,
+        allTransitiveDependencies:
+            UserByIdStreamFamily._allTransitiveDependencies,
+        id: id,
+      );
+
+  UserByIdStreamProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.id,
+  }) : super.internal();
+
+  final String id;
+
+  @override
+  Override overrideWith(
+    Stream<UserModel?> Function(UserByIdStreamRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: UserByIdStreamProvider._internal(
+        (ref) => create(ref as UserByIdStreamRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        id: id,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<UserModel?> createElement() {
+    return _UserByIdStreamProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UserByIdStreamProvider && other.id == id;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, id.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin UserByIdStreamRef on AutoDisposeStreamProviderRef<UserModel?> {
+  /// The parameter `id` of this provider.
+  String get id;
+}
+
+class _UserByIdStreamProviderElement
+    extends AutoDisposeStreamProviderElement<UserModel?>
+    with UserByIdStreamRef {
+  _UserByIdStreamProviderElement(super.provider);
+
+  @override
+  String get id => (origin as UserByIdStreamProvider).id;
+}
+
 String _$usersByRoleHash() => r'8d4a11860e1ec1d38fe7fb37348118c3e69850e4';
 
 /// Provider para obter usuários por cargo

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:typed_data';
 import 'package:go_router/go_router.dart';
 import '../../services/image_processing_service.dart';
 import 'expense_info_screen.dart';
+import '../../../../core/widgets/static_loading_indicator.dart';
 
 class DocumentFilterScreen extends ConsumerStatefulWidget {
   final Uint8List imageData;
@@ -21,16 +23,48 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
   DocumentFilter _selectedFilter = DocumentFilter.enhanced;
   Uint8List? _processedImage;
   bool _isProcessing = false;
+  
+  // Cache for processed images
+  final Map<DocumentFilter, Uint8List> _filterCache = {};
 
   @override
   void initState() {
     super.initState();
-    // Show original image initially and apply enhanced filter
+    // Cache original image
+    _filterCache[DocumentFilter.original] = widget.imageData;
+    // Show original image initially
     _processedImage = widget.imageData;
-    // Apply enhanced filter after frame is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _applyFilter(DocumentFilter.enhanced);
-    });
+    // Process enhanced filter immediately since it's the default
+    _processEnhancedFilter();
+  }
+  
+  Future<void> _processEnhancedFilter() async {
+    try {
+      final processed = await ImageProcessingService.applyFilter(
+        imageData: widget.imageData,
+        filter: DocumentFilter.enhanced,
+      );
+      
+      if (mounted) {
+        // Cache the enhanced version
+        _filterCache[DocumentFilter.enhanced] = processed;
+        
+        // Update the display with enhanced version
+        setState(() {
+          _processedImage = processed;
+        });
+      }
+    } catch (e) {
+      // If processing fails, stay with original
+      debugPrint('Failed to apply enhanced filter: $e');
+    }
+  }
+  
+  @override
+  void dispose() {
+    // Clear cache to free memory
+    _filterCache.clear();
+    super.dispose();
   }
 
   Future<void> _applyFilter(DocumentFilter filter) async {
@@ -38,6 +72,18 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
 
     setState(() {
       _selectedFilter = filter;
+    });
+
+    // Check if we have this filter cached
+    if (_filterCache.containsKey(filter)) {
+      setState(() {
+        _processedImage = _filterCache[filter];
+      });
+      return;
+    }
+
+    // Filter not in cache, process it
+    setState(() {
       _isProcessing = true;
     });
 
@@ -51,6 +97,9 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
       );
 
       if (mounted) {
+        // Cache the processed image
+        _filterCache[filter] = processed;
+        
         setState(() {
           _processedImage = processed;
           _isProcessing = false;
@@ -102,23 +151,13 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
           if (_isProcessing)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.3),
-                child: Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 50,
-                        height: 50,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
+                color: Colors.black.withOpacity(0.7),
+                child: const Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: StaticLoadingIndicator(
+                        message: 'Applying filter...',
                       ),
                     ),
                   ),

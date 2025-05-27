@@ -38,6 +38,12 @@ Stream<CompanyCardModel?> companyCardStream(CompanyCardStreamRef ref, String id)
   return ref.watch(companyCardRepositoryProvider).watchById(id);
 }
 
+/// Provider para observar um cartão específico em tempo real (alternativo para telas)
+@riverpod
+Stream<CompanyCardModel?> companyCardByIdStream(CompanyCardByIdStreamRef ref, String id) {
+  return ref.watch(companyCardRepositoryProvider).watchById(id);
+}
+
 /// Provider para obter cartões ativos
 @riverpod
 Future<List<CompanyCardModel>> activeCompanyCards(ActiveCompanyCardsRef ref) {

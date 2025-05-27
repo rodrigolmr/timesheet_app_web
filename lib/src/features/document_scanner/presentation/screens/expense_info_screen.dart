@@ -14,6 +14,7 @@ import 'package:timesheet_app_web/src/features/expense/data/models/expense_model
 import 'package:timesheet_app_web/src/features/expense/presentation/providers/expense_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../../../core/widgets/static_loading_indicator.dart';
 
 class ExpenseInfoScreen extends ConsumerStatefulWidget {
   final Uint8List imageData;
@@ -122,13 +123,19 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
       await ref.read(expenseRepositoryProvider).create(expense);
 
       if (mounted) {
+        setState(() => _isLoading = false);
+        
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Expense saved successfully'),
             backgroundColor: context.colors.success,
+            duration: const Duration(seconds: 2),
           ),
         );
-        context.go('/'); // Go to home
+        
+        // Navigate to expenses screen
+        context.go('/expenses');
       }
     } catch (e) {
       if (mounted) {
@@ -147,13 +154,16 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
   Widget build(BuildContext context) {
     final cardsAsync = ref.watch(companyCardsStreamProvider);
 
-    return Scaffold(
-      backgroundColor: context.colors.background,
-      appBar: AppHeader(
-        title: 'Receipt Information',
-        showBackButton: true,
-      ),
-      body: SingleChildScrollView(
+    return StaticLoadingOverlay(
+      isVisible: _isLoading,
+      message: 'Saving expense...',
+      child: Scaffold(
+        backgroundColor: context.colors.background,
+        appBar: AppHeader(
+          title: 'Receipt Information',
+          showBackButton: true,
+        ),
+        body: SingleChildScrollView(
         child: ResponsiveContainer(
           child: Padding(
             padding: context.dimensions.padding,
@@ -177,7 +187,7 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
                         errorText: _cardError,
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: StaticLoadingIndicator()),
                     error: (e, _) => Text(
                       'Error loading cards: $e',
                       style: TextStyle(color: context.colors.error),
@@ -257,13 +267,9 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
                             ),
                           ),
                           child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
+                              ? const StaticLoadingIndicator(
+                                  size: 20,
+                                  color: Colors.white,
                                 )
                               : const Text('Save Expense'),
                         ),
@@ -299,6 +305,7 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

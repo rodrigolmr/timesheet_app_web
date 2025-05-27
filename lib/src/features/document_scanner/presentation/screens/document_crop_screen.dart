@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:go_router/go_router.dart';
 import '../../services/image_processing_service.dart' as img_service;
 import 'document_filter_screen.dart';
+import '../../../../core/widgets/static_loading_indicator.dart';
 
 class DocumentCropScreen extends ConsumerStatefulWidget {
   final Uint8List imageData;
@@ -70,60 +71,18 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black87,
       builder: (context) => WillPopScope(
         onWillPop: () async => false,
         child: Container(
-          color: Colors.transparent,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 4,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Processing document',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Applying perspective correction...',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+          color: Colors.black.withOpacity(0.7),
+          child: const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: StaticLoadingIndicator(
+                  message: 'Processing document',
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -187,7 +146,7 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
                   future: _getImageSize(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
-                      return const CircularProgressIndicator();
+                      return const StaticLoadingIndicator();
                     }
 
                     _imageSize = snapshot.data!;
