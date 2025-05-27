@@ -6,7 +6,7 @@ part of 'employee_search_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$cachedEmployeesHash() => r'4f46c60ebe40882baafe99bcf1e96a73c92e43fb';
+String _$cachedEmployeesHash() => r'100c5a9dc5c5489d3d11b01273b3bb1bfe79dba6';
 
 /// Provider para armazenar todos os funcionários em cache
 ///

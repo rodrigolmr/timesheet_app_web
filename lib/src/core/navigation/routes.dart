@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/home/presentation/screens/home_screen.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/screens/employees_placeholder.dart';
+import 'package:timesheet_app_web/src/features/employee/presentation/screens/employees_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_selector_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/settings_screen.dart';
@@ -25,9 +25,8 @@ part 'routes.g.dart';
 enum AppRoute {
   login('/login'),
   home('/'),
-  // Rotas de funcionários foram removidas
+  // Rotas de funcionários
   employees('/employees'),
-  employeeDetails('/employees/:id'),
   settings('/settings'),
   themeSettings('/settings/theme'),
   themeSelector('/settings/theme-selector'),
@@ -103,15 +102,7 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(
         path: AppRoute.employees.path,
         name: AppRoute.employees.name,
-        builder: (context, state) => const EmployeesPlaceholder(),
-      ),
-      GoRoute(
-        path: AppRoute.employeeDetails.path,
-        name: AppRoute.employeeDetails.name,
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return EmployeeDetailsPlaceholder(employeeId: id);
-        },
+        builder: (context, state) => const EmployeesScreen(),
       ),
       GoRoute(
         path: AppRoute.settings.path,

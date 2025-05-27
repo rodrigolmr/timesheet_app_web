@@ -54,12 +54,13 @@ class _WebCameraViewState extends State<WebCameraView> {
       
       // Request camera permission and get stream
       try {
-        // Try back camera first
+        // Try back camera first with higher resolution
         _stream = await html.window.navigator.mediaDevices!.getUserMedia({
           'video': {
             'facingMode': {'ideal': 'environment'},
-            'width': {'ideal': 1920},
-            'height': {'ideal': 1080},
+            'width': {'ideal': 3840},  // 4K width
+            'height': {'ideal': 2160}, // 4K height
+            'aspectRatio': {'ideal': 16/9},
           }
         });
       } catch (e) {
@@ -114,7 +115,7 @@ class _WebCameraViewState extends State<WebCameraView> {
       // Convert canvas to blob
       final completer = Completer<Uint8List>();
       
-      canvas.toBlob('image/jpeg', 0.95).then((blob) async {
+      canvas.toBlob('image/jpeg', 1.0).then((blob) async {  // Maximum quality
         final reader = html.FileReader();
         reader.readAsArrayBuffer(blob);
         await reader.onLoad.first;

@@ -18,10 +18,14 @@ import '../../../../core/widgets/static_loading_indicator.dart';
 
 class ExpenseInfoScreen extends ConsumerStatefulWidget {
   final Uint8List imageData;
+  final bool isPdf;
+  final String? fileName;
 
   const ExpenseInfoScreen({
     super.key,
     required this.imageData,
+    this.isPdf = false,
+    this.fileName,
   });
 
   @override
@@ -97,13 +101,19 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
       final currentUser = ref.read(currentUserProvider);
       if (currentUser == null) throw Exception('User not authenticated');
 
-      // Upload image to Firebase Storage
+      // Upload file to Firebase Storage
+      final fileExtension = widget.isPdf ? 'pdf' : 'jpg';
+      final fileName = widget.fileName ?? '${DateTime.now().millisecondsSinceEpoch}_${currentUser.uid}.$fileExtension';
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('receipts')
-          .child('${DateTime.now().millisecondsSinceEpoch}_${currentUser.uid}.jpg');
+          .child(fileName);
       
-      final uploadTask = await storageRef.putData(widget.imageData);
+      final metadata = SettableMetadata(
+        contentType: widget.isPdf ? 'application/pdf' : 'image/jpeg',
+      );
+      
+      final uploadTask = await storageRef.putData(widget.imageData, metadata);
       final imageUrl = await uploadTask.ref.getDownloadURL();
 
       // Create expense
@@ -125,6 +135,8 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         
+        debugPrint('Expense saved successfully - isPdf: ${widget.isPdf}');
+        
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -134,8 +146,26 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
           ),
         );
         
+        // Wait a bit for the snackbar to show, then navigate
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         // Navigate to expenses screen
-        context.go('/expenses');
+        if (mounted) {
+          debugPrint('Navigating to expenses screen...');
+          debugPrint('Current route: ${GoRouter.of(context).routeInformationProvider.value.uri}');
+          
+          // Pop all routes and go to expenses
+          while (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+          
+          // Small delay to ensure all pops are processed
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          if (mounted) {
+            context.go('/expenses');
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -292,11 +322,38 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                      child: Image.memory(
-                        widget.imageData,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                      ),
+                      child: widget.isPdf
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.picture_as_pdf,
+                                    size: 80,
+                                    color: context.colors.primary,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    widget.fileName ?? 'PDF Receipt',
+                                    style: context.textStyles.body,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'PDF file will be uploaded',
+                                    style: context.textStyles.caption.copyWith(
+                                      color: context.colors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Image.memory(
+                              widget.imageData,
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                            ),
                     ),
                   ),
                   SizedBox(height: context.dimensions.spacingXL),

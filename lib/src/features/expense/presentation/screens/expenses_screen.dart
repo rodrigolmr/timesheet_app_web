@@ -59,22 +59,79 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     super.dispose();
   }
 
+  PreferredSizeWidget _buildAppBar() {
+    final selectionState = ref.watch(expenseSelectionProvider);
+    
+    if (selectionState.isSelectionMode) {
+      return AppBar(
+        backgroundColor: context.colors.primary,
+        foregroundColor: context.colors.onPrimary,
+        title: Text(
+          '${selectionState.selectionCount} selected',
+          style: context.textStyles.title.copyWith(
+            color: context.colors.onPrimary,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => ref.read(expenseSelectionProvider.notifier).exitSelectionMode(),
+          tooltip: 'Cancel selection',
+        ),
+        actions: [
+          if (selectionState.hasSelection) ...[
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
+              tooltip: 'Delete selected',
+            ),
+          ],
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) => _handleSelectionAction(value),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'select_all',
+                child: Text('Select All'),
+              ),
+              const PopupMenuItem(
+                value: 'select_none',
+                child: Text('Select None'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    
+    return AppHeader(
+      title: 'Expenses',
+      subtitle: 'View and manage expense reports',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.checklist),
+          onPressed: () => ref.read(expenseSelectionProvider.notifier).enterSelectionMode(),
+          tooltip: 'Select expenses',
+        ),
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (_) => const CreateExpenseDialog(),
+            );
+          },
+          tooltip: 'Add expense',
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final expensesAsync = ref.watch(expensesStreamProvider);
     
     return Scaffold(
-      appBar: AppHeader(
-        title: 'Expenses',
-        subtitle: 'View and manage expense reports',
-        actionIcon: Icons.add,
-        onActionPressed: () {
-          showDialog(
-            context: context,
-            builder: (_) => const CreateExpenseDialog(),
-          );
-        },
-      ),
+      appBar: _buildAppBar(),
       body: Column(
         children: [
           _buildFilters(),
@@ -303,6 +360,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   Widget _buildCompactExpenseItem(BuildContext context, ExpenseModel expense) {
     // Get card information
     final cardAsync = ref.watch(companyCardProvider(expense.cardId));
+    final selectionState = ref.watch(expenseSelectionProvider);
+    final isSelected = selectionState.isSelected(expense.id);
     
     final cardLastFour = cardAsync.maybeWhen(
       data: (card) => card != null ? card.lastFourDigits : '****',
@@ -310,15 +369,34 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     );
     
     return InkWell(
-      onTap: () => context.push('/expenses/${expense.id}'),
+      onTap: () {
+        if (selectionState.isSelectionMode) {
+          ref.read(expenseSelectionProvider.notifier).toggleSelection(expense.id);
+        } else {
+          context.push('/expenses/${expense.id}');
+        }
+      },
+      onLongPress: () {
+        if (!selectionState.isSelectionMode) {
+          ref.read(expenseSelectionProvider.notifier).enterSelectionMode();
+          ref.read(expenseSelectionProvider.notifier).toggleSelection(expense.id);
+        }
+      },
       borderRadius: BorderRadius.circular(4),
       child: Container(
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: context.colors.surface,
+          color: isSelected 
+              ? context.colors.primary.withOpacity(0.1)
+              : context.colors.surface,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: context.colors.outline.withOpacity(0.3)),
+          border: Border.all(
+            color: isSelected 
+                ? context.colors.primary 
+                : context.colors.outline.withOpacity(0.3),
+            width: isSelected ? 2 : 1,
+          ),
         ),
         child: Row(
         children: [
@@ -381,6 +459,17 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
               fontSize: 12,
             ),
           ),
+          
+          // Selection checkbox on the right
+          if (selectionState.isSelectionMode) ...[
+            const SizedBox(width: 8),
+            Checkbox(
+              value: isSelected,
+              onChanged: (_) => ref.read(expenseSelectionProvider.notifier).toggleSelection(expense.id),
+              activeColor: context.colors.primary,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ],
         ],
       ),
       ),
@@ -475,5 +564,92 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       case ExpenseStatus.rejected:
         return context.colors.error;
     }
+  }
+
+  void _handleSelectionAction(String action) {
+    final expenses = ref.read(expensesStreamProvider).valueOrNull ?? [];
+    final filteredExpenses = _getFilteredExpenses(expenses);
+    final allIds = filteredExpenses.map((expense) => expense.id).toList();
+    
+    switch (action) {
+      case 'select_all':
+        ref.read(expenseSelectionProvider.notifier).selectAll(allIds);
+        break;
+      case 'select_none':
+        ref.read(expenseSelectionProvider.notifier).selectNone();
+        break;
+    }
+  }
+
+  List<ExpenseModel> _getFilteredExpenses(List<ExpenseModel> expenses) {
+    var filteredExpenses = expenses;
+    
+    if (_selectedDateRange != null) {
+      filteredExpenses = filteredExpenses.where((expense) {
+        return expense.date.isAfter(_selectedDateRange!.start.subtract(const Duration(days: 1))) &&
+               expense.date.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
+      }).toList();
+    }
+    
+    if (_selectedCard != null) {
+      filteredExpenses = filteredExpenses.where((expense) => expense.cardId == _selectedCard).toList();
+    }
+    
+    if (_selectedCreator != null) {
+      filteredExpenses = filteredExpenses.where((expense) => expense.userId == _selectedCreator).toList();
+    }
+    
+    return filteredExpenses;
+  }
+
+  void _showDeleteConfirmDialog(Set<String> selectedIds) {
+    showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Expenses'),
+        content: Text(
+          'Are you sure you want to delete ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.error,
+              foregroundColor: context.colors.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed == true) {
+        _deleteSelectedExpenses(selectedIds);
+      }
+    });
+  }
+
+  void _deleteSelectedExpenses(Set<String> selectedIds) async {
+    // TODO: Implementar exclusão em lote
+    // Por enquanto, exclui um por um
+    for (final id in selectedIds) {
+      try {
+        await ref.read(expenseRepositoryProvider).delete(id);
+      } catch (e) {
+        // Handle error
+      }
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Deleted ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''}'),
+        backgroundColor: context.colors.success,
+      ),
+    );
+    
+    ref.read(expenseSelectionProvider.notifier).exitSelectionMode();
   }
 }

@@ -71,7 +71,7 @@ class ImageProcessingService {
     }
 
     // Encode back to bytes
-    return Uint8List.fromList(img.encodeJpg(output, quality: 95));
+    return Uint8List.fromList(img.encodeJpg(output, quality: 100));  // Maximum quality
   }
 
   /// Apply filters to the image
@@ -123,7 +123,7 @@ class ImageProcessingService {
         break;
     }
 
-    return Uint8List.fromList(img.encodeJpg(processed, quality: 95));
+    return Uint8List.fromList(img.encodeJpg(processed, quality: 100));  // Maximum quality
   }
 }
 

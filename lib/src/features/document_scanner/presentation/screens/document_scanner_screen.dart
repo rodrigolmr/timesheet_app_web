@@ -84,9 +84,8 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 95,
-        maxWidth: 1920,
-        maxHeight: 1920,
+        imageQuality: 100,  // Maximum quality
+        // Remove size limits to preserve original resolution
       );
       
       if (image != null) {

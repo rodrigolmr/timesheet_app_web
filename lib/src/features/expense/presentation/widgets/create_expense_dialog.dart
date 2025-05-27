@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
-// import 'package:file_picker/file_picker.dart'; // TODO: Add file_picker dependency when implementing PDF upload
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
+import '../../../document_scanner/presentation/screens/expense_info_screen.dart';
+import 'pdf_picker_web.dart' if (dart.library.io) '';
 
 class CreateExpenseDialog extends StatelessWidget {
   const CreateExpenseDialog({super.key});
@@ -68,7 +72,6 @@ class CreateExpenseDialog extends StatelessWidget {
               title: 'Upload PDF',
               subtitle: 'Select a PDF receipt',
               onTap: () async {
-                Navigator.of(context).pop();
                 await _handlePdfUpload(context);
               },
             ),
@@ -154,12 +157,123 @@ class CreateExpenseDialog extends StatelessWidget {
   }
 
   Future<void> _handlePdfUpload(BuildContext context) async {
-    // TODO: Implement PDF upload when file_picker dependency is added
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('PDF upload functionality coming soon'),
-        backgroundColor: context.colors.info,
-      ),
-    );
+    try {
+      Uint8List? fileBytes;
+      String? fileName;
+      
+      // Try using FilePicker first for all platforms
+      try {
+        debugPrint('Attempting to pick PDF with FilePicker...');
+        
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+          withData: true,
+          allowMultiple: false,
+          lockParentWindow: false, // Changed to false for mobile compatibility
+          dialogTitle: 'Select PDF Receipt',
+        );
+        
+        if (result != null && result.files.isNotEmpty) {
+          final file = result.files.first;
+          fileBytes = file.bytes;
+          fileName = file.name;
+          debugPrint('PDF selected: $fileName, size: ${fileBytes?.length ?? 0} bytes');
+        } else {
+          debugPrint('No file selected');
+          return;
+        }
+      } catch (e) {
+        debugPrint('FilePicker error: $e');
+        
+        // If FilePicker fails on mobile web, try HTML5 approach
+        if (kIsWeb) {
+          debugPrint('Falling back to HTML5 file input...');
+          try {
+            final result = await PdfPickerWeb.pickPdf();
+            if (result != null) {
+              fileBytes = result.bytes;
+              fileName = result.name;
+              debugPrint('PDF selected via HTML5: $fileName, size: ${fileBytes!.length} bytes');
+            } else {
+              debugPrint('No PDF selected via HTML5');
+              return;
+            }
+          } catch (htmlError) {
+            debugPrint('HTML5 picker error: $htmlError');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Unable to select PDF. Please try again.'),
+                  backgroundColor: context.colors.error,
+                ),
+              );
+            }
+            return;
+          }
+        } else {
+          throw e;
+        }
+      }
+
+      if (fileBytes != null && fileName != null) {
+        // Navigate to expense info screen with PDF data
+        if (context.mounted) {
+          // Close the dialog first
+          Navigator.of(context).pop();
+          
+          // Then navigate to expense info screen
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExpenseInfoScreen(
+                imageData: fileBytes!,
+                isPdf: true,
+                fileName: fileName,
+              ),
+            ),
+          );
+        }
+      } else if (fileBytes == null) {
+        // Show error when file bytes are null
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Failed to load PDF file'),
+              backgroundColor: context.colors.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Hide loading indicator if still showing
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (context.mounted) {
+        String errorMessage = 'Error selecting PDF';
+        
+        // Handle specific errors
+        if (e.toString().contains('_instance')) {
+          errorMessage = 'Please try again. If the problem persists, try refreshing the page.';
+        } else if (e.toString().contains('User canceled')) {
+          // User canceled the picker, no need to show error
+          return;
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: context.colors.error,
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () => _handlePdfUpload(context),
+              textColor: Colors.white,
+            ),
+          ),
+        );
+      }
+    }
   }
 }

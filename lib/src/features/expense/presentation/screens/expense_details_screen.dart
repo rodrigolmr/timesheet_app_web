@@ -11,6 +11,9 @@ import 'package:timesheet_app_web/src/features/company_card/presentation/provide
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import '../../data/models/expense_model.dart';
 import '../../domain/enums/expense_status.dart';
+import '../widgets/pdf_viewer_dialog.dart';
+import 'package:timesheet_app_web/src/core/widgets/fullscreen_viewer_base.dart';
+import 'dart:html' as html;
 
 class ExpenseDetailsScreen extends ConsumerWidget {
   final String expenseId;
@@ -211,7 +214,20 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     InkWell(
-                      onTap: () => _viewFullImage(context),
+                      onTap: () {
+                        final isPdf = expense.imageUrl.toLowerCase().contains('.pdf');
+                        if (isPdf) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => PdfViewerDialog(
+                              pdfUrl: expense.imageUrl,
+                              title: 'Receipt - ${expense.description}',
+                            ),
+                          );
+                        } else {
+                          _viewFullImage(context);
+                        }
+                      },
                       child: Container(
                         constraints: BoxConstraints(
                           minHeight: 200,
@@ -224,6 +240,39 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                             Builder(
                               builder: (context) {
                                 debugPrint('Loading image from URL: ${expense.imageUrl}');
+                                final isPdf = expense.imageUrl.toLowerCase().contains('.pdf');
+                                
+                                if (isPdf) {
+                                  return Container(
+                                    height: 300,
+                                    color: context.colors.surface,
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.picture_as_pdf,
+                                            size: 64,
+                                            color: context.colors.primary,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'PDF Receipt',
+                                            style: context.textStyles.title,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Tap to open PDF',
+                                            style: context.textStyles.caption.copyWith(
+                                              color: context.colors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+                                
                                 return Image.network(
                                   expense.imageUrl,
                                   fit: BoxFit.contain,
@@ -431,73 +480,56 @@ class _ExpenseDetailsContent extends ConsumerWidget {
     debugPrint('Opening full screen image: ${expense.imageUrl}');
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(0),
-        child: Stack(
-          children: [
-            // Background
-            GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(color: Colors.black.withOpacity(0.9)),
-            ),
-            // Image
-            Center(
-              child: InteractiveViewer(
-                panEnabled: true,
-                minScale: 0.5,
-                maxScale: 4,
-                child: Image.network(
-                  expense.imageUrl,
-                  fit: BoxFit.contain,
-                  headers: const {
-                    'Accept': 'image/*',
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: StaticLoadingIndicator(
+      barrierDismissible: true,
+      builder: (context) => FullscreenViewerBase(
+        child: InteractiveViewer(
+          panEnabled: true,
+          minScale: 0.5,
+          maxScale: 4,
+          child: Image.network(
+            expense.imageUrl,
+            fit: BoxFit.contain,
+            headers: const {
+              'Accept': 'image/*',
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(
+                child: StaticLoadingIndicator(
+                  color: Colors.white,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Error in full screen: $error');
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load image',
+                      style: context.textStyles.title.copyWith(
                         color: Colors.white,
                       ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    debugPrint('Error in full screen: $error');
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Failed to load image',
-                            style: context.textStyles.title.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            // Close button
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              right: 16,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 32),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
       ),
     );
+  }
+  
+  void _viewPdf(BuildContext context, String pdfUrl) {
+    // Open PDF in new tab
+    html.window.open(pdfUrl, '_blank');
   }
 }

@@ -9,7 +9,7 @@ part 'employee_search_providers.g.dart';
 @Riverpod(keepAlive: true)
 Stream<List<EmployeeModel>> cachedEmployees(CachedEmployeesRef ref) {
   // Usamos o stream existente que já está com persistência
-  return ref.watch(employeesStreamProvider);
+  return ref.watch(employeesStreamProvider.stream);
 }
 
 /// Enumeração para ordenação de funcionários

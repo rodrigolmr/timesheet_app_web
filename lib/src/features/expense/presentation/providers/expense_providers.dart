@@ -7,6 +7,96 @@ import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_stat
 
 part 'expense_providers.g.dart';
 
+/// Estado para gerenciar seleção múltipla de expenses
+class ExpenseSelectionState {
+  const ExpenseSelectionState({
+    this.isSelectionMode = false,
+    this.selectedIds = const <String>{},
+  });
+
+  final bool isSelectionMode;
+  final Set<String> selectedIds;
+
+  ExpenseSelectionState copyWith({
+    bool? isSelectionMode,
+    Set<String>? selectedIds,
+  }) {
+    return ExpenseSelectionState(
+      isSelectionMode: isSelectionMode ?? this.isSelectionMode,
+      selectedIds: selectedIds ?? this.selectedIds,
+    );
+  }
+
+  bool get hasSelection => selectedIds.isNotEmpty;
+  int get selectionCount => selectedIds.length;
+  
+  bool isSelected(String id) => selectedIds.contains(id);
+}
+
+/// Provider notifier para gerenciar seleção múltipla
+@riverpod
+class ExpenseSelection extends _$ExpenseSelection {
+  @override
+  ExpenseSelectionState build() {
+    return const ExpenseSelectionState();
+  }
+
+  /// Entra no modo de seleção
+  void enterSelectionMode() {
+    state = state.copyWith(
+      isSelectionMode: true,
+      selectedIds: <String>{},
+    );
+  }
+
+  /// Sai do modo de seleção
+  void exitSelectionMode() {
+    state = const ExpenseSelectionState();
+  }
+
+  /// Seleciona ou deseleciona um expense
+  void toggleSelection(String id) {
+    if (!state.isSelectionMode) return;
+    
+    final newSelectedIds = Set<String>.from(state.selectedIds);
+    if (newSelectedIds.contains(id)) {
+      newSelectedIds.remove(id);
+    } else {
+      newSelectedIds.add(id);
+    }
+    
+    state = state.copyWith(selectedIds: newSelectedIds);
+  }
+
+  /// Seleciona todos os expenses visíveis
+  void selectAll(List<String> allExpenseIds) {
+    if (!state.isSelectionMode) return;
+    
+    state = state.copyWith(
+      selectedIds: Set<String>.from(allExpenseIds),
+    );
+  }
+
+  /// Deseleciona todos
+  void selectNone() {
+    if (!state.isSelectionMode) return;
+    
+    state = state.copyWith(selectedIds: <String>{});
+  }
+
+  /// Remove expenses selecionados do estado após exclusão
+  void removeDeletedExpenses(Set<String> deletedIds) {
+    final newSelectedIds = Set<String>.from(state.selectedIds);
+    newSelectedIds.removeAll(deletedIds);
+    
+    state = state.copyWith(
+      selectedIds: newSelectedIds,
+      // Sai do modo seleção se não há mais nada selecionado
+      isSelectionMode: newSelectedIds.isNotEmpty || state.isSelectionMode,
+    );
+  }
+}
+
 /// Provider que fornece o repositório de despesas
 @riverpod
 ExpenseRepository expenseRepository(ExpenseRepositoryRef ref) {

@@ -1207,6 +1207,27 @@ class _ExpensesByCardProviderElement
   String get cardId => (origin as ExpensesByCardProvider).cardId;
 }
 
+String _$expenseSelectionHash() => r'ff2291520c25b350bbdcc918dc79974a05442f7b';
+
+/// Provider notifier para gerenciar seleção múltipla
+///
+/// Copied from [ExpenseSelection].
+@ProviderFor(ExpenseSelection)
+final expenseSelectionProvider = AutoDisposeNotifierProvider<
+  ExpenseSelection,
+  ExpenseSelectionState
+>.internal(
+  ExpenseSelection.new,
+  name: r'expenseSelectionProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$expenseSelectionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ExpenseSelection = AutoDisposeNotifier<ExpenseSelectionState>;
 String _$expenseStateHash() => r'eddb015055a01ea689e5c3c6e47d0511fd9baa90';
 
 abstract class _$ExpenseState

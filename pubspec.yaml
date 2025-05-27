@@ -65,6 +65,9 @@ dependencies:
   # Image picker for web
   image_picker: ^1.1.2
   
+  # File picker for web
+  file_picker: ^8.0.0+1
+  
   # Image processing
   image: ^4.1.7
 
