@@ -11,7 +11,6 @@ import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/home/presentation/providers/home_providers.dart';
-import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -30,12 +29,6 @@ class HomeScreen extends ConsumerWidget {
         mobile: _buildMobileLayout(context, ref),
         tablet: _buildTabletLayout(context, ref),
         desktop: _buildDesktopLayout(context, ref),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go(AppRoute.documentScanner.path),
-        label: const Text('Test Scanner'),
-        icon: const Icon(Icons.document_scanner),
-        backgroundColor: context.colors.secondary,
       ),
     );
   }
@@ -166,9 +159,6 @@ class HomeScreen extends ConsumerWidget {
         route: item.route,
         color: context.categoryColorByName(item.categoryName),
         isActive: item.isActive,
-        onTap: item.title == 'Create Job Record' 
-          ? () => _createNewJobRecord(context, ref)
-          : null,
       )).toList();
     } catch (e) {
       // Log error and return empty list
@@ -177,13 +167,4 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 
-  void _createNewJobRecord(BuildContext context, WidgetRef ref) {
-    // Reset all form state providers before creating new record
-    ref.read(jobRecordFormStateProvider.notifier).resetForm();
-    ref.read(isEditModeProvider.notifier).setEditMode(false);
-    ref.read(currentStepNotifierProvider.notifier).setStep(0);
-    
-    // Navigate to create screen
-    context.go(AppRoute.jobRecordCreate.path);
-  }
 }

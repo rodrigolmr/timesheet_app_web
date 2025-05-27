@@ -4,21 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
-import 'package:timesheet_app_web/src/features/employee/data/models/employee_model.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_search_providers.dart';
+import 'package:timesheet_app_web/src/features/company_card/data/models/company_card_model.dart';
+import 'package:timesheet_app_web/src/features/company_card/presentation/providers/company_card_providers.dart';
+import 'package:timesheet_app_web/src/features/company_card/presentation/providers/company_card_search_providers.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/app_text_field.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/widgets/employee_filters.dart';
+import 'package:timesheet_app_web/src/features/company_card/presentation/widgets/company_card_filters.dart';
 
-class EmployeesScreen extends ConsumerStatefulWidget {
-  const EmployeesScreen({super.key});
+class CompanyCardsScreen extends ConsumerStatefulWidget {
+  const CompanyCardsScreen({super.key});
 
   @override
-  ConsumerState<EmployeesScreen> createState() => _EmployeesScreenState();
+  ConsumerState<CompanyCardsScreen> createState() => _CompanyCardsScreenState();
 }
 
-class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
+class _CompanyCardsScreenState extends ConsumerState<CompanyCardsScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'all';
@@ -32,12 +32,12 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final employeesAsync = ref.watch(employeesStreamProvider);
+    final cardsAsync = ref.watch(companyCardsStreamProvider);
     
     return Scaffold(
       appBar: AppHeader(
-        title: 'Employees',
-        subtitle: 'Manage company employees',
+        title: 'Company Cards',
+        subtitle: 'Manage company credit cards',
         actionIcon: Icons.add,
         onActionPressed: () => _showCreateDialog(context),
       ),
@@ -45,8 +45,8 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         children: [
           _buildFilters(),
           Expanded(
-            child: employeesAsync.when(
-              data: (employees) => _buildEmployeeList(context, employees),
+            child: cardsAsync.when(
+              data: (cards) => _buildCardList(context, cards),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(
                 child: Column(
@@ -59,7 +59,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Error loading employees',
+                      'Error loading company cards',
                       style: context.textStyles.title,
                     ),
                     const SizedBox(height: 8),
@@ -81,7 +81,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
   }
 
   Widget _buildFilters() {
-    return EmployeeFilters(
+    return CompanyCardFilters(
       searchController: _searchController,
       searchQuery: _searchQuery,
       selectedStatus: _selectedStatus,
@@ -90,7 +90,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         setState(() {
           _searchQuery = query.trim();
         });
-        ref.read(employeeSearchQueryProvider.notifier).updateQuery(query);
+        ref.read(companyCardSearchQueryProvider.notifier).updateQuery(query);
       },
       onStatusChanged: (status) {
         setState(() {
@@ -98,11 +98,11 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         });
         // Update the provider based on status
         if (status == 'active') {
-          ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(true);
+          ref.read(companyCardSearchFiltersProvider.notifier).updateActiveStatus(true);
         } else if (status == 'inactive') {
-          ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(false);
+          ref.read(companyCardSearchFiltersProvider.notifier).updateActiveStatus(false);
         } else {
-          ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(null);
+          ref.read(companyCardSearchFiltersProvider.notifier).updateActiveStatus(null);
         }
       },
       onExpandedChanged: (expanded) {
@@ -120,17 +120,17 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
       _searchQuery = '';
       _selectedStatus = 'all';
     });
-    ref.read(employeeSearchQueryProvider.notifier).updateQuery('');
-    ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(null);
+    ref.read(companyCardSearchQueryProvider.notifier).updateQuery('');
+    ref.read(companyCardSearchFiltersProvider.notifier).updateActiveStatus(null);
   }
 
-  Widget _buildEmployeeList(BuildContext context, List<EmployeeModel> allEmployees) {
-    final searchResults = ref.watch(employeeSearchResultsProvider);
-    final employees = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all'
-        ? allEmployees
+  Widget _buildCardList(BuildContext context, List<CompanyCardModel> allCards) {
+    final searchResults = ref.watch(companyCardSearchResultsProvider);
+    final cards = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all'
+        ? allCards
         : searchResults;
     
-    if (employees.isEmpty) {
+    if (cards.isEmpty) {
       return _buildEmptyState(context);
     }
 
@@ -139,10 +139,10 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
     if (isMobile) {
       return ListView.builder(
         padding: EdgeInsets.all(context.dimensions.spacingM),
-        itemCount: employees.length,
+        itemCount: cards.length,
         itemBuilder: (context, index) {
-          final employee = employees[index];
-          return _buildEmployeeCard(context, employee);
+          final card = cards[index];
+          return _buildCompanyCard(context, card);
         },
       );
     }
@@ -155,14 +155,14 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         smColumns: 2,
         mdColumns: 3,
         lgColumns: 4,
-        children: employees.map((employee) => 
-          _buildEmployeeCard(context, employee)
+        children: cards.map((card) => 
+          _buildCompanyCard(context, card)
         ).toList(),
       ),
     );
   }
 
-  Widget _buildEmployeeCard(BuildContext context, EmployeeModel employee) {
+  Widget _buildCompanyCard(BuildContext context, CompanyCardModel card) {
     return Card(
       margin: EdgeInsets.only(bottom: context.responsive<double>(xs: 6, sm: 8, md: 10)),
       child: Padding(
@@ -172,20 +172,27 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: context.responsive<double>(xs: 16, sm: 18, md: 20),
-                backgroundColor: employee.isActive 
-                    ? context.colors.primary 
-                    : context.colors.textSecondary.withOpacity(0.3),
-                child: Text(
-                  '${employee.firstName[0]}${employee.lastName[0]}',
-                  style: TextStyle(
-                    color: employee.isActive 
-                        ? context.colors.onPrimary 
-                        : context.colors.textSecondary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: context.responsive<double>(xs: 12, sm: 13, md: 14),
+              Container(
+                width: context.responsive<double>(xs: 40, sm: 44, md: 48),
+                height: context.responsive<double>(xs: 30, sm: 33, md: 36),
+                decoration: BoxDecoration(
+                  color: card.isActive 
+                      ? context.colors.primary.withOpacity(0.1)
+                      : context.colors.textSecondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: card.isActive 
+                        ? context.colors.primary.withOpacity(0.3)
+                        : context.colors.textSecondary.withOpacity(0.3),
+                    width: 1,
                   ),
+                ),
+                child: Icon(
+                  Icons.credit_card,
+                  size: context.responsive<double>(xs: 18, sm: 20, md: 22),
+                  color: card.isActive 
+                      ? context.colors.primary 
+                      : context.colors.textSecondary,
                 ),
               ),
               SizedBox(width: context.responsive<double>(xs: 10, sm: 12, md: 14)),
@@ -195,10 +202,19 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${employee.firstName} ${employee.lastName}',
+                      card.holderName,
                       style: context.textStyles.body.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: context.responsive<double>(xs: 14, sm: 15, md: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '**** **** **** ${card.lastFourDigits}',
+                      style: context.textStyles.caption.copyWith(
+                        color: context.colors.textSecondary,
+                        fontSize: context.responsive<double>(xs: 11, sm: 12, md: 13),
+                        fontFamily: 'monospace',
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -208,15 +224,15 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: employee.isActive
+                        color: card.isActive
                             ? context.colors.success.withOpacity(0.1)
                             : context.colors.error.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        employee.isActive ? 'Active' : 'Inactive',
+                        card.isActive ? 'Active' : 'Inactive',
                         style: context.textStyles.caption.copyWith(
-                          color: employee.isActive
+                          color: card.isActive
                               ? context.colors.success
                               : context.colors.error,
                           fontWeight: FontWeight.w600,
@@ -232,8 +248,8 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                   Icons.edit_outlined,
                   size: context.responsive<double>(xs: 18, sm: 20, md: 22),
                 ),
-                onPressed: () => _showEditDialog(context, employee),
-                tooltip: 'Edit employee',
+                onPressed: () => _showEditDialog(context, card),
+                tooltip: 'Edit card',
                 padding: const EdgeInsets.all(4),
                 constraints: BoxConstraints(
                   minWidth: context.responsive<double>(xs: 32, sm: 36, md: 40),
@@ -254,13 +270,13 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            hasFilters ? Icons.search_off : Icons.people_outline,
+            hasFilters ? Icons.search_off : Icons.credit_card_off,
             size: 120,
             color: context.colors.textSecondary.withOpacity(0.3),
           ),
           const SizedBox(height: 24),
           Text(
-            hasFilters ? 'No employees found' : 'No employees yet',
+            hasFilters ? 'No cards found' : 'No company cards yet',
             style: context.textStyles.title.copyWith(
               color: context.colors.textSecondary,
             ),
@@ -269,7 +285,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
           Text(
             hasFilters 
                 ? 'Try adjusting your search or filters'
-                : 'Start by adding your first employee',
+                : 'Start by adding your first company card',
             style: context.textStyles.body.copyWith(
               color: context.colors.textSecondary,
             ),
@@ -279,7 +295,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
             ElevatedButton.icon(
               onPressed: () => _showCreateDialog(context),
               icon: const Icon(Icons.add),
-              label: const Text('Add Employee'),
+              label: const Text('Add Company Card'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
                 foregroundColor: context.colors.onPrimary,
@@ -298,60 +314,61 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
   void _showCreateDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => _CreateEmployeeDialog(ref: ref),
+      builder: (_) => _CreateCompanyCardDialog(ref: ref),
     );
   }
 
-  void _showEditDialog(BuildContext context, EmployeeModel employee) {
+  void _showEditDialog(BuildContext context, CompanyCardModel card) {
     showDialog(
       context: context,
-      builder: (_) => _EditEmployeeDialog(employee: employee, ref: ref),
+      builder: (_) => _EditCompanyCardDialog(card: card, ref: ref),
     );
   }
 }
 
-class _CreateEmployeeDialog extends StatefulWidget {
+class _CreateCompanyCardDialog extends StatefulWidget {
   final WidgetRef ref;
 
-  const _CreateEmployeeDialog({required this.ref});
+  const _CreateCompanyCardDialog({required this.ref});
 
   @override
-  State<_CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
+  State<_CreateCompanyCardDialog> createState() => _CreateCompanyCardDialogState();
 }
 
-class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
+class _CreateCompanyCardDialogState extends State<_CreateCompanyCardDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _holderNameController = TextEditingController();
+  final _lastFourDigitsController = TextEditingController();
   bool _isActive = true;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _holderNameController.dispose();
+    _lastFourDigitsController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Employee'),
+      title: const Text('Add Company Card'),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
-              controller: _firstNameController,
-              label: 'First Name',
-              hintText: 'Enter first name',
+              controller: _holderNameController,
+              label: 'Card Holder Name',
+              hintText: 'Enter cardholder name',
             ),
             SizedBox(height: context.dimensions.spacingM),
             AppTextField(
-              controller: _lastNameController,
-              label: 'Last Name',
-              hintText: 'Enter last name',
+              controller: _lastFourDigitsController,
+              label: 'Last 4 Digits',
+              hintText: 'Enter last 4 digits',
+              keyboardType: TextInputType.number,
             ),
             SizedBox(height: context.dimensions.spacingM),
             CheckboxListTile(
@@ -388,11 +405,12 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_firstNameController.text.trim().isEmpty ||
-        _lastNameController.text.trim().isEmpty) {
+    if (_holderNameController.text.trim().isEmpty ||
+        _lastFourDigitsController.text.trim().isEmpty ||
+        _lastFourDigitsController.text.trim().length != 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please fill in all fields'),
+          content: const Text('Please fill in all fields correctly'),
           backgroundColor: context.colors.error,
         ),
       );
@@ -402,22 +420,22 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final employee = EmployeeModel(
+      final card = CompanyCardModel(
         id: '',
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
+        holderName: _holderNameController.text.trim(),
+        lastFourDigits: _lastFourDigitsController.text.trim(),
         isActive: _isActive,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(employeeRepositoryProvider).create(employee);
+      await widget.ref.read(companyCardRepositoryProvider).create(card);
 
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Employee added successfully'),
+            content: const Text('Company card added successfully'),
             backgroundColor: context.colors.success,
           ),
         );
@@ -439,60 +457,61 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
   }
 }
 
-class _EditEmployeeDialog extends StatefulWidget {
-  final EmployeeModel employee;
+class _EditCompanyCardDialog extends StatefulWidget {
+  final CompanyCardModel card;
   final WidgetRef ref;
 
-  const _EditEmployeeDialog({
-    required this.employee,
+  const _EditCompanyCardDialog({
+    required this.card,
     required this.ref,
   });
 
   @override
-  State<_EditEmployeeDialog> createState() => _EditEmployeeDialogState();
+  State<_EditCompanyCardDialog> createState() => _EditCompanyCardDialogState();
 }
 
-class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
+class _EditCompanyCardDialogState extends State<_EditCompanyCardDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _firstNameController;
-  late final TextEditingController _lastNameController;
+  late final TextEditingController _holderNameController;
+  late final TextEditingController _lastFourDigitsController;
   late bool _isActive;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.employee.firstName);
-    _lastNameController = TextEditingController(text: widget.employee.lastName);
-    _isActive = widget.employee.isActive;
+    _holderNameController = TextEditingController(text: widget.card.holderName);
+    _lastFourDigitsController = TextEditingController(text: widget.card.lastFourDigits);
+    _isActive = widget.card.isActive;
   }
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _holderNameController.dispose();
+    _lastFourDigitsController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Employee'),
+      title: const Text('Edit Company Card'),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
-              controller: _firstNameController,
-              label: 'First Name',
-              hintText: 'Enter first name',
+              controller: _holderNameController,
+              label: 'Card Holder Name',
+              hintText: 'Enter cardholder name',
             ),
             SizedBox(height: context.dimensions.spacingM),
             AppTextField(
-              controller: _lastNameController,
-              label: 'Last Name',
-              hintText: 'Enter last name',
+              controller: _lastFourDigitsController,
+              label: 'Last 4 Digits',
+              hintText: 'Enter last 4 digits',
+              keyboardType: TextInputType.number,
             ),
             SizedBox(height: context.dimensions.spacingM),
             CheckboxListTile(
@@ -529,11 +548,12 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_firstNameController.text.trim().isEmpty ||
-        _lastNameController.text.trim().isEmpty) {
+    if (_holderNameController.text.trim().isEmpty ||
+        _lastFourDigitsController.text.trim().isEmpty ||
+        _lastFourDigitsController.text.trim().length != 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please fill in all fields'),
+          content: const Text('Please fill in all fields correctly'),
           backgroundColor: context.colors.error,
         ),
       );
@@ -543,23 +563,23 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final updatedEmployee = widget.employee.copyWith(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
+      final updatedCard = widget.card.copyWith(
+        holderName: _holderNameController.text.trim(),
+        lastFourDigits: _lastFourDigitsController.text.trim(),
         isActive: _isActive,
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(employeeRepositoryProvider).update(
-        widget.employee.id,
-        updatedEmployee,
+      await widget.ref.read(companyCardRepositoryProvider).update(
+        widget.card.id,
+        updatedCard,
       );
 
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Employee updated successfully'),
+            content: const Text('Company card updated successfully'),
             backgroundColor: context.colors.success,
           ),
         );

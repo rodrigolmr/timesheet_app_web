@@ -14,11 +14,11 @@ import 'package:timesheet_app_web/src/features/database/presentation/screens/dat
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_create_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_records_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_details_screen.dart';
-import 'package:timesheet_app_web/src/demo/week_grouping_demo.dart';
-import 'package:timesheet_app_web/src/demo/expense_visualizations_demo.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/screens/expenses_screen.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/screens/expense_details_screen.dart';
 import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_scanner_screen.dart';
+import 'package:timesheet_app_web/src/features/user/presentation/screens/users_screen.dart';
+import 'package:timesheet_app_web/src/features/company_card/presentation/screens/company_cards_screen.dart';
 
 part 'routes.g.dart';
 
@@ -27,6 +27,8 @@ enum AppRoute {
   home('/'),
   // Rotas de funcionários
   employees('/employees'),
+  users('/users'),
+  companyCards('/company-cards'),
   settings('/settings'),
   themeSettings('/settings/theme'),
   themeSelector('/settings/theme-selector'),
@@ -39,8 +41,6 @@ enum AppRoute {
   jobRecordDetails('/job-records/:id'),
   expenses('/expenses'),
   expenseDetails('/expenses/:id'),
-  weekGroupingDemo('/demo/week-grouping'),
-  expenseVisualizationsDemo('/demo/expense-visualizations'),
   documentScanner('/document-scanner'),
 ;
 
@@ -103,6 +103,16 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.employees.path,
         name: AppRoute.employees.name,
         builder: (context, state) => const EmployeesScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.users.path,
+        name: AppRoute.users.name,
+        builder: (context, state) => const UsersScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.companyCards.path,
+        name: AppRoute.companyCards.name,
+        builder: (context, state) => const CompanyCardsScreen(),
       ),
       GoRoute(
         path: AppRoute.settings.path,
@@ -172,16 +182,6 @@ GoRouter goRouter(GoRouterRef ref) {
           final id = state.pathParameters['id']!;
           return ExpenseDetailsScreen(expenseId: id);
         },
-      ),
-      GoRoute(
-        path: AppRoute.weekGroupingDemo.path,
-        name: AppRoute.weekGroupingDemo.name,
-        builder: (context, state) => const WeekGroupingDemo(),
-      ),
-      GoRoute(
-        path: AppRoute.expenseVisualizationsDemo.path,
-        name: AppRoute.expenseVisualizationsDemo.name,
-        builder: (context, state) => const ExpenseVisualizationsDemo(),
       ),
       GoRoute(
         path: AppRoute.documentScanner.path,

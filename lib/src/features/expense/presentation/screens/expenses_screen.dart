@@ -112,16 +112,6 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           onPressed: () => ref.read(expenseSelectionProvider.notifier).enterSelectionMode(),
           tooltip: 'Select expenses',
         ),
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (_) => const CreateExpenseDialog(),
-            );
-          },
-          tooltip: 'Add expense',
-        ),
       ],
     );
   }
@@ -132,6 +122,17 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     
     return Scaffold(
       appBar: _buildAppBar(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (_) => const CreateExpenseDialog(),
+          );
+        },
+        backgroundColor: context.colors.primary,
+        tooltip: 'Add expense',
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
           _buildFilters(),
@@ -388,13 +389,13 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected 
-              ? context.colors.primary.withOpacity(0.1)
+              ? context.colors.primary.withValues(alpha: 0.1)
               : context.colors.surface,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: isSelected 
                 ? context.colors.primary 
-                : context.colors.outline.withOpacity(0.3),
+                : context.colors.outline.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -416,7 +417,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
-              color: context.colors.primary.withOpacity(0.1),
+              color: context.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
@@ -484,7 +485,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           Icon(
             Icons.receipt_long_outlined,
             size: 120,
-            color: context.colors.textSecondary.withOpacity(0.3),
+            color: context.colors.textSecondary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 24),
           Text(

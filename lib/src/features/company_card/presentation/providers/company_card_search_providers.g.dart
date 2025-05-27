@@ -7,7 +7,7 @@ part of 'company_card_search_providers.dart';
 // **************************************************************************
 
 String _$cachedCompanyCardsHash() =>
-    r'e7acc93accb28339239cd78b952d1c12205042ba';
+    r'8b39dc11b5275c071618374fc91649e7df0fb752';
 
 /// Provider para armazenar todos os cartões corporativos em cache
 ///

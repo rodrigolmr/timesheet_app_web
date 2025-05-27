@@ -9,7 +9,7 @@ part 'company_card_search_providers.g.dart';
 @Riverpod(keepAlive: true)
 Stream<List<CompanyCardModel>> cachedCompanyCards(CachedCompanyCardsRef ref) {
   // Usamos o stream existente que já está com persistência
-  return ref.watch(companyCardsStreamProvider);
+  return ref.watch(companyCardsStreamProvider.stream);
 }
 
 /// Enumeração para ordenação de cartões corporativos

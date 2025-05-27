@@ -1,182 +1,188 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/theme/theme.dart';
+import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
+import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 
-/// Tela para seleção de temas do aplicativo
+/// Theme selector screen for the application
 class ThemeSelectorScreen extends ConsumerWidget {
-  const ThemeSelectorScreen({Key? key}) : super(key: key);
+  const ThemeSelectorScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Obtém o tema atual
+    // Get current theme
     final currentTheme = ref.watch(themeControllerProvider);
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Escolha de Tema'),
-        elevation: 0,
-      ),
-      floatingActionButton: Semantics(
-        label: 'Confirmar seleção de tema e voltar à tela anterior',
-        hint: 'Botão para aplicar o tema selecionado e retornar à página anterior',
-        button: true,
-        child: FloatingActionButton.extended(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.check),
-          label: const Text('Confirmar'),
-          elevation: 2,
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          tooltip: 'Confirmar seleção de tema',
-        ),
+      backgroundColor: context.colors.background,
+      appBar: AppHeader(
+        title: 'Theme Selection',
+        subtitle: 'Choose your preferred theme',
+        showBackButton: true,
+        showNavigationMenu: false,
+        onBackPressed: () => context.go('/settings'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Semantics(
-              header: true,
-              hint: 'Título da tela de seleção de temas',
-              child: const Text(
-                'Selecione o tema de sua preferência',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+        child: ResponsiveContainer(
+          maxWidthXl: 800,
+          child: Padding(
+            padding: EdgeInsets.all(
+              context.isMobile
+                ? context.dimensions.spacingM
+                : context.dimensions.spacingL,
             ),
-            const SizedBox(height: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // No header text needed since it's in AppHeader
             
-            // Tema Azul (Light)
-            _buildThemeCard(
-              context,
-              title: 'Azul Corporativo',
-              description: 'Tema padrão com tons de azul corporativo',
-              variant: ThemeVariant.light,
-              isSelected: currentTheme.variant == ThemeVariant.light,
-              onSelect: () => _selectTheme(ref, ThemeVariant.light),
+                // Blue Theme (Light)
+                _buildThemeCard(
+                  context,
+                  ref,
+                  title: 'Corporate Blue',
+                  description: 'Default theme with corporate blue tones',
+                  variant: ThemeVariant.light,
+                  isSelected: currentTheme.variant == ThemeVariant.light,
+                ),
+                
+                // Dark Theme
+                _buildThemeCard(
+                  context,
+                  ref,
+                  title: 'Dark Theme',
+                  description: 'Dark theme for low-light environments',
+                  variant: ThemeVariant.dark,
+                  isSelected: currentTheme.variant == ThemeVariant.dark,
+                ),
+                
+                // Pink Theme (Feminine)
+                _buildThemeCard(
+                  context,
+                  ref,
+                  title: 'Pink Theme',
+                  description: 'Modern and vibrant theme with pink tones',
+                  variant: ThemeVariant.feminine,
+                  isSelected: currentTheme.variant == ThemeVariant.feminine,
+                ),
+                
+                // Green Theme
+                _buildThemeCard(
+                  context,
+                  ref,
+                  title: 'Green Theme',
+                  description: 'Calming theme with green tones',
+                  variant: ThemeVariant.green,
+                  isSelected: currentTheme.variant == ThemeVariant.green,
+                ),
+              ],
             ),
-            
-            // Tema Dark
-            _buildThemeCard(
-              context,
-              title: 'Tema Escuro',
-              description: 'Tema escuro para visualização em ambientes com pouca luz',
-              variant: ThemeVariant.dark,
-              isSelected: currentTheme.variant == ThemeVariant.dark,
-              onSelect: () => _selectTheme(ref, ThemeVariant.dark),
-            ),
-            
-            // Tema Rosa (Feminine)
-            _buildThemeCard(
-              context,
-              title: 'Tema Rosa',
-              description: 'Tema com tons de rosa, moderno e vibrante',
-              variant: ThemeVariant.feminine,
-              isSelected: currentTheme.variant == ThemeVariant.feminine,
-              onSelect: () => _selectTheme(ref, ThemeVariant.feminine),
-            ),
-            
-            // Tema Verde
-            _buildThemeCard(
-              context,
-              title: 'Tema Verde',
-              description: 'Tema com tons de verde, transmitindo tranquilidade',
-              variant: ThemeVariant.green,
-              isSelected: currentTheme.variant == ThemeVariant.green,
-              onSelect: () => _selectTheme(ref, ThemeVariant.green),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
   
-  /// Seleciona um tema e exibe feedback de confirmação
-  void _selectTheme(WidgetRef ref, ThemeVariant variant) {
+  /// Selects a theme and shows confirmation feedback
+  void _selectTheme(BuildContext context, WidgetRef ref, ThemeVariant variant) {
     ref.read(themeControllerProvider.notifier).setTheme(variant);
     
-    // Obtenha o contexto do ScaffoldMessenger ao qual podemos anexar o SnackBar
-    final scaffoldMessenger = ScaffoldMessenger.of(ref.context);
-    
-    // Determine o nome do tema para exibir no feedback
+    // Get theme name for feedback
     String themeName;
     switch (variant) {
       case ThemeVariant.light:
-        themeName = 'Azul Corporativo';
+        themeName = 'Corporate Blue';
         break;
       case ThemeVariant.dark:
-        themeName = 'Tema Escuro';
+        themeName = 'Dark Theme';
         break;
       case ThemeVariant.feminine:
-        themeName = 'Tema Rosa';
+        themeName = 'Pink Theme';
         break;
       case ThemeVariant.green:
-        themeName = 'Tema Verde';
+        themeName = 'Green Theme';
         break;
     }
     
-    // Exibe um SnackBar com o tema selecionado
-    scaffoldMessenger.hideCurrentSnackBar();
-    scaffoldMessenger.showSnackBar(
+    // Show SnackBar with selected theme
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Tema $themeName aplicado com sucesso',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          '$themeName applied successfully',
+          style: context.textStyles.body.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         backgroundColor: _getColorForVariant(variant),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        ),
       ),
     );
   }
   
-  /// Constrói um card para cada opção de tema
+  /// Builds a card for each theme option
   Widget _buildThemeCard(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required String title,
     required String description,
     required ThemeVariant variant,
     required bool isSelected,
-    required VoidCallback onSelect,
   }) {
-    // Define cores baseadas na variante
+    // Define colors based on variant
     final Color primaryColor = _getColorForVariant(variant);
     final Color backgroundColor = isSelected 
-      ? primaryColor.withOpacity(0.1) 
-      : Colors.transparent;
+      ? primaryColor.withValues(alpha: 0.1) 
+      : context.colors.surface;
     
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(
+        bottom: context.isMobile
+          ? context.dimensions.spacingM
+          : context.dimensions.spacingL,
+      ),
       elevation: isSelected ? 2 : 1,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isSelected
-            ? BorderSide(color: primaryColor, width: 2)
-            : BorderSide(color: Colors.grey.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        side: BorderSide(
+          color: isSelected ? primaryColor : context.colors.outline.withValues(alpha: 0.3),
+          width: isSelected ? 2 : 1,
+        ),
       ),
       child: Semantics(
-        label: 'Tema $title',
-        hint: 'Selecionar o tema $title. $description',
+        label: '$title theme',
+        hint: 'Select $title theme. $description',
         button: true,
         checked: isSelected,
         enabled: true,
         child: InkWell(
-          onTap: onSelect,
-          borderRadius: BorderRadius.circular(12),
+          onTap: () => _selectTheme(context, ref, variant),
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(
+              context.isMobile
+                ? context.dimensions.spacingM
+                : context.dimensions.spacingL,
+            ),
             decoration: BoxDecoration(
               color: backgroundColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    // Círculo de cor que representa o tema
+                    // Color circle representing the theme
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: context.isMobile ? 36 : 44,
+                      height: context.isMobile ? 36 : 44,
                       decoration: BoxDecoration(
                         color: primaryColor,
                         shape: BoxShape.circle,
@@ -184,70 +190,73 @@ class ThemeSelectorScreen extends ConsumerWidget {
                       child: Icon(
                         _getIconForVariant(variant),
                         color: Colors.white,
-                        size: 24,
+                        size: context.isMobile ? 20 : 24,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: context.dimensions.spacingM),
                     
-                    // Título e descrição
+                    // Title and description
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: context.textStyles.subtitle.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: context.dimensions.spacingXS),
                           Text(
                             description,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
+                            style: context.textStyles.body.copyWith(
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ],
                       ),
                     ),
                     
-                    // Ícone de seleção
+                    // Selection icon
                     if (isSelected)
                       Icon(
                         Icons.check_circle,
                         color: primaryColor,
-                        size: 28,
+                        size: context.isMobile ? 24 : 28,
                       ),
                   ],
                 ),
                 
-                const SizedBox(height: 16),
+                SizedBox(height: context.dimensions.spacingM),
                 
-                // Amostras de cores do tema
+                // Theme color samples
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildColorSample(
+                      context,
                       color: primaryColor,
-                      label: 'Primária',
+                      label: 'Primary',
                     ),
                     _buildColorSample(
+                      context,
                       color: _getLighterColorForVariant(variant),
-                      label: 'Secundária',
+                      label: 'Secondary',
                     ),
                     _buildColorSample(
+                      context,
                       color: _getSuccessColorForVariant(variant),
-                      label: 'Sucesso',
+                      label: 'Success',
                     ),
                     _buildColorSample(
+                      context,
                       color: _getWarningColorForVariant(variant),
-                      label: 'Alerta',
+                      label: 'Warning',
                     ),
                     _buildColorSample(
+                      context,
                       color: _getErrorColorForVariant(variant),
-                      label: 'Erro',
+                      label: 'Error',
                     ),
                   ],
                 ),
@@ -259,34 +268,34 @@ class ThemeSelectorScreen extends ConsumerWidget {
     );
   }
   
-  /// Constrói uma amostra de cor do tema
-  Widget _buildColorSample({
+  /// Builds a color sample for the theme
+  Widget _buildColorSample(
+    BuildContext context, {
     required Color color,
     required String label,
   }) {
     return Semantics(
-      label: 'Amostra de cor $label',
-      hint: 'Cor $label no tema selecionado',
+      label: '$label color sample',
+      hint: '$label color in selected theme',
       child: Column(
         children: [
           Container(
-            width: 30,
-            height: 30,
+            width: context.isMobile ? 28 : 32,
+            height: context.isMobile ? 28 : 32,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.grey.withOpacity(0.3),
+                color: context.colors.outline.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: context.dimensions.spacingXS),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade600,
+            style: context.textStyles.caption.copyWith(
+              color: context.colors.textSecondary,
             ),
           ),
         ],
@@ -294,7 +303,7 @@ class ThemeSelectorScreen extends ConsumerWidget {
     );
   }
   
-  /// Retorna o ícone para a variante de tema
+  /// Returns the icon for the theme variant
   IconData _getIconForVariant(ThemeVariant variant) {
     switch (variant) {
       case ThemeVariant.light:
@@ -308,9 +317,9 @@ class ThemeSelectorScreen extends ConsumerWidget {
     }
   }
   
-  /// Retorna a cor primária para uma variante de tema
+  /// Returns the primary color for a theme variant
   Color _getColorForVariant(ThemeVariant variant) {
-    // Usar as cores exatas das paletas definidas
+    // Use exact colors from defined palettes
     switch (variant) {
       case ThemeVariant.light:
         return const Color(0xFF1565C0); // Azul Corporativo da Palette4CorporateAmber
@@ -323,7 +332,7 @@ class ThemeSelectorScreen extends ConsumerWidget {
     }
   }
   
-  /// Retorna a cor secundária para uma variante de tema
+  /// Returns the secondary color for a theme variant
   Color _getLighterColorForVariant(ThemeVariant variant) {
     switch (variant) {
       case ThemeVariant.light:
@@ -337,7 +346,7 @@ class ThemeSelectorScreen extends ConsumerWidget {
     }
   }
   
-  /// Retorna a cor de sucesso para uma variante de tema
+  /// Returns the success color for a theme variant
   Color _getSuccessColorForVariant(ThemeVariant variant) {
     switch (variant) {
       case ThemeVariant.light:
@@ -351,7 +360,7 @@ class ThemeSelectorScreen extends ConsumerWidget {
     }
   }
   
-  /// Retorna a cor de alerta para uma variante de tema
+  /// Returns the warning color for a theme variant
   Color _getWarningColorForVariant(ThemeVariant variant) {
     switch (variant) {
       case ThemeVariant.light:
@@ -365,7 +374,7 @@ class ThemeSelectorScreen extends ConsumerWidget {
     }
   }
   
-  /// Retorna a cor de erro para uma variante de tema
+  /// Returns the error color for a theme variant
   Color _getErrorColorForVariant(ThemeVariant variant) {
     switch (variant) {
       case ThemeVariant.light:

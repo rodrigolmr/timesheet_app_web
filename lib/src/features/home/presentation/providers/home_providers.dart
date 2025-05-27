@@ -28,14 +28,6 @@ class HomeNavigationItem {
 List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
   return [
     HomeNavigationItem(
-      title: 'Create Job Record',
-      description: 'Create new job records',
-      icon: Icons.add_chart,
-      route: AppRoute.jobRecordCreate.path,
-      categoryName: 'timesheet',
-      isActive: true,
-    ),
-    HomeNavigationItem(
       title: 'Job Records',
       description: 'View and manage all job records',
       icon: Icons.view_list,
@@ -55,9 +47,9 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       title: 'Company Cards',
       description: 'View and manage company credit cards',
       icon: Icons.credit_card,
-      route: '/company-cards', // TODO: Update with AppRoute.companyCards.path when route is added
+      route: AppRoute.companyCards.path,
       categoryName: 'card',
-      isActive: false,
+      isActive: true,
     ),
     HomeNavigationItem(
       title: 'Employees',
@@ -65,6 +57,14 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       icon: Icons.people,
       route: AppRoute.employees.path,
       categoryName: 'worker',
+      isActive: true,
+    ),
+    HomeNavigationItem(
+      title: 'Users',
+      description: 'Manage system users',
+      icon: Icons.manage_accounts,
+      route: AppRoute.users.path,
+      categoryName: 'user',
       isActive: true,
     ),
     HomeNavigationItem(

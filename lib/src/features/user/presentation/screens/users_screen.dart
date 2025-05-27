@@ -4,21 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
-import 'package:timesheet_app_web/src/features/employee/data/models/employee_model.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_search_providers.dart';
+import 'package:timesheet_app_web/src/features/user/data/models/user_model.dart';
+import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
+import 'package:timesheet_app_web/src/features/user/presentation/providers/user_search_providers.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/app_text_field.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
-import 'package:timesheet_app_web/src/features/employee/presentation/widgets/employee_filters.dart';
+import 'package:timesheet_app_web/src/features/user/presentation/widgets/user_filters.dart';
 
-class EmployeesScreen extends ConsumerStatefulWidget {
-  const EmployeesScreen({super.key});
+class UsersScreen extends ConsumerStatefulWidget {
+  const UsersScreen({super.key});
 
   @override
-  ConsumerState<EmployeesScreen> createState() => _EmployeesScreenState();
+  ConsumerState<UsersScreen> createState() => _UsersScreenState();
 }
 
-class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
+class _UsersScreenState extends ConsumerState<UsersScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'all';
@@ -32,12 +32,12 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final employeesAsync = ref.watch(employeesStreamProvider);
+    final usersAsync = ref.watch(usersStreamProvider);
     
     return Scaffold(
       appBar: AppHeader(
-        title: 'Employees',
-        subtitle: 'Manage company employees',
+        title: 'Users',
+        subtitle: 'Manage system users',
         actionIcon: Icons.add,
         onActionPressed: () => _showCreateDialog(context),
       ),
@@ -45,8 +45,8 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         children: [
           _buildFilters(),
           Expanded(
-            child: employeesAsync.when(
-              data: (employees) => _buildEmployeeList(context, employees),
+            child: usersAsync.when(
+              data: (users) => _buildUserList(context, users),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(
                 child: Column(
@@ -59,7 +59,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Error loading employees',
+                      'Error loading users',
                       style: context.textStyles.title,
                     ),
                     const SizedBox(height: 8),
@@ -81,7 +81,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
   }
 
   Widget _buildFilters() {
-    return EmployeeFilters(
+    return UserFilters(
       searchController: _searchController,
       searchQuery: _searchQuery,
       selectedStatus: _selectedStatus,
@@ -90,7 +90,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         setState(() {
           _searchQuery = query.trim();
         });
-        ref.read(employeeSearchQueryProvider.notifier).updateQuery(query);
+        ref.read(userSearchQueryProvider.notifier).updateQuery(query);
       },
       onStatusChanged: (status) {
         setState(() {
@@ -98,11 +98,11 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         });
         // Update the provider based on status
         if (status == 'active') {
-          ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(true);
+          ref.read(userSearchFiltersProvider.notifier).updateActiveStatus(true);
         } else if (status == 'inactive') {
-          ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(false);
+          ref.read(userSearchFiltersProvider.notifier).updateActiveStatus(false);
         } else {
-          ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(null);
+          ref.read(userSearchFiltersProvider.notifier).updateActiveStatus(null);
         }
       },
       onExpandedChanged: (expanded) {
@@ -120,17 +120,17 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
       _searchQuery = '';
       _selectedStatus = 'all';
     });
-    ref.read(employeeSearchQueryProvider.notifier).updateQuery('');
-    ref.read(employeeSearchFiltersProvider.notifier).updateActiveStatus(null);
+    ref.read(userSearchQueryProvider.notifier).updateQuery('');
+    ref.read(userSearchFiltersProvider.notifier).updateActiveStatus(null);
   }
 
-  Widget _buildEmployeeList(BuildContext context, List<EmployeeModel> allEmployees) {
-    final searchResults = ref.watch(employeeSearchResultsProvider);
-    final employees = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all'
-        ? allEmployees
+  Widget _buildUserList(BuildContext context, List<UserModel> allUsers) {
+    final searchResults = ref.watch(userSearchResultsProvider);
+    final users = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all'
+        ? allUsers
         : searchResults;
     
-    if (employees.isEmpty) {
+    if (users.isEmpty) {
       return _buildEmptyState(context);
     }
 
@@ -139,10 +139,10 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
     if (isMobile) {
       return ListView.builder(
         padding: EdgeInsets.all(context.dimensions.spacingM),
-        itemCount: employees.length,
+        itemCount: users.length,
         itemBuilder: (context, index) {
-          final employee = employees[index];
-          return _buildEmployeeCard(context, employee);
+          final user = users[index];
+          return _buildUserCard(context, user);
         },
       );
     }
@@ -155,14 +155,14 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
         smColumns: 2,
         mdColumns: 3,
         lgColumns: 4,
-        children: employees.map((employee) => 
-          _buildEmployeeCard(context, employee)
+        children: users.map((user) => 
+          _buildUserCard(context, user)
         ).toList(),
       ),
     );
   }
 
-  Widget _buildEmployeeCard(BuildContext context, EmployeeModel employee) {
+  Widget _buildUserCard(BuildContext context, UserModel user) {
     return Card(
       margin: EdgeInsets.only(bottom: context.responsive<double>(xs: 6, sm: 8, md: 10)),
       child: Padding(
@@ -174,13 +174,13 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
             children: [
               CircleAvatar(
                 radius: context.responsive<double>(xs: 16, sm: 18, md: 20),
-                backgroundColor: employee.isActive 
+                backgroundColor: user.isActive 
                     ? context.colors.primary 
                     : context.colors.textSecondary.withOpacity(0.3),
                 child: Text(
-                  '${employee.firstName[0]}${employee.lastName[0]}',
+                  '${user.firstName[0]}${user.lastName[0]}',
                   style: TextStyle(
-                    color: employee.isActive 
+                    color: user.isActive 
                         ? context.colors.onPrimary 
                         : context.colors.textSecondary,
                     fontWeight: FontWeight.bold,
@@ -195,34 +195,65 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${employee.firstName} ${employee.lastName}',
+                      '${user.firstName} ${user.lastName}',
                       style: context.textStyles.body.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: context.responsive<double>(xs: 14, sm: 15, md: 16),
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: context.responsive<double>(xs: 6, sm: 7, md: 8),
-                        vertical: 1,
+                    Text(
+                      user.email,
+                      style: context.textStyles.caption.copyWith(
+                        color: context.colors.textSecondary,
+                        fontSize: context.responsive<double>(xs: 11, sm: 12, md: 13),
                       ),
-                      decoration: BoxDecoration(
-                        color: employee.isActive
-                            ? context.colors.success.withOpacity(0.1)
-                            : context.colors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        employee.isActive ? 'Active' : 'Inactive',
-                        style: context.textStyles.caption.copyWith(
-                          color: employee.isActive
-                              ? context.colors.success
-                              : context.colors.error,
-                          fontWeight: FontWeight.w600,
-                          fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.responsive<double>(xs: 6, sm: 7, md: 8),
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: user.isActive
+                                ? context.colors.success.withOpacity(0.1)
+                                : context.colors.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            user.isActive ? 'Active' : 'Inactive',
+                            style: context.textStyles.caption.copyWith(
+                              color: user.isActive
+                                  ? context.colors.success
+                                  : context.colors.error,
+                              fontWeight: FontWeight.w600,
+                              fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.responsive<double>(xs: 6, sm: 7, md: 8),
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.colors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            user.role,
+                            style: context.textStyles.caption.copyWith(
+                              color: context.colors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -232,8 +263,8 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                   Icons.edit_outlined,
                   size: context.responsive<double>(xs: 18, sm: 20, md: 22),
                 ),
-                onPressed: () => _showEditDialog(context, employee),
-                tooltip: 'Edit employee',
+                onPressed: () => _showEditDialog(context, user),
+                tooltip: 'Edit user',
                 padding: const EdgeInsets.all(4),
                 constraints: BoxConstraints(
                   minWidth: context.responsive<double>(xs: 32, sm: 36, md: 40),
@@ -260,7 +291,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            hasFilters ? 'No employees found' : 'No employees yet',
+            hasFilters ? 'No users found' : 'No users yet',
             style: context.textStyles.title.copyWith(
               color: context.colors.textSecondary,
             ),
@@ -269,7 +300,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
           Text(
             hasFilters 
                 ? 'Try adjusting your search or filters'
-                : 'Start by adding your first employee',
+                : 'Start by adding your first user',
             style: context.textStyles.body.copyWith(
               color: context.colors.textSecondary,
             ),
@@ -279,7 +310,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
             ElevatedButton.icon(
               onPressed: () => _showCreateDialog(context),
               icon: const Icon(Icons.add),
-              label: const Text('Add Employee'),
+              label: const Text('Add User'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
                 foregroundColor: context.colors.onPrimary,
@@ -298,31 +329,33 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
   void _showCreateDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => _CreateEmployeeDialog(ref: ref),
+      builder: (_) => _CreateUserDialog(ref: ref),
     );
   }
 
-  void _showEditDialog(BuildContext context, EmployeeModel employee) {
+  void _showEditDialog(BuildContext context, UserModel user) {
     showDialog(
       context: context,
-      builder: (_) => _EditEmployeeDialog(employee: employee, ref: ref),
+      builder: (_) => _EditUserDialog(user: user, ref: ref),
     );
   }
 }
 
-class _CreateEmployeeDialog extends StatefulWidget {
+class _CreateUserDialog extends StatefulWidget {
   final WidgetRef ref;
 
-  const _CreateEmployeeDialog({required this.ref});
+  const _CreateUserDialog({required this.ref});
 
   @override
-  State<_CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
+  State<_CreateUserDialog> createState() => _CreateUserDialogState();
 }
 
-class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
+class _CreateUserDialogState extends State<_CreateUserDialog> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  String _selectedRole = 'user';
   bool _isActive = true;
   bool _isLoading = false;
 
@@ -330,13 +363,14 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Employee'),
+      title: const Text('Add User'),
       content: Form(
         key: _formKey,
         child: Column(
@@ -352,6 +386,27 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
               controller: _lastNameController,
               label: 'Last Name',
               hintText: 'Enter last name',
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            AppTextField(
+              controller: _emailController,
+              label: 'Email',
+              hintText: 'Enter email',
+              keyboardType: TextInputType.emailAddress,
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            DropdownButtonFormField<String>(
+              value: _selectedRole,
+              decoration: const InputDecoration(
+                labelText: 'Role',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                DropdownMenuItem(value: 'manager', child: Text('Manager')),
+                DropdownMenuItem(value: 'user', child: Text('User')),
+              ],
+              onChanged: (value) => setState(() => _selectedRole = value!),
             ),
             SizedBox(height: context.dimensions.spacingM),
             CheckboxListTile(
@@ -389,7 +444,8 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
 
   Future<void> _handleSubmit() async {
     if (_firstNameController.text.trim().isEmpty ||
-        _lastNameController.text.trim().isEmpty) {
+        _lastNameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please fill in all fields'),
@@ -402,22 +458,25 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final employee = EmployeeModel(
+      final user = UserModel(
         id: '',
+        authUid: '', // This will be set by the repository
+        email: _emailController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
+        role: _selectedRole,
         isActive: _isActive,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(employeeRepositoryProvider).create(employee);
+      await widget.ref.read(userRepositoryProvider).create(user);
 
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Employee added successfully'),
+            content: const Text('User added successfully'),
             backgroundColor: context.colors.success,
           ),
         );
@@ -439,45 +498,50 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
   }
 }
 
-class _EditEmployeeDialog extends StatefulWidget {
-  final EmployeeModel employee;
+class _EditUserDialog extends StatefulWidget {
+  final UserModel user;
   final WidgetRef ref;
 
-  const _EditEmployeeDialog({
-    required this.employee,
+  const _EditUserDialog({
+    required this.user,
     required this.ref,
   });
 
   @override
-  State<_EditEmployeeDialog> createState() => _EditEmployeeDialogState();
+  State<_EditUserDialog> createState() => _EditUserDialogState();
 }
 
-class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
+class _EditUserDialogState extends State<_EditUserDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  late final TextEditingController _emailController;
+  late String _selectedRole;
   late bool _isActive;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.employee.firstName);
-    _lastNameController = TextEditingController(text: widget.employee.lastName);
-    _isActive = widget.employee.isActive;
+    _firstNameController = TextEditingController(text: widget.user.firstName);
+    _lastNameController = TextEditingController(text: widget.user.lastName);
+    _emailController = TextEditingController(text: widget.user.email);
+    _selectedRole = widget.user.role.toLowerCase();
+    _isActive = widget.user.isActive;
   }
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Employee'),
+      title: const Text('Edit User'),
       content: Form(
         key: _formKey,
         child: Column(
@@ -493,6 +557,27 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
               controller: _lastNameController,
               label: 'Last Name',
               hintText: 'Enter last name',
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            AppTextField(
+              controller: _emailController,
+              label: 'Email',
+              hintText: 'Enter email',
+              keyboardType: TextInputType.emailAddress,
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            DropdownButtonFormField<String>(
+              value: _selectedRole,
+              decoration: const InputDecoration(
+                labelText: 'Role',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                DropdownMenuItem(value: 'manager', child: Text('Manager')),
+                DropdownMenuItem(value: 'user', child: Text('User')),
+              ],
+              onChanged: (value) => setState(() => _selectedRole = value!),
             ),
             SizedBox(height: context.dimensions.spacingM),
             CheckboxListTile(
@@ -530,7 +615,8 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
 
   Future<void> _handleSubmit() async {
     if (_firstNameController.text.trim().isEmpty ||
-        _lastNameController.text.trim().isEmpty) {
+        _lastNameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please fill in all fields'),
@@ -543,23 +629,25 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final updatedEmployee = widget.employee.copyWith(
+      final updatedUser = widget.user.copyWith(
+        email: _emailController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
+        role: _selectedRole,
         isActive: _isActive,
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(employeeRepositoryProvider).update(
-        widget.employee.id,
-        updatedEmployee,
+      await widget.ref.read(userRepositoryProvider).update(
+        widget.user.id,
+        updatedUser,
       );
 
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Employee updated successfully'),
+            content: const Text('User updated successfully'),
             backgroundColor: context.colors.success,
           ),
         );
