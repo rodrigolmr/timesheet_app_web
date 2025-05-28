@@ -155,6 +155,15 @@ class DatabaseScreen extends ConsumerWidget {
                   icon: Icon(Icons.upload_file),
                   label: Text('Restore from Backup'),
                 ),
+                ElevatedButton.icon(
+                  onPressed: () => context.goNamed('dataImport'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: Icon(Icons.import_export),
+                  label: Text('Import from Old App'),
+                ),
                 OutlinedButton.icon(
                   onPressed: () => _handleClearCache(context, ref),
                   style: OutlinedButton.styleFrom(

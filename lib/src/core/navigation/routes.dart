@@ -19,6 +19,7 @@ import 'package:timesheet_app_web/src/features/expense/presentation/screens/expe
 import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_scanner_screen.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/screens/users_screen.dart';
 import 'package:timesheet_app_web/src/features/company_card/presentation/screens/company_cards_screen.dart';
+import 'package:timesheet_app_web/src/features/database/presentation/screens/data_import_screen.dart';
 
 part 'routes.g.dart';
 
@@ -34,6 +35,7 @@ enum AppRoute {
   themeSelector('/settings/theme-selector'),
   imageProcessingDebug('/settings/image-processing-debug'),
   database('/settings/database'),
+  dataImport('/settings/database/import'),
   jobRecordCreate('/job-record-create'),
   jobRecordEdit('/job-records/edit/:id'),
   jobRecords('/job-records'),
@@ -138,6 +140,11 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.database.path,
         name: AppRoute.database.name,
         builder: (context, state) => const DatabaseScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.dataImport.path,
+        name: AppRoute.dataImport.name,
+        builder: (context, state) => const DataImportScreen(),
       ),
       GoRoute(
         path: AppRoute.jobRecordCreate.path,

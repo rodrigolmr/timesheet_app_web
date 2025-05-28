@@ -5,6 +5,14 @@ import 'package:flutter/material.dart';
 /// Centraliza valores de espaçamento, bordas, tamanhos de botões e outros
 /// elementos para garantir consistência em toda a aplicação.
 class AppDimensions {
+  // Static constants for compatibility
+  static const double padding12 = 12.0;
+  static const double padding16 = 16.0;
+  static const double padding24 = 24.0;
+  static const double spacing8 = 8.0;
+  static const double spacing16 = 16.0;
+  static const double spacing24 = 24.0;
+  static const double radiusMedium = 10.0;
   /// Espaçamento extra pequeno
   final double spacingXS;
   

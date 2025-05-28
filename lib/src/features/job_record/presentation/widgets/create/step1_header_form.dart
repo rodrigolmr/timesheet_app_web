@@ -214,6 +214,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                       label: 'Job Name',
                       hintText: 'Enter job name',
                       controller: _jobNameController,
+                      textCapitalization: TextCapitalization.words,
                       hasError: _jobNameHasError,
                       errorText: null,
                       onClearError: () {
@@ -253,6 +254,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                       label: 'Territorial Manager',
                       hintText: 'Enter territorial manager name',
                       controller: _territorialManagerController,
+                      textCapitalization: TextCapitalization.words,
                       onChanged: (value) {
                         _updateFormData('territorialManager', value);
                       },
@@ -273,6 +275,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                       label: 'Foreman',
                       hintText: 'Enter foreman name',
                       controller: _foremanController,
+                      textCapitalization: TextCapitalization.words,
                       onChanged: (value) {
                         _updateFormData('foreman', value);
                       },

@@ -549,7 +549,7 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
                               foregroundColor: context.colors.primary,
                               child: Icon(Icons.arrow_back, size: 16),
                             ),
-                            
+                        
                         // Clear button para o Step 1 com ícone de vassoura amarelo
                         if (currentStep == 0)
                           if (!context.isMobile)
