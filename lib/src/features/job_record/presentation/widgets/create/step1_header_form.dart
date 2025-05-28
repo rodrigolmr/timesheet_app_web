@@ -81,9 +81,15 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController.text = formState.jobDescription;
     _foremanController.text = formState.foreman;
     _vehicleController.text = formState.vehicle;
-    // Load the date from form state - in edit mode we always want to load the existing date
-    _selectedDate = formState.date;
-    _dateWasModified = true;
+    // Only load date if we're in edit mode or if user already selected a date
+    final isEditMode = ref.read(isEditModeProvider);
+    if (isEditMode || _dateWasModified) {
+      _selectedDate = formState.date;
+      _dateWasModified = true;
+    } else {
+      _selectedDate = null;
+      _dateWasModified = false;
+    }
     
     // Clear errors when reloading data (like after Clear button)
     clearErrors();
@@ -171,31 +177,20 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
       _initialized = true;
     }
     
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        left: context.responsive<double>(
-          xs: context.dimensions.spacingS,
-          sm: context.dimensions.spacingM,
-          md: context.dimensions.spacingL,
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: context.responsive<double>(
+            xs: double.infinity,
+            sm: double.infinity,
+            md: 800,
+            lg: 1000,
+            xl: 1200,
+          ),
         ),
-        right: context.responsive<double>(
-          xs: context.dimensions.spacingS,
-          sm: context.dimensions.spacingM,
-          md: context.dimensions.spacingL,
-        ),
-        // Sem padding inferior para maximizar o espaço
-        bottom: 0,
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: context.responsive<double>(
-              xs: double.infinity,
-              sm: double.infinity,
-              md: 800,
-              lg: 1000,
-              xl: 1200,
-            ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.dimensions.spacingM,
           ),
           child: Form(
             key: _formKey,
@@ -293,7 +288,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                   ],
                 ),
                 
-                SizedBox(height: context.dimensions.spacingM),
+                SizedBox(height: context.dimensions.spacingS),
                 
                 // Material - Full width multiline
                 AppMultilineTextField(
@@ -307,7 +302,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                   },
                 ),
                 
-                SizedBox(height: context.dimensions.spacingM),
+                SizedBox(height: context.dimensions.spacingS),
                 
                 // Job Description (required) - Full width multiline
                 AppMultilineTextField(

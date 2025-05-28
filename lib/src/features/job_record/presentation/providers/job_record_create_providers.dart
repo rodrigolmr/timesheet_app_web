@@ -124,6 +124,7 @@ class JobRecordFormState extends _$JobRecordFormState {
     
     state = state.copyWith(
       jobName: '',
+      date: DateTime.now(), // Reset date to current date (will be cleared in the form)
       territorialManager: '',
       jobSize: '',
       material: '',
@@ -132,7 +133,7 @@ class JobRecordFormState extends _$JobRecordFormState {
       vehicle: '',
       notes: '',
       updatedAt: DateTime.now(),
-      // Keep date and employees intact
+      // Keep employees intact
     );
     
     developer.log('Header data cleared', name: 'JobRecordFormState');

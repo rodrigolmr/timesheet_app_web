@@ -28,6 +28,7 @@ class JobRecordCreateScreen extends ConsumerStatefulWidget {
 
 class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
   bool _isInitialized = false;
+  final ScrollController _scrollController = ScrollController();
   
   @override
   void initState() {
@@ -44,6 +45,12 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
         ref.read(isEditModeProvider.notifier).setEditMode(false);
       });
     }
+  }
+  
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
   
   void _loadExistingRecord() {
@@ -441,6 +448,7 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
   
   Widget _buildContent(BuildContext context, int currentStep) {
     return Scaffold(
+      resizeToAvoidBottomInset: false, // Desabilita o comportamento padrão
       appBar: AppHeader(
         title: widget.editRecordId != null ? 'Edit Job Record' : 'Create Job Record',
         showBackButton: true,
@@ -469,15 +477,16 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
               // Current step content
               Expanded(
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: EdgeInsets.only(
-                    top: 0, // Removido completamente o espaço superior
-                    // Adicionado padding inferior que corresponde à altura dos botões + seu espaçamento
-                    bottom: currentStep == 0 ? context.responsive<double>(
-                      xs: 56.0 + context.dimensions.spacingS * 2, // Altura do FAB (56) + espaçamento acima e abaixo
+                    top: 0,
+                    // Padding inferior que corresponde à altura dos botões + seu espaçamento
+                    bottom: context.responsive<double>(
+                      xs: 56.0 + context.dimensions.spacingS * 2, // FAB height + spacing above and below
                       sm: 56.0 + context.dimensions.spacingM * 2,
-                      md: 36.0 + context.dimensions.spacingM * 2, // Altura aproximada do ElevatedButton + espaçamento
+                      md: 36.0 + context.dimensions.spacingM * 2, // Button height + spacing
                       lg: 36.0 + context.dimensions.spacingM * 2,
-                    ) : 0,
+                    ),
                   ),
                   child: ResponsiveContainer(
                     padding: EdgeInsets.symmetric(
