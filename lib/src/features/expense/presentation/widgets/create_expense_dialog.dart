@@ -18,9 +18,13 @@ class CreateExpenseDialog extends StatelessWidget {
       ),
       child: Container(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               'Create Expense',
               style: context.textStyles.title.copyWith(
@@ -86,6 +90,7 @@ class CreateExpenseDialog extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -222,16 +227,14 @@ class CreateExpenseDialog extends StatelessWidget {
           // Close the dialog first
           Navigator.of(context).pop();
           
-          // Then navigate to expense info screen
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ExpenseInfoScreen(
-                imageData: fileBytes!,
-                isPdf: true,
-                fileName: fileName,
-              ),
-            ),
+          // Then navigate to expense info screen using GoRouter
+          context.push(
+            '/document-scanner/expense-info',
+            extra: {
+              'imageData': fileBytes!,
+              'isPdf': true,
+              'fileName': fileName,
+            },
           );
         }
       } else if (fileBytes == null) {

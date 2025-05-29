@@ -4,179 +4,152 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
-import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
+import 'package:timesheet_app_web/src/core/responsive/responsive_container.dart' as responsive;
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/providers/database_providers.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/widgets/import_collection_dialog.dart';
 import 'package:timesheet_app_web/src/features/database/data/models/database_stats_model.dart';
+import 'package:universal_html/html.dart' as html;
 
-class DatabaseScreen extends ConsumerWidget {
+class DatabaseScreen extends ConsumerStatefulWidget {
   const DatabaseScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final databaseStatsAsync = ref.watch(databaseStatsProvider);
-    final operationsState = ref.watch(databaseOperationsProvider);
+  ConsumerState<DatabaseScreen> createState() => _DatabaseScreenState();
+}
 
+class _DatabaseScreenState extends ConsumerState<DatabaseScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppHeader(
         title: 'Database Management',
+        subtitle: 'Manage your application data',
         showBackButton: true,
         showNavigationMenu: false,
-        actionIcon: Icons.refresh,
-        onActionPressed: () => ref.refresh(databaseStatsProvider),
       ),
-      body: databaseStatsAsync.when(
-        data: (stats) => _buildContent(context, ref, stats),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: context.colors.error,
-              ),
-              SizedBox(height: context.dimensions.spacingM),
-              Text(
-                'Error loading database stats',
-                style: context.textStyles.title,
-              ),
-              SizedBox(height: context.dimensions.spacingS),
-              Text(
-                error.toString(),
-                style: context.textStyles.body.copyWith(
-                  color: context.colors.textSecondary,
+      body: Column(
+        children: [
+          // Tab Bar
+          Container(
+            decoration: BoxDecoration(
+              color: context.colors.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: context.colors.surface,
+                  width: 1,
                 ),
-                textAlign: TextAlign.center,
               ),
-              SizedBox(height: context.dimensions.spacingL),
-              ElevatedButton(
-                onPressed: () => ref.refresh(databaseStatsProvider),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.primary,
-                  foregroundColor: context.colors.onPrimary,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: context.colors.primary,
+              unselectedLabelColor: context.colors.textSecondary,
+              indicatorColor: context.colors.primary,
+              indicatorWeight: 3,
+              isScrollable: context.isMobile,
+              labelStyle: TextStyle(
+                fontSize: context.responsive<double>(
+                  xs: 11,
+                  sm: 12,
+                  md: 13,
+                  lg: 14,
                 ),
-                child: Text('Try Again'),
               ),
-            ],
+              tabs: context.isMobile
+                  ? [
+                      Tab(icon: Icon(Icons.folder_outlined, size: context.iconSizeSmall)),
+                      Tab(icon: Icon(Icons.backup_outlined, size: context.iconSizeSmall)),
+                      Tab(icon: Icon(Icons.sync_alt_outlined, size: context.iconSizeSmall)),
+                    ]
+                  : [
+                      Tab(
+                        text: 'Collections',
+                        icon: Icon(Icons.folder_outlined),
+                      ),
+                      Tab(
+                        text: 'Backup & Restore',
+                        icon: Icon(Icons.backup_outlined),
+                      ),
+                      Tab(
+                        text: 'Import & Export',
+                        icon: Icon(Icons.sync_alt_outlined),
+                      ),
+                    ],
+            ),
           ),
-        ),
+          // Tab Views
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _CollectionsTab(),
+                _BackupRestoreTab(),
+                _ImportExportTab(),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+// Collections Tab
+class _CollectionsTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final databaseStatsAsync = ref.watch(databaseStatsProvider);
+
+    return databaseStatsAsync.when(
+      data: (stats) => _buildContent(context, ref, stats),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildError(context, ref, error),
     );
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, List<DatabaseStatsModel> stats) {
-    final operationsState = ref.watch(databaseOperationsProvider);
-
-    return ResponsiveContainer(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(context.dimensions.spacingM),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Actions section
-            _buildActionsSection(context, ref),
-            SizedBox(height: context.dimensions.spacingL),
-            
-            // Operations feedback
-            if (operationsState is AsyncLoading)
-              _buildLoadingIndicator(context, 'Processing operation...')
-            else if (operationsState is AsyncData && operationsState.value != null)
-              _buildSuccessMessage(context, operationsState.value!)
-            else if (operationsState is AsyncError)
-              _buildErrorMessage(context, operationsState.error.toString()),
-            
-            // Database overview
-            Text(
-              'Database Overview',
-              style: context.textStyles.headline,
-            ),
-            SizedBox(height: context.dimensions.spacingM),
-            _buildOverviewCard(context, stats),
-            SizedBox(height: context.dimensions.spacingL),
-            
-            // Collections
-            Text(
-              'Collections',
-              style: context.textStyles.headline,
-            ),
-            SizedBox(height: context.dimensions.spacingM),
-            
-            ResponsiveGrid(
-              spacing: context.dimensions.spacingM,
-              xsColumns: 1,
-              smColumns: 2,
-              mdColumns: 3,
-              lgColumns: 3,
-              xlColumns: 4,
-              children: stats.map((stat) => _buildCollectionCard(context, ref, stat)).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionsSection(BuildContext context, WidgetRef ref) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(context.dimensions.spacingM),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Database Actions',
-              style: context.textStyles.title,
-            ),
-            SizedBox(height: context.dimensions.spacingM),
-            Wrap(
-              spacing: context.dimensions.spacingM,
-              runSpacing: context.dimensions.spacingM,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _handleBackup(context, ref),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.primary,
-                    foregroundColor: context.colors.onPrimary,
-                  ),
-                  icon: Icon(Icons.backup),
-                  label: Text('Backup Database'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _showUploadDialog(context, ref),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.primary,
-                    foregroundColor: context.colors.onPrimary,
-                  ),
-                  icon: Icon(Icons.upload_file),
-                  label: Text('Restore from Backup'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => context.goNamed('dataImport'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: Icon(Icons.import_export),
-                  label: Text('Import from Old App'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => _handleClearCache(context, ref),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: context.colors.primary,
-                    side: BorderSide(color: context.colors.primary),
-                  ),
-                  icon: Icon(Icons.cleaning_services),
-                  label: Text('Clear Cache'),
-                ),
-              ],
-            ),
-          ],
-        ),
+    return responsive.ResponsiveContainer(
+      child: ListView(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingS,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingM,
+          lg: context.dimensions.spacingL,
+        )),
+        children: [
+          // Overview Card
+          _buildOverviewCard(context, stats),
+          SizedBox(height: context.dimensions.spacingL),
+          
+          // Collections Grid
+          Text(
+            'Collections',
+            style: context.textStyles.headline,
+          ),
+          SizedBox(height: context.dimensions.spacingM),
+          
+          ...stats.map((stat) => Padding(
+            padding: EdgeInsets.only(bottom: context.dimensions.spacingM),
+            child: _buildCollectionCard(context, ref, stat),
+          )).toList(),
+        ],
       ),
     );
   }
@@ -184,61 +157,139 @@ class DatabaseScreen extends ConsumerWidget {
   Widget _buildOverviewCard(BuildContext context, List<DatabaseStatsModel> stats) {
     final totalDocuments = stats.fold(0, (sum, stat) => sum + stat.documentCount);
     final totalSize = stats.fold(0, (sum, stat) => sum + stat.approximateSizeInBytes);
-    final mostRecentUpdate = stats
-        .where((stat) => stat.lastUpdated != null)
-        .map((stat) => stat.lastUpdated!)
-        .fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
 
     return Card(
       elevation: 2,
       child: Padding(
-        padding: EdgeInsets.all(context.dimensions.spacingM),
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingM,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+          lg: context.dimensions.spacingL,
+        )),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.storage,
-                  size: context.dimensions.iconSizeL,
-                  color: context.colors.primary,
-                ),
-                SizedBox(width: context.dimensions.spacingM),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            context.isMobile
+                ? Column(
                     children: [
-                      Text(
-                        'Total Documents',
-                        style: context.textStyles.caption.copyWith(
-                          color: context.colors.textSecondary,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(context.dimensions.spacingS),
+                            decoration: BoxDecoration(
+                              color: context.colors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                            ),
+                            child: Icon(
+                              Icons.storage,
+                              size: context.iconSizeMedium,
+                              color: context.colors.primary,
+                            ),
+                          ),
+                          SizedBox(width: context.dimensions.spacingS),
+                          Text(
+                            'Database Overview',
+                            style: context.responsive<TextStyle>(
+                              xs: context.textStyles.subtitle,
+                              sm: context.textStyles.title,
+                              md: context.textStyles.title,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: context.dimensions.spacingM),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Column(
+                            children: [
+                              Text(
+                                totalDocuments.toString(),
+                                style: context.textStyles.headline,
+                              ),
+                              Text(
+                                'Documents',
+                                style: context.textStyles.caption.copyWith(
+                                  color: context.colors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            width: 1,
+                            height: 40,
+                            color: context.colors.surface,
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                _formatBytes(totalSize),
+                                style: context.textStyles.headline,
+                              ),
+                              Text(
+                                'Total Size',
+                                style: context.textStyles.caption.copyWith(
+                                  color: context.colors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(context.dimensions.spacingM),
+                        decoration: BoxDecoration(
+                          color: context.colors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                        ),
+                        child: Icon(
+                          Icons.storage,
+                          size: context.dimensions.iconSizeL,
+                          color: context.colors.primary,
                         ),
                       ),
-                      Text(
-                        totalDocuments.toString(),
-                        style: context.textStyles.headline,
+                      SizedBox(width: context.dimensions.spacingM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Database Overview',
+                              style: context.textStyles.title,
+                            ),
+                            SizedBox(height: context.dimensions.spacingXS),
+                            Text(
+                              '$totalDocuments total documents',
+                              style: context.textStyles.caption.copyWith(
+                                color: context.colors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatBytes(totalSize),
+                            style: context.textStyles.headline,
+                          ),
+                          Text(
+                            'Total Size',
+                            style: context.textStyles.caption.copyWith(
+                              color: context.colors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: context.dimensions.spacingM),
-            _buildStatRow(
-              context,
-              icon: Icons.data_usage,
-              label: 'Approximate Size',
-              value: _formatBytes(totalSize),
-            ),
-            if (mostRecentUpdate != null) ...[
-              SizedBox(height: context.dimensions.spacingS),
-              _buildStatRow(
-                context,
-                icon: Icons.update,
-                label: 'Last Updated',
-                value: _formatDateTime(mostRecentUpdate),
-              ),
-            ],
           ],
         ),
       ),
@@ -248,238 +299,112 @@ class DatabaseScreen extends ConsumerWidget {
   Widget _buildCollectionCard(BuildContext context, WidgetRef ref, DatabaseStatsModel stat) {
     return Card(
       elevation: 2,
-      child: InkWell(
-        onTap: () => _showCollectionDetails(context, ref, stat),
-        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-        child: Padding(
-          padding: EdgeInsets.all(context.dimensions.spacingM),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(context.dimensions.spacingS),
-                    decoration: BoxDecoration(
-                      color: context.colors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(context.dimensions.borderRadiusS),
-                    ),
-                    child: Icon(
-                      Icons.folder,
-                      color: context.colors.primary,
-                      size: context.dimensions.iconSizeM,
-                    ),
-                  ),
-                  SizedBox(width: context.dimensions.spacingM),
-                  Expanded(
-                    child: Text(
-                      stat.collectionName,
-                      style: context.textStyles.title,
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      switch (value) {
-                        case 'view':
-                          _showCollectionDocuments(context, ref, stat.collectionName);
-                          break;
-                        case 'add':
-                          _showAddDocumentDialog(context, ref, stat.collectionName);
-                          break;
-                        case 'test':
-                          _showGenerateTestDataDialog(context, ref, stat.collectionName);
-                          break;
-                        case 'export':
-                          _handleExportCollection(context, ref, stat.collectionName);
-                          break;
-                        case 'import':
-                          _handleImportCollection(context, ref, stat.collectionName);
-                          break;
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'view',
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility, size: 20),
-                            SizedBox(width: 8),
-                            Text('View Documents'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'add',
-                        child: Row(
-                          children: [
-                            Icon(Icons.add, size: 20),
-                            SizedBox(width: 8),
-                            Text('Add Document'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'test',
-                        child: Row(
-                          children: [
-                            Icon(Icons.science, size: 20),
-                            SizedBox(width: 8),
-                            Text('Generate Test Data'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'export',
-                        child: Row(
-                          children: [
-                            Icon(Icons.download, size: 20),
-                            SizedBox(width: 8),
-                            Text('Export'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'import',
-                        child: Row(
-                          children: [
-                            Icon(Icons.upload_file, size: 20),
-                            SizedBox(width: 8),
-                            Text('Import CSV'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: context.dimensions.spacingM),
-              _buildCollectionStat(
-                context,
-                label: 'Documents',
-                value: stat.documentCount.toString(),
-              ),
-              SizedBox(height: context.dimensions.spacingXS),
-              _buildCollectionStat(
-                context,
-                label: 'Size',
-                value: _formatBytes(stat.approximateSizeInBytes),
-              ),
-              if (stat.lastUpdated != null) ...[
-                SizedBox(height: context.dimensions.spacingXS),
-                _buildCollectionStat(
-                  context,
-                  label: 'Last Updated',
-                  value: _formatDateTime(stat.lastUpdated!),
-                ),
-              ],
-            ],
+      child: ExpansionTile(
+        leading: Container(
+          padding: EdgeInsets.all(context.dimensions.spacingS),
+          decoration: BoxDecoration(
+            color: context.categoryColorByName(stat.collectionName).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusS),
+          ),
+          child: Icon(
+            _getIconForCollection(stat.collectionName),
+            color: context.categoryColorByName(stat.collectionName),
+            size: context.dimensions.iconSizeM,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: context.dimensions.iconSizeS,
-          color: context.colors.textSecondary,
+        title: Text(
+          _formatCollectionName(stat.collectionName),
+          style: context.textStyles.title,
         ),
-        SizedBox(width: context.dimensions.spacingS),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: context.textStyles.caption.copyWith(
-                  color: context.colors.textSecondary,
-                ),
-              ),
-              Text(
-                value,
-                style: context.textStyles.body,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCollectionStat(
-    BuildContext context, {
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
+        subtitle: Text(
+          '${stat.documentCount} documents • ${_formatBytes(stat.approximateSizeInBytes)}',
           style: context.textStyles.caption.copyWith(
             color: context.colors.textSecondary,
           ),
         ),
-        Text(
-          value,
-          style: context.textStyles.body,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoadingIndicator(BuildContext context, String message) {
-    return Container(
-      padding: EdgeInsets.all(context.dimensions.spacingM),
-      margin: EdgeInsets.only(bottom: context.dimensions.spacingM),
-      decoration: BoxDecoration(
-        color: context.colors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-      ),
-      child: Row(
         children: [
-          const CircularProgressIndicator(strokeWidth: 2),
-          SizedBox(width: context.dimensions.spacingM),
-          Text(
-            message,
-            style: context.textStyles.body,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSuccessMessage(BuildContext context, String message) {
-    return Container(
-      padding: EdgeInsets.all(context.dimensions.spacingM),
-      margin: EdgeInsets.only(bottom: context.dimensions.spacingM),
-      decoration: BoxDecoration(
-        color: context.colors.success.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            color: context.colors.success,
-            size: context.dimensions.iconSizeM,
-          ),
-          SizedBox(width: context.dimensions.spacingM),
-          Expanded(
-            child: Text(
-              message,
-              style: context.textStyles.body.copyWith(
-                color: context.colors.success,
+          Container(
+            padding: EdgeInsets.all(context.dimensions.spacingM),
+            decoration: BoxDecoration(
+              color: context.colors.surface.withOpacity(0.5),
+              border: Border(
+                top: BorderSide(color: context.colors.surface),
               ),
+            ),
+            child: Column(
+              children: [
+                // Action Buttons
+                Wrap(
+                  spacing: context.responsive<double>(
+                    xs: context.dimensions.spacingXS,
+                    sm: context.dimensions.spacingS,
+                    md: context.dimensions.spacingS,
+                  ),
+                  runSpacing: context.responsive<double>(
+                    xs: context.dimensions.spacingXS,
+                    sm: context.dimensions.spacingS,
+                    md: context.dimensions.spacingS,
+                  ),
+                  alignment: context.isMobile ? WrapAlignment.center : WrapAlignment.start,
+                  children: [
+                    _ActionButton(
+                      icon: Icons.visibility_outlined,
+                      label: 'View Documents',
+                      onPressed: () => _showCollectionDocuments(context, ref, stat.collectionName),
+                    ),
+                    _ActionButton(
+                      icon: Icons.add_circle_outline,
+                      label: 'Add Document',
+                      onPressed: () => _showAddDocumentDialog(context, ref, stat.collectionName),
+                    ),
+                    _ActionButton(
+                      icon: Icons.download_outlined,
+                      label: 'Export',
+                      onPressed: () => _handleExportCollection(context, ref, stat.collectionName),
+                    ),
+                    _ActionButton(
+                      icon: Icons.upload_outlined,
+                      label: 'Import CSV',
+                      onPressed: () => _handleImportCollection(context, ref, stat.collectionName),
+                    ),
+                    if (_canGenerateTestData(stat.collectionName))
+                      _ActionButton(
+                        icon: Icons.science_outlined,
+                        label: 'Test Data',
+                        onPressed: () => _showGenerateTestDataDialog(context, ref, stat.collectionName),
+                      ),
+                  ],
+                ),
+                
+                // Collection Stats
+                if (stat.lastUpdated != null) ...[
+                  SizedBox(height: context.dimensions.spacingM),
+                  Container(
+                    padding: EdgeInsets.all(context.dimensions.spacingS),
+                    decoration: BoxDecoration(
+                      color: context.colors.background,
+                      borderRadius: BorderRadius.circular(context.dimensions.borderRadiusS),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.update,
+                          size: context.dimensions.iconSizeS,
+                          color: context.colors.textSecondary,
+                        ),
+                        SizedBox(width: context.dimensions.spacingXS),
+                        Text(
+                          'Last updated: ${_formatDateTime(stat.lastUpdated!)}',
+                          style: context.textStyles.caption.copyWith(
+                            color: context.colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -487,44 +412,83 @@ class DatabaseScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorMessage(BuildContext context, String error) {
-    return Container(
-      padding: EdgeInsets.all(context.dimensions.spacingM),
-      margin: EdgeInsets.only(bottom: context.dimensions.spacingM),
-      decoration: BoxDecoration(
-        color: context.colors.error.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-      ),
-      child: Row(
+  Widget _buildError(BuildContext context, WidgetRef ref, Object error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.error,
+            Icons.error_outline,
+            size: 64,
             color: context.colors.error,
-            size: context.dimensions.iconSizeM,
           ),
-          SizedBox(width: context.dimensions.spacingM),
-          Expanded(
-            child: Text(
-              error,
-              style: context.textStyles.body.copyWith(
-                color: context.colors.error,
-              ),
+          SizedBox(height: context.dimensions.spacingM),
+          Text(
+            'Error loading database stats',
+            style: context.textStyles.title,
+          ),
+          SizedBox(height: context.dimensions.spacingS),
+          Text(
+            error.toString(),
+            style: context.textStyles.body.copyWith(
+              color: context.colors.textSecondary,
             ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: context.dimensions.spacingL),
+          ElevatedButton.icon(
+            onPressed: () => ref.refresh(databaseStatsProvider),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
+            ),
+            icon: Icon(Icons.refresh),
+            label: Text('Try Again'),
           ),
         ],
       ),
     );
   }
 
-  void _showCollectionDetails(BuildContext context, WidgetRef ref, DatabaseStatsModel stat) {
-    showDialog(
-      context: context,
-      builder: (context) => _CollectionDetailsDialog(
-        collectionName: stat.collectionName,
-      ),
-    );
+  IconData _getIconForCollection(String collectionName) {
+    switch (collectionName) {
+      case 'users':
+        return Icons.person_outline;
+      case 'employees':
+        return Icons.badge_outlined;
+      case 'company_cards':
+        return Icons.credit_card_outlined;
+      case 'expenses':
+        return Icons.receipt_outlined;
+      case 'job_records':
+        return Icons.work_outline;
+      default:
+        return Icons.folder_outlined;
+    }
   }
 
+  String _formatCollectionName(String name) {
+    return name.replaceAll('_', ' ').split(' ').map((word) => 
+      word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1)
+    ).join(' ');
+  }
+
+  bool _canGenerateTestData(String collectionName) {
+    return ['users', 'employees', 'company_cards', 'expenses', 'job_records'].contains(collectionName);
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Action handlers
   void _showCollectionDocuments(BuildContext context, WidgetRef ref, String collectionName) {
     showDialog(
       context: context,
@@ -556,28 +520,29 @@ class DatabaseScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Export Collection'),
-        content: Text('Export the "$collectionName" collection?'),
+        title: Text('Export Collection'),
+        content: Text('Export all documents from "$collectionName"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(databaseOperationsProvider.notifier).exportCollection(collectionName);
             },
-            child: Text(
-              'Export',
-              style: TextStyle(color: context.colors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
             ),
+            child: Text('Export'),
           ),
         ],
       ),
     );
   }
-  
+
   void _handleImportCollection(BuildContext context, WidgetRef ref, String collectionName) {
     showDialog(
       context: context,
@@ -586,35 +551,217 @@ class DatabaseScreen extends ConsumerWidget {
       ),
     );
   }
-  
-  void _showUploadDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text('Select Collection to Restore'),
-        contentPadding: EdgeInsets.all(context.dimensions.spacingL),
+}
+
+// Backup & Restore Tab
+class _BackupRestoreTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final operationsState = ref.watch(databaseOperationsProvider);
+
+    return responsive.ResponsiveContainer(
+      child: ListView(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingS,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingM,
+          lg: context.dimensions.spacingL,
+        )),
         children: [
-          Text('Choose a collection to restore from backup:'),
-          SizedBox(height: context.dimensions.spacingM),
-          ...['users', 'employees', 'company_cards', 'expenses', 'job_records'].map((collection) => 
-            ListTile(
-              leading: Icon(Icons.upload_file),
-              title: Text(collection),
-              onTap: () {
-                Navigator.of(context).pop();
-                _handleImportCollection(context, ref, collection);
-              },
+          // Status Messages
+          if (operationsState is AsyncLoading)
+            _buildStatusMessage(
+              context,
+              icon: Icons.sync,
+              message: 'Processing...',
+              color: context.colors.primary,
+              isLoading: true,
             ),
+          if (operationsState is AsyncData && operationsState.value != null)
+            _buildStatusMessage(
+              context,
+              icon: Icons.check_circle,
+              message: operationsState.value!,
+              color: context.colors.success,
+            ),
+          if (operationsState is AsyncError)
+            _buildStatusMessage(
+              context,
+              icon: Icons.error,
+              message: operationsState.error.toString(),
+              color: context.colors.error,
+            ),
+
+          // Backup Section
+          _buildSectionCard(
+            context,
+            title: 'Backup Database',
+            subtitle: 'Create a complete backup of all collections',
+            icon: Icons.backup,
+            color: context.colors.primary,
+            actions: [
+              ElevatedButton.icon(
+                onPressed: () => _handleBackup(context, ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.colors.primary,
+                  foregroundColor: context.colors.onPrimary,
+                ),
+                icon: Icon(Icons.download),
+                label: Text('Create Backup'),
+              ),
+            ],
           ),
+          
           SizedBox(height: context.dimensions.spacingM),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
+
+          // Restore Section
+          _buildSectionCard(
+            context,
+            title: 'Restore Database',
+            subtitle: 'Restore data from a backup file',
+            icon: Icons.restore,
+            color: Colors.orange,
+            actions: [
+              ElevatedButton.icon(
+                onPressed: () => _showRestoreOptions(context, ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                icon: Icon(Icons.upload_file),
+                label: Text('Restore from File'),
+              ),
+            ],
+          ),
+
+          SizedBox(height: context.dimensions.spacingM),
+
+          // Cache Management
+          _buildSectionCard(
+            context,
+            title: 'Cache Management',
+            subtitle: 'Clear local Firestore cache',
+            icon: Icons.cleaning_services,
+            color: context.colors.secondary,
+            actions: [
+              OutlinedButton.icon(
+                onPressed: () => _handleClearCache(context, ref),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: context.colors.secondary,
+                  side: BorderSide(color: context.colors.secondary),
+                ),
+                icon: Icon(Icons.clear),
+                label: Text('Clear Cache'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusMessage(
+    BuildContext context, {
+    required IconData icon,
+    required String message,
+    required Color color,
+    bool isLoading = false,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(context.dimensions.spacingM),
+      margin: EdgeInsets.only(bottom: context.dimensions.spacingM),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          if (isLoading)
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            )
+          else
+            Icon(icon, color: color, size: context.dimensions.iconSizeM),
+          SizedBox(width: context.dimensions.spacingM),
+          Expanded(
+            child: Text(
+              message,
+              style: context.textStyles.body.copyWith(color: color),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required List<Widget> actions,
+  }) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingM,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+          lg: context.dimensions.spacingL,
+        )),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.dimensions.spacingM),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: context.dimensions.iconSizeL,
+                  ),
+                ),
+                SizedBox(width: context.dimensions.spacingM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: context.textStyles.title,
+                      ),
+                      SizedBox(height: context.dimensions.spacingXS),
+                      Text(
+                        subtitle,
+                        style: context.textStyles.caption.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            Wrap(
+              spacing: context.dimensions.spacingM,
+              children: actions,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -623,24 +770,109 @@ class DatabaseScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Backup Database'),
-        content: const Text('Create a backup of all collections?'),
+        title: Text('Create Backup'),
+        content: Text('This will create a backup file containing all your data. Continue?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(databaseOperationsProvider.notifier).backupDatabase();
             },
-            child: Text(
-              'Backup',
-              style: TextStyle(color: context.colors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
             ),
+            child: Text('Create Backup'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showRestoreOptions(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Restore Database'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Choose what to restore:'),
+            SizedBox(height: context.dimensions.spacingM),
+            ListTile(
+              leading: Icon(Icons.folder_special),
+              title: Text('Single Collection'),
+              subtitle: Text('Restore a specific collection'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _showCollectionSelection(context, ref);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.storage),
+              title: Text('Full Database'),
+              subtitle: Text('Restore all collections'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _handleFullRestore(context, ref);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCollectionSelection(BuildContext context, WidgetRef ref) {
+    final collections = ['users', 'employees', 'company_cards', 'expenses', 'job_records'];
+    
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Select Collection to Restore'),
+        children: [
+          ...collections.map((collection) => SimpleDialogOption(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _handleImportCollection(context, ref, collection);
+            },
+            child: ListTile(
+              leading: Icon(Icons.folder),
+              title: Text(collection),
+              contentPadding: EdgeInsets.zero,
+            ),
+          )).toList(),
+        ],
+      ),
+    );
+  }
+
+  void _handleFullRestore(BuildContext context, WidgetRef ref) {
+    // Implement full database restore
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Full database restore is not yet implemented'),
+        backgroundColor: context.colors.warning,
+      ),
+    );
+  }
+
+  void _handleImportCollection(BuildContext context, WidgetRef ref, String collectionName) {
+    showDialog(
+      context: context,
+      builder: (context) => ImportCollectionDialog(
+        collectionName: collectionName,
       ),
     );
   }
@@ -649,12 +881,15 @@ class DatabaseScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Cache'),
-        content: const Text('Clear the local Firestore cache? This may temporarily slow down data loading.'),
+        title: Text('Clear Cache'),
+        content: Text(
+          'This will clear the local Firestore cache. Data will be reloaded from the server on next access.\n\n'
+          'This may temporarily slow down the application.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -662,7 +897,7 @@ class DatabaseScreen extends ConsumerWidget {
               ref.read(databaseOperationsProvider.notifier).clearCache();
             },
             child: Text(
-              'Clear',
+              'Clear Cache',
               style: TextStyle(color: context.colors.error),
             ),
           ),
@@ -670,125 +905,97 @@ class DatabaseScreen extends ConsumerWidget {
       ),
     );
   }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
 }
 
-// Collection details dialog
-class _CollectionDetailsDialog extends ConsumerWidget {
-  final String collectionName;
-
-  const _CollectionDetailsDialog({
-    required this.collectionName,
-  });
-
+// Import & Export Tab
+class _ImportExportTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final collectionDetailsAsync = ref.watch(collectionDetailsProvider(collectionName));
-    final sampleDocumentAsync = ref.watch(sampleDocumentProvider(collectionName));
+    return responsive.ResponsiveContainer(
+      child: ListView(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingS,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingM,
+          lg: context.dimensions.spacingL,
+        )),
+        children: [
+          // Import from Old App - MAINTAINED
+          _buildImportOldAppCard(context, ref),
+          
+          SizedBox(height: context.dimensions.spacingM),
 
-    return Dialog(
-      child: Container(
-        width: context.responsive<double>(
-          xs: double.infinity,
-          sm: 500,
-          md: 600,
-          lg: 700,
-        ),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-        ),
+          // Quick Actions
+          _buildQuickActionsCard(context, ref),
+          
+          SizedBox(height: context.dimensions.spacingM),
+
+          // Import/Export Help
+          _buildHelpCard(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImportOldAppCard(BuildContext context, WidgetRef ref) {
+    return Card(
+      elevation: 3,
+      color: context.categoryColorByName('add').withOpacity(0.1),
+      child: Padding(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingM,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+          lg: context.dimensions.spacingL,
+        )),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(context.dimensions.spacingM),
-              decoration: BoxDecoration(
-                color: context.colors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(context.dimensions.borderRadiusM),
-                  topRight: Radius.circular(context.dimensions.borderRadiusM),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder,
-                    color: context.colors.primary,
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.dimensions.spacingM),
+                  decoration: BoxDecoration(
+                    color: context.categoryColorByName('add'),
+                    borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                  ),
+                  child: Icon(
+                    Icons.history,
+                    color: Colors.white,
                     size: context.dimensions.iconSizeL,
                   ),
-                  SizedBox(width: context.dimensions.spacingM),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          collectionName,
-                          style: context.textStyles.headline,
-                        ),
-                        Text(
-                          'Collection Details',
-                          style: context.textStyles.caption.copyWith(
-                            color: context.colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.dimensions.spacingM),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    collectionDetailsAsync.when(
-                      data: (details) => _buildDetailsSection(context, details),
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (error, stack) => Text(
-                        'Error loading collection details: $error',
-                        style: context.textStyles.body.copyWith(
-                          color: context.colors.error,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: context.dimensions.spacingL),
-                    Text(
-                      'Sample Document',
-                      style: context.textStyles.title,
-                    ),
-                    SizedBox(height: context.dimensions.spacingM),
-                    sampleDocumentAsync.when(
-                      data: (document) => _buildSampleDocument(context, document),
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (error, stack) => Text(
-                        'Error loading sample document: $error',
-                        style: context.textStyles.body.copyWith(
-                          color: context.colors.error,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
+                SizedBox(width: context.dimensions.spacingM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Import from Old App',
+                        style: context.textStyles.headline,
+                      ),
+                      SizedBox(height: context.dimensions.spacingXS),
+                      Text(
+                        'Transfer data from the previous version',
+                        style: context.textStyles.body.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: context.dimensions.spacingL),
+            ElevatedButton.icon(
+              onPressed: () => context.goNamed('dataImport'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.categoryColorByName('add'),
+                foregroundColor: Colors.white,
+                minimumSize: Size(double.infinity, 48),
               ),
+              icon: Icon(Icons.upload_file),
+              label: Text('Open Import Tool'),
             ),
           ],
         ),
@@ -796,120 +1003,359 @@ class _CollectionDetailsDialog extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailsSection(BuildContext context, DatabaseCollectionModel details) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Collection Information',
-          style: context.textStyles.title,
-        ),
-        SizedBox(height: context.dimensions.spacingM),
-        _buildDetailRow(
-          context,
-          label: 'Document Count',
-          value: details.documentCount.toString(),
-        ),
-        if (details.lastUpdated != null) ...[
-          SizedBox(height: context.dimensions.spacingS),
-          _buildDetailRow(
-            context,
-            label: 'Last Updated',
-            value: _formatDateTime(details.lastUpdated!),
-          ),
-        ],
-        SizedBox(height: context.dimensions.spacingL),
-        Text(
-          'Fields',
-          style: context.textStyles.subtitle,
-        ),
-        SizedBox(height: context.dimensions.spacingS),
-        Wrap(
-          spacing: context.dimensions.spacingS,
-          runSpacing: context.dimensions.spacingS,
-          children: details.fields.map((field) => Chip(
-            label: Text(field),
-            backgroundColor: context.colors.primary.withOpacity(0.1),
-          )).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSampleDocument(BuildContext context, Map<String, dynamic> document) {
-    if (document.isEmpty) {
-      return Text(
-        'No documents in this collection',
-        style: context.textStyles.body.copyWith(
-          color: context.colors.textSecondary,
-        ),
-      );
-    }
-
-    return Container(
-      padding: EdgeInsets.all(context.dimensions.spacingM),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-        border: Border.all(
-          color: context.colors.surface,
-        ),
-      ),
-      child: SelectableText(
-        _formatJson(document),
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 14.0,
+  Widget _buildQuickActionsCard(BuildContext context, WidgetRef ref) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingM,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+          lg: context.dimensions.spacingL,
+        )),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quick Actions',
+              style: context.textStyles.title,
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            
+            // Export All Collections
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: context.colors.primary.withOpacity(0.1),
+                child: Icon(Icons.download, color: context.colors.primary),
+              ),
+              title: Text('Export All Collections'),
+              subtitle: Text('Download all data as JSON'),
+              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _handleExportAll(context, ref),
+            ),
+            
+            Divider(),
+            
+            // Import CSV
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.green.withOpacity(0.1),
+                child: Icon(Icons.table_chart, color: Colors.green),
+              ),
+              title: Text('Import CSV'),
+              subtitle: Text('Import data from CSV files'),
+              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _showImportCSVDialog(context, ref),
+            ),
+            
+            Divider(),
+            
+            // Export Templates
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue.withOpacity(0.1),
+                child: Icon(Icons.file_download, color: Colors.blue),
+              ),
+              title: Text('Download Templates'),
+              subtitle: Text('Get CSV templates for import'),
+              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _showDownloadTemplatesDialog(context, ref),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context, {
-    required String label,
-    required String value,
+  Widget _buildHelpCard(BuildContext context) {
+    return Card(
+      elevation: 1,
+      color: context.colors.surface,
+      child: Padding(
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingM,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+          lg: context.dimensions.spacingL,
+        )),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.help_outline,
+                  color: context.colors.primary,
+                  size: context.dimensions.iconSizeM,
+                ),
+                SizedBox(width: context.dimensions.spacingS),
+                Text(
+                  'Import/Export Help',
+                  style: context.textStyles.title,
+                ),
+              ],
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            _buildHelpItem(
+              context,
+              title: 'CSV Format',
+              description: 'First row must contain column headers matching field names',
+            ),
+            SizedBox(height: context.dimensions.spacingS),
+            _buildHelpItem(
+              context,
+              title: 'Date Format',
+              description: 'Use ISO format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS',
+            ),
+            SizedBox(height: context.dimensions.spacingS),
+            _buildHelpItem(
+              context,
+              title: 'Boolean Values',
+              description: 'Use "true" or "false" (lowercase)',
+            ),
+            SizedBox(height: context.dimensions.spacingS),
+            _buildHelpItem(
+              context,
+              title: 'Arrays',
+              description: 'Use JSON format: ["value1", "value2"]',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHelpItem(BuildContext context, {
+    required String title,
+    required String description,
   }) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: context.textStyles.body.copyWith(
-            color: context.colors.textSecondary,
+        Container(
+          width: 6,
+          height: 6,
+          margin: EdgeInsets.only(top: 6),
+          decoration: BoxDecoration(
+            color: context.colors.primary,
+            shape: BoxShape.circle,
           ),
         ),
-        Text(
-          value,
-          style: context.textStyles.body,
+        SizedBox(width: context.dimensions.spacingS),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: context.textStyles.subtitle.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                description,
+                style: context.textStyles.caption.copyWith(
+                  color: context.colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  void _handleExportAll(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Export All Collections'),
+        content: Text('This will export all collections to a single JSON file. Continue?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(databaseOperationsProvider.notifier).backupDatabase();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
+            ),
+            child: Text('Export'),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _formatJson(Map<String, dynamic> json) {
-    // Convert Timestamps to readable strings
-    final processedJson = _processJson(json);
-    const encoder = JsonEncoder.withIndent('  ');
-    return encoder.convert(processedJson);
+  void _showImportCSVDialog(BuildContext context, WidgetRef ref) {
+    final collections = ['employees', 'company_cards', 'expenses', 'job_records'];
+    
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Select Collection'),
+        children: [
+          ...collections.map((collection) => SimpleDialogOption(
+            onPressed: () {
+              Navigator.of(context).pop();
+              showDialog(
+                context: context,
+                builder: (context) => ImportCollectionDialog(
+                  collectionName: collection,
+                ),
+              );
+            },
+            child: ListTile(
+              leading: Icon(Icons.folder),
+              title: Text(collection),
+              contentPadding: EdgeInsets.zero,
+            ),
+          )).toList(),
+        ],
+      ),
+    );
   }
-  
-  dynamic _processJson(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value.map((key, val) => MapEntry(key, _processJson(val)));
-    } else if (value is List) {
-      return value.map((item) => _processJson(item)).toList();
-    } else if (value is DateTime) {
-      return value.toIso8601String();
-    } else if (value is Timestamp) {
-      // Convert Firestore Timestamp to DateTime string
-      return _formatDateTime(value.toDate());
+
+  void _showDownloadTemplatesDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Download Templates'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Select a template to download:'),
+            SizedBox(height: context.dimensions.spacingM),
+            ...['employees', 'company_cards', 'expenses'].map((collection) => 
+              ListTile(
+                leading: Icon(Icons.file_download),
+                title: Text('$collection.csv'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _downloadTemplate(context, collection);
+                },
+              ),
+            ).toList(),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _downloadTemplate(BuildContext context, String collectionName) {
+    // Create CSV template
+    String csvContent = '';
+    
+    switch (collectionName) {
+      case 'employees':
+        csvContent = 'first_name,last_name,is_active\nJohn,Doe,true\nJane,Smith,true';
+        break;
+      case 'company_cards':
+        csvContent = 'holder_name,last_four_digits,is_active\nJohn Doe,1234,true';
+        break;
+      case 'expenses':
+        csvContent = 'user_id,card_id,amount,date,description\n,,100.50,2024-01-01,Office Supplies';
+        break;
     }
-    return value;
+    
+    // Download file
+    final blob = html.Blob([csvContent]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement()
+      ..href = url
+      ..download = '${collectionName}_template.csv'
+      ..click();
+    html.Url.revokeObjectUrl(url);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Template downloaded: ${collectionName}_template.csv'),
+        backgroundColor: context.colors.success,
+      ),
+    );
+  }
+}
+
+// Action Button Widget
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.colors.surface,
+      borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.responsive<double>(
+              xs: context.dimensions.spacingS,
+              sm: context.dimensions.spacingM,
+              md: context.dimensions.spacingM,
+            ),
+            vertical: context.responsive<double>(
+              xs: context.dimensions.spacingXS,
+              sm: context.dimensions.spacingS,
+              md: context.dimensions.spacingS,
+            ),
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(color: context.colors.surface),
+            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: context.responsive<double>(
+                  xs: 16,
+                  sm: 18,
+                  md: 18,
+                ),
+                color: context.colors.primary,
+              ),
+              SizedBox(width: context.dimensions.spacingXS),
+              if (!context.isMobile || label.length <= 10)
+                Text(
+                  label,
+                  style: context.textStyles.caption.copyWith(
+                    color: context.colors.primary,
+                    fontWeight: FontWeight.w500,
+                    fontSize: context.responsive<double>(
+                      xs: 11,
+                      sm: 12,
+                      md: 13,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -926,17 +1372,38 @@ class _CollectionDocumentsDialog extends ConsumerWidget {
     final documentsAsync = ref.watch(collectionDocumentsProvider(collectionName));
 
     return Dialog(
-      child: Container(
-        width: context.responsive<double>(
-          xs: double.infinity,
-          sm: 700,
-          md: 900,
-          lg: 1000,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: context.responsive<double>(
+          xs: 16,
+          sm: 24,
+          md: 40,
+          lg: 40,
         ),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        vertical: context.responsive<double>(
+          xs: 24,
+          sm: 40,
+          md: 60,
         ),
-        child: Column(
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusL),
+        child: Container(
+          width: context.responsive<double>(
+            xs: MediaQuery.of(context).size.width * 0.95,
+            sm: MediaQuery.of(context).size.width * 0.9,
+            md: 800,
+            lg: 1000,
+            xl: 1200,
+          ),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            minHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          decoration: BoxDecoration(
+            color: context.colors.background,
+            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusL),
+          ),
+          child: Column(
           children: [
             // Header
             Container(
@@ -953,37 +1420,58 @@ class _CollectionDocumentsDialog extends ConsumerWidget {
                   Icon(
                     Icons.list,
                     color: context.colors.primary,
-                    size: context.dimensions.iconSizeL,
+                    size: context.responsive<double>(
+                      xs: context.dimensions.iconSizeM,
+                      sm: context.dimensions.iconSizeM,
+                      md: context.dimensions.iconSizeL,
+                    ),
                   ),
-                  SizedBox(width: context.dimensions.spacingM),
+                  SizedBox(width: context.responsive<double>(
+                    xs: context.dimensions.spacingS,
+                    sm: context.dimensions.spacingM,
+                  )),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          collectionName,
-                          style: context.textStyles.headline,
-                        ),
-                        Text(
-                          'Documents',
-                          style: context.textStyles.caption.copyWith(
-                            color: context.colors.textSecondary,
+                          _formatCollectionName(collectionName),
+                          style: context.responsive<TextStyle>(
+                            xs: context.textStyles.title,
+                            sm: context.textStyles.title,
+                            md: context.textStyles.headline,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        if (!context.isMobile)
+                          Text(
+                            'Documents',
+                            style: context.textStyles.caption.copyWith(
+                              color: context.colors.textSecondary,
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddDocumentDialog(context, ref),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.colors.primary,
-                      foregroundColor: context.colors.onPrimary,
-                      minimumSize: Size(0, 36),
+                  if (context.isMobile)
+                    IconButton(
+                      icon: Icon(Icons.add),
+                      onPressed: () => _showAddDocumentDialog(context, ref),
+                      color: context.colors.primary,
+                      tooltip: 'Add New',
+                    )
+                  else
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddDocumentDialog(context, ref),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.colors.primary,
+                        foregroundColor: context.colors.onPrimary,
+                        minimumSize: Size(0, 36),
+                      ),
+                      icon: Icon(Icons.add, size: 18),
+                      label: Text('Add New'),
                     ),
-                    icon: Icon(Icons.add, size: 18),
-                    label: Text('Add New'),
-                  ),
-                  SizedBox(width: context.dimensions.spacingM),
+                  SizedBox(width: context.dimensions.spacingS),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
@@ -1009,8 +1497,15 @@ class _CollectionDocumentsDialog extends ConsumerWidget {
             ),
           ],
         ),
+        ),
       ),
     );
+  }
+
+  String _formatCollectionName(String name) {
+    return name.replaceAll('_', ' ').split(' ').map((word) => 
+      word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1)
+    ).join(' ');
   }
 
   Widget _buildDocumentsList(BuildContext context, WidgetRef ref, List<Map<String, dynamic>> documents) {
@@ -1047,18 +1542,55 @@ class _CollectionDocumentsDialog extends ConsumerWidget {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(context.dimensions.spacingM),
+      padding: EdgeInsets.all(context.responsive<double>(
+        xs: context.dimensions.spacingM,
+        sm: context.dimensions.spacingL,
+        md: context.dimensions.spacingL,
+        lg: context.dimensions.spacingXL,
+      )),
       itemCount: documents.length,
       itemBuilder: (context, index) {
         final doc = documents[index];
         return Card(
-          margin: EdgeInsets.only(bottom: context.dimensions.spacingM),
+          margin: EdgeInsets.only(
+            bottom: context.responsive<double>(
+              xs: context.dimensions.spacingM,
+              sm: context.dimensions.spacingM,
+              md: context.dimensions.spacingL,
+            ),
+          ),
+          elevation: 2,
           child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: context.responsive<double>(
+                xs: context.dimensions.spacingM,
+                sm: context.dimensions.spacingL,
+                md: context.dimensions.spacingL,
+              ),
+              vertical: context.responsive<double>(
+                xs: context.dimensions.spacingS,
+                sm: context.dimensions.spacingM,
+                md: context.dimensions.spacingM,
+              ),
+            ),
             leading: CircleAvatar(
+              radius: context.responsive<double>(
+                xs: 20,
+                sm: 24,
+                md: 28,
+              ),
               backgroundColor: context.colors.primary.withOpacity(0.1),
               child: Text(
                 '${index + 1}',
-                style: TextStyle(color: context.colors.primary),
+                style: TextStyle(
+                  color: context.colors.primary,
+                  fontSize: context.responsive<double>(
+                    xs: 14,
+                    sm: 16,
+                    md: 18,
+                  ),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             title: Text(
@@ -1071,19 +1603,55 @@ class _CollectionDocumentsDialog extends ConsumerWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: context.colors.primary),
-                  onPressed: () => _showEditDocumentDialog(context, ref, doc),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: context.colors.error),
-                  onPressed: () => _confirmDeleteDocument(context, ref, doc['id']),
-                ),
-              ],
-            ),
+            trailing: context.isMobile
+                ? PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'edit':
+                          _showEditDocumentDialog(context, ref, doc);
+                          break;
+                        case 'delete':
+                          _confirmDeleteDocument(context, ref, doc['id']);
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, color: context.colors.primary, size: 20),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: context.colors.error, size: 20),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: context.colors.error)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit, color: context.colors.primary),
+                        onPressed: () => _showEditDocumentDialog(context, ref, doc),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: context.colors.error),
+                        onPressed: () => _confirmDeleteDocument(context, ref, doc['id']),
+                      ),
+                    ],
+                  ),
             onTap: () => _showDocumentDetails(context, doc),
           ),
         );
@@ -1245,7 +1813,6 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
           'image_url': '',
         };
       case 'job_records':
-      case 'job_drafts':
         return {
           'user_id': '',
           'job_name': '',
@@ -1285,10 +1852,11 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
     return Dialog(
       child: Container(
         width: context.responsive<double>(
-          xs: double.infinity,
-          sm: 600,
-          md: 700,
-          lg: 800,
+          xs: MediaQuery.of(context).size.width * 0.95,
+          sm: MediaQuery.of(context).size.width * 0.9,
+          md: 600,
+          lg: 700,
+          xl: 800,
         ),
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.9,
@@ -1322,7 +1890,7 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
                           style: context.textStyles.headline,
                         ),
                         Text(
-                          widget.collectionName,
+                          _formatCollectionName(widget.collectionName),
                           style: context.textStyles.caption.copyWith(
                             color: context.colors.textSecondary,
                           ),
@@ -1441,6 +2009,12 @@ class _DocumentEditorDialogState extends ConsumerState<_DocumentEditorDialog> {
     );
   }
 
+  String _formatCollectionName(String name) {
+    return name.replaceAll('_', ' ').split(' ').map((word) => 
+      word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1)
+    ).join(' ');
+  }
+
   void _handleSave() async {
     if (!_isValidJson) return;
 
@@ -1489,9 +2063,10 @@ class _DocumentDetailsDialog extends StatelessWidget {
     return Dialog(
       child: Container(
         width: context.responsive<double>(
-          xs: double.infinity,
-          sm: 600,
-          md: 700,
+          xs: MediaQuery.of(context).size.width * 0.95,
+          sm: MediaQuery.of(context).size.width * 0.9,
+          md: 600,
+          lg: 700,
         ),
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.8,
@@ -1619,11 +2194,17 @@ class _GenerateTestDataDialogState extends ConsumerState<_GenerateTestDataDialog
     return Dialog(
       child: Container(
         width: context.responsive<double>(
-          xs: double.infinity,
-          sm: 400,
-          md: 500,
+          xs: MediaQuery.of(context).size.width * 0.9,
+          sm: MediaQuery.of(context).size.width * 0.85,
+          md: 400,
+          lg: 500,
         ),
-        padding: EdgeInsets.all(context.dimensions.spacingL),
+        padding: EdgeInsets.all(context.responsive<double>(
+          xs: context.dimensions.spacingM,
+          sm: context.dimensions.spacingM,
+          md: context.dimensions.spacingL,
+          lg: context.dimensions.spacingL,
+        )),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1645,7 +2226,7 @@ class _GenerateTestDataDialogState extends ConsumerState<_GenerateTestDataDialog
                         style: context.textStyles.title,
                       ),
                       Text(
-                        widget.collectionName,
+                        _formatCollectionName(widget.collectionName),
                         style: context.textStyles.caption.copyWith(
                           color: context.colors.textSecondary,
                         ),
@@ -1710,6 +2291,12 @@ class _GenerateTestDataDialogState extends ConsumerState<_GenerateTestDataDialog
         ),
       ),
     );
+  }
+
+  String _formatCollectionName(String name) {
+    return name.replaceAll('_', ' ').split(' ').map((word) => 
+      word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1)
+    ).join(' ');
   }
 
   void _handleGenerate() async {

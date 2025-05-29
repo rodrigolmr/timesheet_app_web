@@ -29,19 +29,22 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
     super.initState();
     // Always open camera or gallery directly based on source
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_hasNavigated) {
-        _hasNavigated = true;
-        final source = widget.extra?['source'] as String?;
-        if (source == 'camera') {
-          _captureImage();
-        } else if (source == 'gallery') {
-          _pickFromGallery();
-        } else {
-          // If no source provided, default to gallery
-          _pickFromGallery();
-        }
-      }
+      _openImageSource();
     });
+  }
+  
+  void _openImageSource() async {
+    if (_hasNavigated) return;
+    
+    final source = widget.extra?['source'] as String?;
+    if (source == 'camera') {
+      await _captureImage();
+    } else if (source == 'gallery') {
+      await _pickFromGallery();
+    } else {
+      // If no source provided, default to gallery
+      await _pickFromGallery();
+    }
   }
 
   Future<void> _captureImage() async {
@@ -60,22 +63,16 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
     );
     
     if (result != null && mounted) {
-      // Go directly to crop screen
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => DocumentCropScreen(
-            imageData: result,
-          ),
-        ),
+      // Mark as navigated before pushing to crop
+      _hasNavigated = true;
+      // Go directly to crop screen using GoRouter
+      context.push(
+        '/document-scanner/crop',
+        extra: {'imageData': result},
       );
-      
-      // When we return from crop screen, close this screen too
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
     } else if (mounted) {
       // User cancelled, go back
-      Navigator.of(context).pop();
+      context.pop();
     }
   }
 
@@ -182,26 +179,20 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
           print('Image size in bytes: ${bytes.length}');
           
           if (mounted) {
-            // Go directly to crop screen
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => DocumentCropScreen(
-                  imageData: bytes!,
-                ),
-              ),
+            // Mark as navigated before pushing to crop
+            _hasNavigated = true;
+            // Go directly to crop screen using GoRouter
+            context.push(
+              '/document-scanner/crop',
+              extra: {'imageData': bytes!},
             );
-            
-            // When we return from crop screen, close this screen too
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
           }
         }
       } else {
         print('No image selected');
         if (mounted) {
           // User cancelled, go back
-          Navigator.of(context).pop();
+          context.pop();
         }
       }
     } catch (e) {
@@ -212,7 +203,7 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
           SnackBar(content: Text('Error picking image: $e')),
         );
         // Go back on error
-        Navigator.of(context).pop();
+        context.pop();
       }
     } finally {
       if (mounted) {
@@ -229,12 +220,22 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
       backgroundColor: Colors.black,
       body: Container(
         color: Colors.black.withOpacity(0.7),
-        child: const Center(
+        child: Center(
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(32),
-              child: StaticLoadingIndicator(
-                message: 'Loading...',
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const StaticLoadingIndicator(
+                    message: 'Loading...',
+                  ),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Cancel'),
+                  ),
+                ],
               ),
             ),
           ),

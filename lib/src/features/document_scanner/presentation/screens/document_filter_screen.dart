@@ -120,12 +120,12 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
   void _saveDocument() {
     if (_processedImage == null) return;
     
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ExpenseInfoScreen(
-          imageData: _processedImage!,
-        ),
-      ),
+    context.push(
+      '/document-scanner/expense-info',
+      extra: {
+        'imageData': _processedImage!,
+        'isPdf': false,
+      },
     );
   }
 

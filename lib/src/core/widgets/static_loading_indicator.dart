@@ -17,43 +17,45 @@ class StaticLoadingIndicator extends StatelessWidget {
     final theme = Theme.of(context);
     final indicatorColor = color ?? theme.colorScheme.primary;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: indicatorColor.withOpacity(0.2),
-              width: 4.0,
+    final content = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: indicatorColor.withOpacity(0.2),
+          width: size < 30 ? 2.0 : 4.0,
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Static arc segment
+          CustomPaint(
+            size: Size(size, size),
+            painter: _StaticArcPainter(
+              color: indicatorColor,
+              strokeWidth: size < 30 ? 2.0 : 4.0,
             ),
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Static arc segment
-              CustomPaint(
-                size: Size(size, size),
-                painter: _StaticArcPainter(
-                  color: indicatorColor,
-                  strokeWidth: 4.0,
-                ),
-              ),
-              // Center dot
-              Container(
-                width: 8.0,
-                height: 8.0,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: indicatorColor,
-                ),
-              ),
-            ],
+          // Center dot
+          Container(
+            width: size < 30 ? 4.0 : 8.0,
+            height: size < 30 ? 4.0 : 8.0,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: indicatorColor,
+            ),
           ),
-        ),
-        if (message != null) ...[
+        ],
+      ),
+    );
+
+    if (message != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          content,
           const SizedBox(height: 16),
           Text(
             message!,
@@ -62,8 +64,10 @@ class StaticLoadingIndicator extends StatelessWidget {
             ),
           ),
         ],
-      ],
-    );
+      );
+    }
+
+    return content;
   }
 }
 

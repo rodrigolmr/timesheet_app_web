@@ -228,17 +228,19 @@ class _WebCameraViewState extends State<WebCameraView> {
               left: 16,
               right: 16,
               bottom: MediaQuery.of(context).padding.bottom + 16,
-              top: 24,
+              top: 16,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 // Capture button
                 GestureDetector(
                   onTap: _isCapturing ? null : _captureImage,
                   child: Container(
-                    width: 72,
-                    height: 72,
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
@@ -256,15 +258,15 @@ class _WebCameraViewState extends State<WebCameraView> {
                     ),
                     child: _isCapturing
                         ? const Padding(
-                            padding: EdgeInsets.all(20.0),
+                            padding: EdgeInsets.all(16.0),
                             child: StaticLoadingIndicator(
-                              size: 32,
+                              size: 26,
                               color: Colors.black,
                             ),
                           )
                         : const Icon(
                             Icons.circle,
-                            size: 56,
+                            size: 48,
                             color: Colors.black,
                           ),
                   ),
@@ -298,6 +300,7 @@ class _WebCameraViewState extends State<WebCameraView> {
                   ],
                 ),
               ],
+            ),
             ),
           ),
         ),

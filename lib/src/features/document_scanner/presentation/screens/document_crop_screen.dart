@@ -107,13 +107,10 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
         // Small delay before navigation for smooth transition
         await Future.delayed(const Duration(milliseconds: 100));
         
-        // Navigate to filter screen
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => DocumentFilterScreen(
-              imageData: croppedImage,
-            ),
-          ),
+        // Navigate to filter screen using GoRouter
+        context.push(
+          '/document-scanner/filter',
+          extra: {'imageData': croppedImage},
         );
       }
     } catch (e) {
@@ -217,7 +214,7 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
             // Back button
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.go('/expenses'),
               tooltip: 'Back',
             ),
             // Reset button

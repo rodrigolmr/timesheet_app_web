@@ -110,7 +110,13 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
       leading: showBackButton
           ? IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: onBackPressed ?? () => context.pop(),
+              onPressed: onBackPressed ?? () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppRoute.home.path);
+                }
+              },
               tooltip: 'Back',
             )
           : (showNavigationMenu
@@ -305,7 +311,13 @@ class _AppHeaderWithTabs extends AppHeader {
       leading: showBackButton
           ? IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: onBackPressed ?? () => context.pop(),
+              onPressed: onBackPressed ?? () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go(AppRoute.home.path);
+                }
+              },
               tooltip: 'Back',
             )
           : (showNavigationMenu

@@ -90,8 +90,7 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
     if (shouldCancel && mounted) {
       debugPrint('=== CANCEL CONFIRMED ===');
       
-      // Since we're in a modal navigation stack on top of /expenses,
-      // we need to ensure we return to the expenses screen properly
+      // Navigate back to expenses screen using GoRouter
       context.go('/expenses');
     }
   }
@@ -186,10 +185,9 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
         // Wait a bit for the snackbar to show, then navigate
         await Future.delayed(const Duration(milliseconds: 500));
         
-        // Navigate back to expenses screen
+        // Navigate back to expenses screen using GoRouter
         if (mounted) {
-          debugPrint('Navigating back after save...');
-          // Use go to ensure we return to expenses screen
+          debugPrint('Navigating back to expenses screen after save...');
           context.go('/expenses');
         }
       }

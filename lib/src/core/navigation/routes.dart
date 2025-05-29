@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:typed_data';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
@@ -18,6 +19,9 @@ import 'package:timesheet_app_web/src/features/job_record/presentation/screens/j
 import 'package:timesheet_app_web/src/features/expense/presentation/screens/expenses_screen.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/screens/expense_details_screen.dart';
 import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_scanner_screen.dart';
+import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_crop_screen.dart';
+import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_filter_screen.dart';
+import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/expense_info_screen.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/screens/users_screen.dart';
 import 'package:timesheet_app_web/src/features/company_card/presentation/screens/company_cards_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/data_import_screen.dart';
@@ -47,6 +51,9 @@ enum AppRoute {
   expenses('/expenses'),
   expenseDetails('/expenses/:id'),
   documentScanner('/document-scanner'),
+  documentCrop('/document-scanner/crop'),
+  documentFilter('/document-scanner/filter'),
+  expenseInfo('/document-scanner/expense-info'),
 ;
 
   const AppRoute(this.path);
@@ -226,6 +233,38 @@ GoRouter goRouter(GoRouterRef ref) {
         builder: (context, state) => DocumentScannerScreen(
           extra: state.extra as Map<String, dynamic>?,
         ),
+      ),
+      GoRoute(
+        path: AppRoute.documentCrop.path,
+        name: AppRoute.documentCrop.name,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return DocumentCropScreen(
+            imageData: extra['imageData'] as Uint8List,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoute.documentFilter.path,
+        name: AppRoute.documentFilter.name,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return DocumentFilterScreen(
+            imageData: extra['imageData'] as Uint8List,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoute.expenseInfo.path,
+        name: AppRoute.expenseInfo.name,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return ExpenseInfoScreen(
+            imageData: extra['imageData'] as Uint8List,
+            isPdf: extra['isPdf'] as bool? ?? false,
+            fileName: extra['fileName'] as String?,
+          );
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
