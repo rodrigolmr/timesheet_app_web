@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/app_input_field_base.dart';
+import 'package:timesheet_app_web/src/core/utils/text_formatters.dart';
 
 /// Campo de texto padronizado para entrada de texto simples (linha única)
 class AppTextField extends StatelessWidget {
@@ -82,7 +83,7 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.maxWidth,
     this.height,
-    this.textCapitalization = TextCapitalization.none,
+    this.textCapitalization = TextCapitalization.words,
     this.onChanged,
     this.onSubmitted,
     this.isLastField = false,
@@ -91,6 +92,15 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Adiciona o formatter de capitalização se necessário
+    List<TextInputFormatter>? effectiveFormatters = inputFormatters;
+    if (textCapitalization == TextCapitalization.words) {
+      effectiveFormatters = [
+        WordCapitalizationFormatter(),
+        ...?inputFormatters,
+      ];
+    }
+    
     return AppInputFieldBase(
       label: label,
       hintText: hintText,
@@ -100,7 +110,7 @@ class AppTextField extends StatelessWidget {
       focusNode: focusNode,
       onClearError: onClearError,
       keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
+      inputFormatters: effectiveFormatters,
       prefixText: prefixText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,

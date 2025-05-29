@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/app_input_field_base.dart';
+import 'package:timesheet_app_web/src/core/utils/text_formatters.dart';
 
 /// Campo de texto padronizado para entrada de texto com múltiplas linhas
 class AppMultilineTextField extends StatelessWidget {
@@ -90,6 +91,15 @@ class AppMultilineTextField extends StatelessWidget {
     final effectiveMaxLines = autoGrow ? null : maxLines;
     final effectiveMinLines = autoGrow ? (minLines ?? 3) : minLines;
     
+    // Adiciona o formatter de capitalização se necessário
+    List<TextInputFormatter>? effectiveFormatters = inputFormatters;
+    if (textCapitalization == TextCapitalization.sentences) {
+      effectiveFormatters = [
+        SentenceCapitalizationFormatter(),
+        ...?inputFormatters,
+      ];
+    }
+    
     return AppInputFieldBase(
       label: label,
       hintText: hintText,
@@ -99,7 +109,7 @@ class AppMultilineTextField extends StatelessWidget {
       focusNode: focusNode,
       onClearError: onClearError,
       keyboardType: keyboardType ?? TextInputType.multiline,
-      inputFormatters: inputFormatters,
+      inputFormatters: effectiveFormatters,
       enabled: enabled,
       maxWidth: maxWidth,
       height: effectiveHeight,

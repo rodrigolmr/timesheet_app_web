@@ -260,6 +260,7 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                       label: 'Job Size',
                       hintText: 'Enter job size',
                       controller: _jobSizeController,
+                      textCapitalization: TextCapitalization.none,
                       onChanged: (value) {
                         _updateFormData('jobSize', value);
                       },

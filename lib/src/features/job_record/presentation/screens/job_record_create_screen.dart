@@ -87,6 +87,58 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
     }
   }
   
+  void _handleStepTapped(int targetStep) async {
+    final currentStep = ref.read(currentStepNotifierProvider);
+    
+    // Se está tentando voltar, permite sempre
+    if (targetStep < currentStep) {
+      ref.read(currentStepNotifierProvider.notifier).setStep(targetStep);
+      return;
+    }
+    
+    // Se está tentando clicar no step atual, não faz nada
+    if (targetStep == currentStep) {
+      return;
+    }
+    
+    // Se está tentando avançar, usa a mesma lógica do botão Next
+    if (targetStep > currentStep) {
+      // Avança um passo por vez, validando cada um
+      for (int step = currentStep; step < targetStep; step++) {
+        // Atualiza temporariamente o currentStep para usar a lógica do _handleNext
+        final originalStep = ref.read(currentStepNotifierProvider);
+        
+        if (step == 0) {
+          // Valida e avança do Step 1 para o Step 2
+          final step1FormKey = ref.read(step1FormKeyProvider);
+          final canProceed = step1FormKey.currentState?.validateForm() ?? false;
+          
+          if (canProceed) {
+            // Add small delay to ensure state is saved
+            await Future.delayed(Duration(milliseconds: 100));
+            ref.read(currentStepNotifierProvider.notifier).nextStep();
+          } else {
+            return; // Para se não conseguir validar
+          }
+        } else if (step == 1) {
+          // Valida e avança do Step 2 para o Step 3
+          final formState = ref.read(jobRecordFormStateProvider);
+          if (formState.employees.isNotEmpty) {
+            ref.read(currentStepNotifierProvider.notifier).nextStep();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Please add at least one employee'),
+                backgroundColor: context.colors.error,
+              ),
+            );
+            return;
+          }
+        }
+      }
+    }
+  }
+
   void _handlePrevious() {
     ref.read(currentStepNotifierProvider.notifier).previousStep();
   }
@@ -468,7 +520,7 @@ class _JobRecordCreateScreenState extends ConsumerState<JobRecordCreateScreen> {
                   child: JobRecordStepper(
                     currentStep: currentStep,
                     onStepTapped: (step) {
-                      ref.read(currentStepNotifierProvider.notifier).setStep(step);
+                      _handleStepTapped(step);
                     },
                   ),
                 ),
