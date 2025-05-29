@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/home/presentation/screens/home_screen.dart';
 import 'package:timesheet_app_web/src/features/employee/presentation/screens/employees_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_settings_screen.dart';
@@ -20,12 +21,14 @@ import 'package:timesheet_app_web/src/features/document_scanner/presentation/scr
 import 'package:timesheet_app_web/src/features/user/presentation/screens/users_screen.dart';
 import 'package:timesheet_app_web/src/features/company_card/presentation/screens/company_cards_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/data_import_screen.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/screens/access_denied_screen.dart';
 
 part 'routes.g.dart';
 
 enum AppRoute {
   login('/login'),
   home('/'),
+  accessDenied('/access-denied'),
   // Rotas de funcionários
   employees('/employees'),
   users('/users'),
@@ -68,12 +71,13 @@ GoRouter goRouter(GoRouterRef ref) {
     initialLocation: AppRoute.home.path,
     debugLogDiagnostics: true,
     refreshListenable: authNotifier,
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final authState = ref.read(authStateProvider);
       final isLoggingIn = state.matchedLocation == AppRoute.login.path;
+      final isAccessDenied = state.matchedLocation == AppRoute.accessDenied.path;
       
       return authState.when(
-        data: (user) {
+        data: (user) async {
           if (user == null) {
             // No user authenticated
             return isLoggingIn ? null : AppRoute.login.path;
@@ -82,6 +86,27 @@ GoRouter goRouter(GoRouterRef ref) {
           // User is authenticated
           if (isLoggingIn) {
             return AppRoute.home.path;
+          }
+          
+          // Check route permissions
+          final currentRoute = AppRoute.values.firstWhere(
+            (r) => state.matchedLocation == r.path || 
+                   state.matchedLocation.startsWith(r.path + '/') ||
+                   (r.path.contains(':') && _matchesParameterizedRoute(state.matchedLocation, r.path)),
+            orElse: () => AppRoute.home,
+          );
+          
+          // Skip permission check for certain routes
+          final publicRoutes = [AppRoute.login, AppRoute.home, AppRoute.accessDenied];
+          if (publicRoutes.contains(currentRoute)) {
+            return null;
+          }
+          
+          // Check if user has permission to access the route
+          final hasPermission = await ref.read(canAccessRouteProvider(currentRoute).future);
+          
+          if (!hasPermission && !isAccessDenied) {
+            return AppRoute.accessDenied.path;
           }
           
           return null;
@@ -100,6 +125,11 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.home.path,
         name: AppRoute.home.name,
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.accessDenied.path,
+        name: AppRoute.accessDenied.name,
+        builder: (context, state) => const AccessDeniedScreen(),
       ),
       GoRoute(
         path: AppRoute.employees.path,
@@ -204,4 +234,16 @@ GoRouter goRouter(GoRouterRef ref) {
       ),
     ),
   );
+}
+
+// Helper function to match parameterized routes
+bool _matchesParameterizedRoute(String path, String routePattern) {
+  // Convert route pattern to regex
+  final regexPattern = routePattern.replaceAllMapped(
+    RegExp(r':(\w+)'),
+    (match) => r'[^/]+',
+  );
+  
+  final regex = RegExp('^$regexPattern\$');
+  return regex.hasMatch(path);
 }

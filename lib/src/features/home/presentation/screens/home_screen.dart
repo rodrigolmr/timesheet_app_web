@@ -149,22 +149,25 @@ class HomeScreen extends ConsumerWidget {
   }
 
   List<Widget> _getFeatureCards(BuildContext context, WidgetRef ref) {
-    try {
-      final navigationItems = ref.watch(homeNavigationItemsProvider);
-      
-      return navigationItems.map((item) => NavigationCard(
+    final navigationItemsAsync = ref.watch(filteredHomeNavigationItemsProvider);
+    
+    return navigationItemsAsync.when(
+      data: (items) => items.map((item) => NavigationCard(
         title: item.title,
         description: item.description,
         icon: item.icon,
         route: item.route,
         color: context.categoryColorByName(item.categoryName),
         isActive: item.isActive,
-      )).toList();
-    } catch (e) {
-      // Log error and return empty list
-      debugPrint('Error loading navigation items: $e');
-      return [];
-    }
+      )).toList(),
+      loading: () => [
+        const Center(child: CircularProgressIndicator()),
+      ],
+      error: (error, _) {
+        debugPrint('Error loading navigation items: $error');
+        return [];
+      },
+    );
   }
 
 }

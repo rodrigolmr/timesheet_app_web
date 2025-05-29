@@ -16,9 +16,10 @@ Este documento unifica todas as diretrizes essenciais para o desenvolvimento do 
 10. [Navegação](#navegação)
 11. [Componentes de UI](#componentes-de-ui)
 12. [Fluxo de Autenticação](#fluxo-de-autenticação)
-13. [Exemplos Práticos](#exemplos-práticos)
-14. [Decisões Arquiteturais](#decisões-arquiteturais)
-15. [Troubleshooting](#troubleshooting)
+13. [Sistema de Permissões e Roles](#sistema-de-permissões-e-roles)
+14. [Exemplos Práticos](#exemplos-práticos)
+15. [Decisões Arquiteturais](#decisões-arquiteturais)
+16. [Troubleshooting](#troubleshooting)
 
 ## Visão Geral do Projeto
 
@@ -1301,6 +1302,230 @@ Duas abordagens disponíveis:
 Escolha baseada no contexto:
 - Use componentes customizados para interfaces padrão
 - Use Flutter widgets para casos específicos ou layouts complexos
+
+## Sistema de Permissões e Roles
+
+### Visão Geral
+O sistema implementa um controle de acesso baseado em roles (RBAC) com três níveis de permissão:
+- **admin**: Acesso total ao sistema
+- **manager**: Acesso a recursos operacionais e gerenciais
+- **user**: Acesso limitado aos próprios recursos
+
+### Estrutura de Permissões
+
+#### 1. Enum UserRole
+```dart
+enum UserRole {
+  admin('admin'),
+  manager('manager'),
+  user('user');
+
+  final String value;
+  const UserRole(this.value);
+
+  static UserRole fromString(String role) {
+    return UserRole.values.firstWhere(
+      (e) => e.value == role,
+      orElse: () => UserRole.user,
+    );
+  }
+}
+```
+
+#### 2. Permissões de Rotas
+
+| Role | Páginas Permitidas |
+|------|-------------------|
+| **admin** | Todas as páginas |
+| **manager** | Todas exceto: Database |
+| **user** | Home, Job Records (próprios), Expenses (próprias), Settings |
+
+#### 3. Permissões de Ações
+
+##### Job Records
+- **Criar**: Todos os roles
+- **Visualizar**: 
+  - User: apenas próprios registros
+  - Manager/Admin: todos os registros
+- **Editar**:
+  - User: apenas próprios registros
+  - Manager/Admin: todos os registros
+- **Deletar**: Apenas Manager e Admin
+
+##### Expenses
+- **Criar**: Todos os roles
+- **Visualizar**:
+  - User: apenas próprias despesas
+  - Manager/Admin: todas as despesas
+- **Editar**:
+  - User: apenas próprias despesas
+  - Manager/Admin: todas as despesas
+- **Deletar**: Apenas Manager e Admin
+
+##### Outros Recursos
+- **Employees**: Visualização e edição apenas para Manager/Admin
+- **Company Cards**: Gerenciamento apenas para Manager/Admin
+- **Users**: Gerenciamento apenas para Manager/Admin
+- **Database**: Acesso apenas para Admin
+
+### Implementação
+
+#### 1. Verificação de Permissões em Rotas
+```dart
+// No GoRouter
+redirect: (context, state) async {
+  // ... autenticação ...
+  
+  // Verificar permissões da rota
+  final hasPermission = await ref.read(
+    canAccessRouteProvider(currentRoute).future
+  );
+  
+  if (!hasPermission) {
+    return AppRoute.accessDenied.path;
+  }
+  
+  return null;
+}
+```
+
+#### 2. Providers de Permissão
+```dart
+// Verificar role do usuário
+final role = await ref.watch(currentUserRoleProvider.future);
+
+// Verificar permissões específicas
+final canViewAll = await ref.watch(canViewAllJobRecordsProvider.future);
+final canEdit = await ref.watch(
+  canEditJobRecordProvider(recordCreatorId).future
+);
+final canDelete = await ref.watch(canDeleteJobRecordProvider.future);
+```
+
+#### 3. Filtros em Queries
+```dart
+// Em providers de Job Records
+@riverpod
+Stream<List<JobRecordModel>> jobRecordsStream(JobRecordsStreamRef ref) {
+  final repository = ref.watch(jobRecordRepositoryProvider);
+  final userProfile = await ref.watch(currentUserProfileProvider.future);
+  
+  if (userProfile == null) return Stream.value([]);
+  
+  // Aplicar filtro baseado no role
+  if (userProfile.userRole == UserRole.user) {
+    return repository.watchByUserId(userProfile.id);
+  }
+  
+  // Manager e Admin veem todos
+  return repository.watchAll();
+}
+```
+
+#### 4. Componente PermissionGuard
+```dart
+// Proteger elementos da UI
+PermissionGuard(
+  requiredRole: UserRole.manager,
+  child: ElevatedButton(
+    onPressed: () => _deleteRecord(),
+    child: Text('Delete'),
+  ),
+  fallback: SizedBox.shrink(), // Opcional
+)
+
+// Verificação assíncrona
+PermissionGuardAsync(
+  permissionCheck: (ref) => ref.read(canDeleteJobRecordProvider.future),
+  child: IconButton(
+    icon: Icon(Icons.delete),
+    onPressed: () => _deleteRecord(),
+  ),
+)
+```
+
+#### 5. Ocultação de Navegação
+```dart
+// Provider filtrado para home
+@riverpod
+Future<List<HomeNavigationItem>> filteredHomeNavigationItems(
+  FilteredHomeNavigationItemsRef ref
+) async {
+  final allItems = ref.watch(homeNavigationItemsProvider);
+  final allowedRoutes = await ref.watch(allowedRoutesProvider.future);
+  
+  return allItems.where((item) {
+    final route = AppRoute.values.firstWhereOrNull(
+      (r) => r.path == item.route
+    );
+    return route != null && allowedRoutes.contains(route);
+  }).toList();
+}
+```
+
+### Boas Práticas
+
+1. **Sempre verifique permissões no backend**: Nunca confie apenas na UI
+2. **Use providers reativos**: Permissões podem mudar durante a sessão
+3. **Fallback gracioso**: Sempre forneça alternativas quando acesso é negado
+4. **Mensagens claras**: Informe o usuário sobre limitações de acesso
+5. **Auditoria**: Registre tentativas de acesso não autorizado
+
+### Exemplo Completo: Tela com Permissões
+```dart
+class JobRecordsScreen extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Stream filtrado baseado em permissões
+    final recordsAsync = ref.watch(jobRecordsStreamProvider);
+    final canDelete = ref.watch(canDeleteJobRecordProvider);
+    
+    return Scaffold(
+      appBar: AppHeader(
+        title: 'Job Records',
+        // Botão de criar visível para todos
+        actionIcon: Icons.add,
+        onActionPressed: () => _createRecord(context),
+      ),
+      body: recordsAsync.when(
+        data: (records) => ListView.builder(
+          itemCount: records.length,
+          itemBuilder: (context, index) {
+            final record = records[index];
+            return ListTile(
+              title: Text(record.jobName),
+              subtitle: Text(record.date.toString()),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Editar - verificação individual
+                  PermissionGuardAsync(
+                    permissionCheck: (ref) => ref.read(
+                      canEditJobRecordProvider(record.userId).future
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () => _editRecord(context, record),
+                    ),
+                  ),
+                  // Deletar - apenas manager/admin
+                  if (canDelete.value ?? false)
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => _deleteRecord(ref, record),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+        loading: () => CircularProgressIndicator(),
+        error: (e, s) => Text('Error: $e'),
+      ),
+    );
+  }
+}
+```
 
 ## Troubleshooting
 

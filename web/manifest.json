@@ -1,11 +1,11 @@
 {
-    "name": "timesheet_app_web",
-    "short_name": "timesheet_app_web",
+    "name": "Timesheet Manager",
+    "short_name": "Timesheet",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Professional timesheet management application.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

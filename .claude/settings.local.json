@@ -22,7 +22,8 @@
       "Bash(flutter pub:*)",
       "Bash(firebase deploy:*)",
       "Bash(git log:*)",
-      "Bash(gsutil cors:*)"
+      "Bash(gsutil cors:*)",
+      "Bash(./generate_icons.sh:*)"
     ],
     "deny": []
   },

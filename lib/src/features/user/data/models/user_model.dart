@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_variant.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 part 'user_model.freezed.dart';
 part 'user_model.g.dart';
@@ -82,4 +83,16 @@ class UserModel with _$UserModel {
   
   /// Verifica se o usuário pode alterar seu tema
   bool get canChangeTheme => forcedTheme != true;
+  
+  /// Retorna o UserRole enum baseado na string role
+  UserRole get userRole => UserRole.fromString(role);
+  
+  /// Verifica se o usuário é admin
+  bool get isAdmin => userRole == UserRole.admin;
+  
+  /// Verifica se o usuário é manager
+  bool get isManager => userRole == UserRole.manager;
+  
+  /// Verifica se o usuário é user regular
+  bool get isRegularUser => userRole == UserRole.user;
 }

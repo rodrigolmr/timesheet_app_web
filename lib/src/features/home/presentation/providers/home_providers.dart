@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter/material.dart';
 import 'package:timesheet_app_web/src/core/navigation/routes.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 
 part 'home_providers.g.dart';
 
@@ -84,4 +85,27 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       isActive: true,
     ),
   ];
+}
+
+/// Provider for filtered home navigation items based on user permissions
+@riverpod
+Future<List<HomeNavigationItem>> filteredHomeNavigationItems(
+  FilteredHomeNavigationItemsRef ref,
+) async {
+  final allItems = ref.watch(homeNavigationItemsProvider);
+  final allowedRoutes = await ref.watch(allowedRoutesProvider.future);
+  
+  // Filter items based on allowed routes
+  return allItems.where((item) {
+    // Skip inactive items
+    if (!item.isActive) return false;
+    
+    // Find matching AppRoute
+    final matchingRoute = AppRoute.values.where((route) => route.path == item.route).firstOrNull;
+    
+    // If no matching route found or route not allowed, hide the item
+    if (matchingRoute == null) return false;
+    
+    return allowedRoutes.contains(matchingRoute);
+  }).toList();
 }
