@@ -5,6 +5,8 @@ import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 /// Widget de filtros para job records seguindo padrões do GUIDE.md
 class JobRecordFilters extends ConsumerStatefulWidget {
@@ -73,15 +75,31 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
   }
 
   Widget _buildExpandedFilters() {
+    final userRoleAsync = ref.watch(currentUserRoleProvider);
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Primeira linha: Date Range + Creator
+        // Primeira linha: Date Range + Creator (se não for user regular)
         Row(
           children: [
             _buildDateRangeField(),
-            const SizedBox(width: 8),
-            _buildCreatorDropdown(),
+            // Só mostra o dropdown de criador se não for um user regular
+            userRoleAsync.when(
+              data: (role) {
+                if (role == UserRole.admin || role == UserRole.manager) {
+                  return Row(
+                    children: [
+                      const SizedBox(width: 8),
+                      _buildCreatorDropdown(),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
           ],
         ),
         const SizedBox(height: 6),

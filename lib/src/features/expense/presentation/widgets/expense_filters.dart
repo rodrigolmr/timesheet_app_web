@@ -6,6 +6,8 @@ import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/providers/expense_providers.dart';
 import 'package:timesheet_app_web/src/features/company_card/presentation/providers/company_card_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 /// Widget de filtros para expenses seguindo o mesmo padrão de job_record_filters
 class ExpenseFilters extends ConsumerStatefulWidget {
@@ -72,6 +74,8 @@ class _ExpenseFiltersState extends ConsumerState<ExpenseFilters> {
   }
 
   Widget _buildExpandedFilters() {
+    final userRoleAsync = ref.watch(currentUserRoleProvider);
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -84,10 +88,22 @@ class _ExpenseFiltersState extends ConsumerState<ExpenseFilters> {
           ],
         ),
         const SizedBox(height: 6),
-        // Segunda linha: Creator + Botões
+        // Segunda linha: Creator (se não for user regular) + Botões
         Row(
           children: [
-            _buildCreatorDropdown(),
+            // Só mostra o dropdown de criador se não for um user regular
+            userRoleAsync.when(
+              data: (role) {
+                if (role == UserRole.admin || role == UserRole.manager) {
+                  return Expanded(
+                    child: _buildCreatorDropdown(),
+                  );
+                }
+                return const Expanded(child: SizedBox.shrink());
+              },
+              loading: () => const Expanded(child: SizedBox.shrink()),
+              error: (_, __) => const Expanded(child: SizedBox.shrink()),
+            ),
             const SizedBox(width: 8),
             _buildActionButtons(),
           ],
@@ -328,10 +344,10 @@ class _ExpenseFiltersState extends ConsumerState<ExpenseFilters> {
         ),
         child: Consumer(
           builder: (context, ref, _) {
-            final usersAsync = ref.watch(usersProvider);
+            final creatorsAsync = ref.watch(expenseCreatorsProvider);
             
-            return usersAsync.when(
-              data: (users) {
+            return creatorsAsync.when(
+              data: (creators) {
                 return DropdownButtonHideUnderline(
                   child: ButtonTheme(
                     alignedDropdown: true,
@@ -360,14 +376,14 @@ class _ExpenseFiltersState extends ConsumerState<ExpenseFilters> {
                         DropdownMenuItem<String?>(
                           value: null,
                           child: Text(
-                            'All Creators',
+                            'All',
                             style: context.textStyles.body.copyWith(fontSize: 12),
                           ),
                         ),
-                        ...users.map((user) => DropdownMenuItem<String?>(
-                          value: user.authUid, // Using authUid since expenses store auth UID
+                        ...creators.map((creator) => DropdownMenuItem<String?>(
+                          value: creator.id,
                           child: Text(
-                            '${user.firstName} ${user.lastName}',
+                            creator.name,
                             style: context.textStyles.body.copyWith(fontSize: 12),
                             overflow: TextOverflow.ellipsis,
                           ),

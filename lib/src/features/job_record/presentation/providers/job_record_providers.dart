@@ -5,6 +5,8 @@ import 'package:timesheet_app_web/src/features/job_record/data/models/job_record
 import 'package:timesheet_app_web/src/features/job_record/data/repositories/firestore_job_record_repository.dart';
 import 'package:timesheet_app_web/src/features/job_record/domain/repositories/job_record_repository.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 part 'job_record_providers.g.dart';
 
@@ -124,6 +126,38 @@ Stream<List<JobRecordModel>> jobRecordsStream(JobRecordsStreamRef ref) {
   return ref.watch(jobRecordRepositoryProvider).watchAll();
 }
 
+/// Provider para observar registros filtrados por permissão do usuário
+@Riverpod(keepAlive: true)
+Stream<List<JobRecordModel>> filteredJobRecordsStream(FilteredJobRecordsStreamRef ref) async* {
+  try {
+    final userProfile = await ref.watch(currentUserProfileProvider.future);
+    
+    if (userProfile == null) {
+      yield [];
+      return;
+    }
+    
+    final role = UserRole.fromString(userProfile.role);
+    
+    // Admin e Manager veem todos os registros
+    if (role == UserRole.admin || role == UserRole.manager) {
+      yield* ref.watch(jobRecordsStreamProvider.stream);
+    } else {
+      // User vê apenas seus próprios registros
+      // Precisa verificar tanto pelo ID do usuário quanto pelo authUid
+      yield* ref.watch(jobRecordsStreamProvider.stream).map((records) {
+        return records.where((record) => 
+          record.userId == userProfile.id || 
+          record.userId == userProfile.authUid
+        ).toList();
+      });
+    }
+  } catch (e) {
+    // Em caso de erro, retorna lista vazia
+    yield [];
+  }
+}
+
 /// Provider para observar registros filtrados por intervalo de data
 @riverpod
 Stream<List<JobRecordModel>> jobRecordsDateRangeStream(
@@ -205,7 +239,7 @@ Stream<List<JobRecordModel>> jobRecordsSearchStream(
 
   // Tenta obter dados já carregados primeiro
   try {
-    final cachedRecords = ref.read(jobRecordsStreamProvider.future);
+    final cachedRecords = ref.read(filteredJobRecordsStreamProvider.future);
     if (cachedRecords is Future<List<JobRecordModel>>) {
       final records = await cachedRecords;
       yield applyFilters(records);
@@ -215,7 +249,7 @@ Stream<List<JobRecordModel>> jobRecordsSearchStream(
   }
 
   // Continua ouvindo o stream para futuras atualizações
-  await for (final allRecords in ref.watch(jobRecordsStreamProvider.stream)) {
+  await for (final allRecords in ref.watch(filteredJobRecordsStreamProvider.stream)) {
     yield applyFilters(allRecords);
   }
 }
@@ -254,8 +288,8 @@ bool _recordContainsSearchTerm(JobRecordModel record, String term) {
 @Riverpod(keepAlive: true)
 Future<List<({String id, String name})>> jobRecordCreators(JobRecordCreatorsRef ref) async {
   try {
-    // Busca todos os registros uma vez
-    final records = await ref.watch(jobRecordsProvider.future);
+    // Busca apenas os registros filtrados por permissão
+    final records = await ref.watch(filteredJobRecordsStreamProvider.future);
     print('DEBUG: Found ${records.length} job records');
     
     // Extraímos os IDs únicos dos criadores

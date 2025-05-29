@@ -12,6 +12,8 @@ import 'package:timesheet_app_web/src/features/company_card/presentation/provide
 import 'package:timesheet_app_web/src/features/expense/presentation/widgets/expense_filters.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/widgets/create_expense_dialog.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 // Group expenses by month
 class ExpensePeriod {
@@ -63,6 +65,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     final selectionState = ref.watch(expenseSelectionProvider);
     
     if (selectionState.isSelectionMode) {
+      final canDeleteAsync = ref.watch(canDeleteExpenseProvider);
+      final canDelete = canDeleteAsync.valueOrNull ?? false;
+      
       return AppBar(
         backgroundColor: context.colors.primary,
         foregroundColor: context.colors.onPrimary,
@@ -79,11 +84,12 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
         ),
         actions: [
           if (selectionState.hasSelection) ...[
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
-              tooltip: 'Delete selected',
-            ),
+            if (canDelete)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
+                tooltip: 'Delete selected',
+              ),
           ],
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -118,7 +124,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final expensesAsync = ref.watch(expensesStreamProvider);
+    final expensesAsync = ref.watch(filteredExpensesStreamProvider);
     
     return Scaffold(
       appBar: _buildAppBar(),
@@ -478,6 +484,28 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    // Verifica se há filtros ativos
+    final hasFilters = _selectedCard != null || 
+                      _selectedDateRange != null || 
+                      _selectedCreator != null;
+    
+    // Mensagem baseada no role e filtros
+    final userRoleAsync = ref.read(currentUserRoleProvider);
+    final message = userRoleAsync.when(
+      data: (role) {
+        if (hasFilters) {
+          return 'No expenses found matching your filters';
+        }
+        if (role == UserRole.user) {
+          return 'You have no expenses yet';
+        } else {
+          return 'No expenses found';
+        }
+      },
+      loading: () => 'No expenses found',
+      error: (_, __) => 'No expenses found',
+    );
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -489,14 +517,14 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'No expenses found',
+            message,
             style: context.textStyles.title.copyWith(
               color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Start by adding your first expense',
+            hasFilters ? 'Try adjusting your filters' : 'Start by adding your first expense',
             style: context.textStyles.body.copyWith(
               color: context.colors.textSecondary,
             ),
@@ -568,7 +596,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   }
 
   void _handleSelectionAction(String action) {
-    final expenses = ref.read(expensesStreamProvider).valueOrNull ?? [];
+    final expenses = ref.read(filteredExpensesStreamProvider).valueOrNull ?? [];
     final filteredExpenses = _getFilteredExpenses(expenses);
     final allIds = filteredExpenses.map((expense) => expense.id).toList();
     
@@ -634,23 +662,88 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   }
 
   void _deleteSelectedExpenses(Set<String> selectedIds) async {
-    // TODO: Implementar exclusão em lote
-    // Por enquanto, exclui um por um
-    for (final id in selectedIds) {
-      try {
-        await ref.read(expenseRepositoryProvider).delete(id);
-      } catch (e) {
-        // Handle error
+    // Verificar permissão para deletar
+    final canDelete = await ref.read(canDeleteExpenseProvider.future);
+    
+    if (!canDelete) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You do not have permission to delete expenses'),
+            backgroundColor: context.colors.error,
+          ),
+        );
       }
+      return;
     }
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Deleted ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''}'),
-        backgroundColor: context.colors.success,
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
     
-    ref.read(expenseSelectionProvider.notifier).exitSelectionMode();
+    try {
+      // Deletar cada despesa
+      int successCount = 0;
+      int errorCount = 0;
+      
+      for (final id in selectedIds) {
+        try {
+          await ref.read(expenseStateProvider(id).notifier).delete(id);
+          successCount++;
+        } catch (e) {
+          errorCount++;
+          debugPrint('Error deleting expense $id: $e');
+        }
+      }
+      
+      // Fechar loading
+      if (mounted) Navigator.of(context).pop();
+      
+      // Mostrar resultado
+      if (mounted) {
+        if (errorCount == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully deleted $successCount expense${successCount > 1 ? 's' : ''}'),
+              backgroundColor: context.colors.success,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Deleted $successCount expense${successCount > 1 ? 's' : ''}, $errorCount failed'),
+              backgroundColor: context.colors.warning,
+            ),
+          );
+        }
+      }
+      
+      // Remover despesas deletadas da seleção e sair do modo seleção se necessário
+      ref.read(expenseSelectionProvider.notifier).removeDeletedExpenses(
+        selectedIds.where((id) => successCount > 0).toSet()
+      );
+      
+      // Se todos foram deletados, sair do modo seleção
+      if (successCount == selectedIds.length) {
+        ref.read(expenseSelectionProvider.notifier).exitSelectionMode();
+      }
+    } catch (e) {
+      // Fechar loading
+      if (mounted) Navigator.of(context).pop();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting expenses: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
   }
 }

@@ -10,6 +10,8 @@ import 'package:timesheet_app_web/src/features/job_record/presentation/providers
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/services/job_record_print_service.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 class JobRecordDetailsScreen extends ConsumerStatefulWidget {
   static const routePath = '/job-records/:id';
@@ -48,6 +50,8 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final canDeleteAsync = ref.watch(canDeleteJobRecordProvider);
+    
     return AppHeader(
       title: 'Job Record Details',
       showBackButton: true,
@@ -55,39 +59,51 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
           onSelected: _handleMenuAction,
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'duplicate',
-              child: Row(
-                children: [
-                  Icon(Icons.copy, size: 20),
-                  SizedBox(width: 8),
-                  Text('Duplicate'),
-                ],
+          itemBuilder: (context) {
+            final canDelete = canDeleteAsync.valueOrNull ?? false;
+            
+            final items = <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'duplicate',
+                child: Row(
+                  children: [
+                    Icon(Icons.copy, size: 20),
+                    SizedBox(width: 8),
+                    Text('Duplicate'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'print',
-              child: Row(
-                children: [
-                  Icon(Icons.print, size: 20),
-                  SizedBox(width: 8),
-                  Text('Print'),
-                ],
+              const PopupMenuItem<String>(
+                value: 'print',
+                child: Row(
+                  children: [
+                    Icon(Icons.print, size: 20),
+                    SizedBox(width: 8),
+                    Text('Print'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuDivider(),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+            ];
+            
+            // Adiciona delete apenas se tem permissão
+            if (canDelete) {
+              items.add(const PopupMenuDivider());
+              items.add(
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, size: 20, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Delete', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              );
+            }
+            
+            return items;
+          },
         ),
       ],
     );
@@ -478,29 +494,66 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
     }
   }
 
-  void _deleteRecord() {
+  void _deleteRecord() async {
+    // Verificar permissão primeiro
+    final canDelete = await ref.read(canDeleteJobRecordProvider.future);
+    
+    if (!canDelete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('You do not have permission to delete job records'),
+          backgroundColor: context.colors.error,
+        ),
+      );
+      return;
+    }
+    
+    // Obter o registro atual
+    final record = ref.read(jobRecordProvider(widget.recordId)).valueOrNull;
+    if (record == null) return;
+    
+    // Verificar se é o criador do registro (para usuários regulares)
+    final userRole = await ref.read(currentUserRoleProvider.future);
+    if (userRole == UserRole.user) {
+      final currentUser = await ref.read(currentUserProfileProvider.future);
+      if (currentUser != null && record.userId != currentUser.id && record.userId != currentUser.authUid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You can only delete your own job records'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+        return;
+      }
+    }
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Job Record'),
-        content: const Text(
+        backgroundColor: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        ),
+        title: Text(
+          'Delete Job Record',
+          style: context.textStyles.title,
+        ),
+        content: Text(
           'Are you sure you want to delete this job record? This action cannot be undone.',
+          style: context.textStyles.body,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: context.colors.textSecondary,
+            ),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: Implement delete
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Delete functionality will be implemented'),
-                  backgroundColor: context.colors.error,
-                ),
-              );
+              await _performDeletion();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: context.colors.error,
@@ -511,6 +564,51 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
         ],
       ),
     );
+  }
+  
+  Future<void> _performDeletion() async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      // Delete the record
+      await ref.read(jobRecordStateProvider(widget.recordId).notifier).delete(widget.recordId);
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Job record deleted successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+        
+        // Navigate back to job records list
+        context.go('/job-records');
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting record: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _handleMenuAction(String action) {

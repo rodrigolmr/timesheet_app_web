@@ -223,6 +223,28 @@ final jobRecordsStreamProvider = StreamProvider<List<JobRecordModel>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef JobRecordsStreamRef = StreamProviderRef<List<JobRecordModel>>;
+String _$filteredJobRecordsStreamHash() =>
+    r'41df17f3678bfa7c46095878f5402aba949ef59c';
+
+/// Provider para observar registros filtrados por permissão do usuário
+///
+/// Copied from [filteredJobRecordsStream].
+@ProviderFor(filteredJobRecordsStream)
+final filteredJobRecordsStreamProvider =
+    StreamProvider<List<JobRecordModel>>.internal(
+      filteredJobRecordsStream,
+      name: r'filteredJobRecordsStreamProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$filteredJobRecordsStreamHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FilteredJobRecordsStreamRef = StreamProviderRef<List<JobRecordModel>>;
 String _$jobRecordsDateRangeStreamHash() =>
     r'6f86b9f9c9b4a64ee457977447f74f5fc106c0d9';
 
@@ -386,7 +408,7 @@ class _JobRecordsDateRangeStreamProviderElement
 }
 
 String _$jobRecordsSearchStreamHash() =>
-    r'8fdc6962c0c78b0cb551ef81e35baea2ba86e231';
+    r'fdcaa22abd90b1db93e23bb0dee5a24a4db5545e';
 
 /// Provider unificado para aplicar todos os filtros
 ///
@@ -584,7 +606,7 @@ class _JobRecordsSearchStreamProviderElement
   String? get creatorId => (origin as JobRecordsSearchStreamProvider).creatorId;
 }
 
-String _$jobRecordCreatorsHash() => r'0046c117e71cd53b0afc415be884ac06d9e6370c';
+String _$jobRecordCreatorsHash() => r'9b6e67967756655fc46766b185c8c4bf17cbec1d';
 
 /// Provider para obter a lista de criadores dos job records com names
 ///

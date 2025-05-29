@@ -66,6 +66,28 @@ final expensesStreamProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ExpensesStreamRef = AutoDisposeStreamProviderRef<List<ExpenseModel>>;
+String _$filteredExpensesStreamHash() =>
+    r'60d30bdfe220737c23fadcce4ccf0df091b70da5';
+
+/// Provider para observar despesas filtradas por permissão do usuário
+///
+/// Copied from [filteredExpensesStream].
+@ProviderFor(filteredExpensesStream)
+final filteredExpensesStreamProvider =
+    StreamProvider<List<ExpenseModel>>.internal(
+      filteredExpensesStream,
+      name: r'filteredExpensesStreamProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$filteredExpensesStreamHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FilteredExpensesStreamRef = StreamProviderRef<List<ExpenseModel>>;
 String _$expenseHash() => r'04f5f9e23e03bd8fb8f5466617d9c4bac25e27ba';
 
 /// Copied from Dart SDK
@@ -1207,6 +1229,28 @@ class _ExpensesByCardProviderElement
   String get cardId => (origin as ExpensesByCardProvider).cardId;
 }
 
+String _$expenseCreatorsHash() => r'dd45646b08a86777f3c94b2d67a1bccfb69a45d8';
+
+/// Provider para obter a lista de criadores das despesas com nomes
+///
+/// Copied from [expenseCreators].
+@ProviderFor(expenseCreators)
+final expenseCreatorsProvider =
+    FutureProvider<List<({String id, String name})>>.internal(
+      expenseCreators,
+      name: r'expenseCreatorsProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$expenseCreatorsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ExpenseCreatorsRef =
+    FutureProviderRef<List<({String id, String name})>>;
 String _$expenseSelectionHash() => r'ff2291520c25b350bbdcc918dc79974a05442f7b';
 
 /// Provider notifier para gerenciar seleção múltipla

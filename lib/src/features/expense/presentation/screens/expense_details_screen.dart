@@ -14,6 +14,8 @@ import '../../domain/enums/expense_status.dart';
 import '../widgets/pdf_viewer_dialog.dart';
 import 'package:timesheet_app_web/src/core/widgets/fullscreen_viewer_base.dart';
 import 'dart:html' as html;
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 class ExpenseDetailsScreen extends ConsumerWidget {
   final String expenseId;
@@ -26,12 +28,43 @@ class ExpenseDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expenseAsync = ref.watch(expenseByIdStreamProvider(expenseId));
+    final canDeleteAsync = ref.watch(canDeleteExpenseProvider);
+    final canDelete = canDeleteAsync.valueOrNull ?? false;
 
     return Scaffold(
       backgroundColor: context.colors.background,
       appBar: AppHeader(
         title: 'Expense Details',
         showBackButton: true,
+        actions: [
+          if (canDelete) 
+            expenseAsync.whenOrNull(
+              data: (expense) {
+                if (expense == null) return const SizedBox.shrink();
+                
+                return PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _showDeleteDialog(context, ref, expense);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ) ?? const SizedBox.shrink(),
+        ],
       ),
       body: expenseAsync.when(
         data: (expense) {
@@ -73,9 +106,109 @@ class ExpenseDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, ExpenseModel expense) async {
+    // Verificar se é o criador da despesa (para usuários regulares)
+    final userRole = await ref.read(currentUserRoleProvider.future);
+    if (userRole == UserRole.user) {
+      final currentUser = await ref.read(currentUserProfileProvider.future);
+      if (currentUser != null && expense.userId != currentUser.id && expense.userId != currentUser.authUid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You can only delete your own expenses'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+        return;
+      }
+    }
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        ),
+        title: Text(
+          'Delete Expense',
+          style: context.textStyles.title,
+        ),
+        content: Text(
+          'Are you sure you want to delete this expense? This action cannot be undone.',
+          style: context.textStyles.body,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: context.colors.textSecondary,
+            ),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await _performDeletion(context, ref, expense.id);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.error,
+              foregroundColor: context.colors.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Future<void> _performDeletion(BuildContext context, WidgetRef ref, String expenseId) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      // Delete the expense
+      await ref.read(expenseStateProvider(expenseId).notifier).delete(expenseId);
+      
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+      
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Expense deleted successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+        
+        // Navigate back to expenses list
+        context.go('/expenses');
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+      
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting expense: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
+  }
 }
 
-class _ExpenseDetailsContent extends ConsumerWidget {
+class _ExpenseDetailsContent extends ConsumerStatefulWidget {
   final ExpenseModel expense;
 
   const _ExpenseDetailsContent({
@@ -83,9 +216,14 @@ class _ExpenseDetailsContent extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cardAsync = ref.watch(companyCardByIdStreamProvider(expense.cardId));
-    final userAsync = ref.watch(userByIdStreamProvider(expense.userId));
+  ConsumerState<_ExpenseDetailsContent> createState() => _ExpenseDetailsContentState();
+}
+
+class _ExpenseDetailsContentState extends ConsumerState<_ExpenseDetailsContent> {
+  @override
+  Widget build(BuildContext context) {
+    final cardAsync = ref.watch(companyCardByIdStreamProvider(widget.expense.cardId));
+    final userAsync = ref.watch(userByIdStreamProvider(widget.expense.userId));
 
     return SingleChildScrollView(
       child: ResponsiveContainer(
@@ -96,19 +234,19 @@ class _ExpenseDetailsContent extends ConsumerWidget {
             children: [
               // Status card
               Card(
-                color: _getStatusColor(context, expense.status),
+                color: _getStatusColor(context, widget.expense.status),
                 child: Padding(
                   padding: context.dimensions.padding,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        _getStatusIcon(expense.status),
+                        _getStatusIcon(widget.expense.status),
                         color: Colors.white,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        expense.status.name.toUpperCase(),
+                        widget.expense.status.name.toUpperCase(),
                         style: context.textStyles.subtitle.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -138,7 +276,7 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                         context,
                         icon: Icons.attach_money,
                         label: 'Amount',
-                        value: NumberFormat.currency(symbol: '\$').format(expense.amount),
+                        value: NumberFormat.currency(symbol: '\$').format(widget.expense.amount),
                         valueStyle: context.textStyles.headline.copyWith(
                           color: context.colors.primary,
                           fontWeight: FontWeight.bold,
@@ -151,7 +289,7 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                         context,
                         icon: Icons.calendar_today,
                         label: 'Purchase Date',
-                        value: DateFormat('MMMM d, yyyy').format(expense.date),
+                        value: DateFormat('MMMM d, yyyy').format(widget.expense.date),
                       ),
                       const Divider(),
                       
@@ -185,7 +323,7 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                         context,
                         icon: Icons.description,
                         label: 'Description',
-                        value: expense.description,
+                        value: widget.expense.description,
                         isMultiline: true,
                       ),
                     ],
@@ -215,13 +353,13 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                     const Divider(height: 1),
                     InkWell(
                       onTap: () {
-                        final isPdf = expense.imageUrl.toLowerCase().contains('.pdf');
+                        final isPdf = widget.expense.imageUrl.toLowerCase().contains('.pdf');
                         if (isPdf) {
                           showDialog(
                             context: context,
                             builder: (context) => PdfViewerDialog(
-                              pdfUrl: expense.imageUrl,
-                              title: 'Receipt - ${expense.description}',
+                              pdfUrl: widget.expense.imageUrl,
+                              title: 'Receipt - ${widget.expense.description}',
                             ),
                           );
                         } else {
@@ -239,8 +377,8 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                           children: [
                             Builder(
                               builder: (context) {
-                                debugPrint('Loading image from URL: ${expense.imageUrl}');
-                                final isPdf = expense.imageUrl.toLowerCase().contains('.pdf');
+                                debugPrint('Loading image from URL: ${widget.expense.imageUrl}');
+                                final isPdf = widget.expense.imageUrl.toLowerCase().contains('.pdf');
                                 
                                 if (isPdf) {
                                   return Container(
@@ -274,7 +412,7 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                                 }
                                 
                                 return Image.network(
-                                  expense.imageUrl,
+                                  widget.expense.imageUrl,
                                   fit: BoxFit.contain,
                                   width: double.infinity,
                                   headers: const {
@@ -391,12 +529,12 @@ class _ExpenseDetailsContent extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Created: ${DateFormat('MMM d, y - h:mm a').format(expense.createdAt)}',
+                        'Created: ${DateFormat('MMM d, y - h:mm a').format(widget.expense.createdAt)}',
                         style: context.textStyles.caption,
                       ),
-                      if (expense.reviewedAt != null) ...[
+                      if (widget.expense.reviewedAt != null) ...[
                         Text(
-                          'Reviewed: ${DateFormat('MMM d, y - h:mm a').format(expense.reviewedAt!)}',
+                          'Reviewed: ${DateFormat('MMM d, y - h:mm a').format(widget.expense.reviewedAt!)}',
                           style: context.textStyles.caption,
                         ),
                       ],
@@ -477,7 +615,7 @@ class _ExpenseDetailsContent extends ConsumerWidget {
   }
 
   void _viewFullImage(BuildContext context) {
-    debugPrint('Opening full screen image: ${expense.imageUrl}');
+    debugPrint('Opening full screen image: ${widget.expense.imageUrl}');
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -487,7 +625,7 @@ class _ExpenseDetailsContent extends ConsumerWidget {
           minScale: 0.5,
           maxScale: 4,
           child: Image.network(
-            expense.imageUrl,
+            widget.expense.imageUrl,
             fit: BoxFit.contain,
             headers: const {
               'Accept': 'image/*',

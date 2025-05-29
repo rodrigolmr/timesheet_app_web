@@ -8,6 +8,8 @@ import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
 import 'package:timesheet_app_web/src/core/widgets/navigation/navigation.dart';
 import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -90,128 +92,142 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildFeatureCards(BuildContext context, WidgetRef ref) {
-    final allCards = [
-      // Quick Actions
-      NavigationCard(
-        title: 'Themes',
-        description: 'Choose theme',
-        icon: Icons.palette,
-        route: AppRoute.themeSelector.path,
-        color: context.colors.primary,
-        isActive: true,
-      ),
-      NavigationCard(
-        title: 'Profile',
-        description: 'Your info',
-        icon: Icons.person_outline,
-        route: '/settings/profile',
-        color: context.categoryColorByName('worker'),
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'Notifications',
-        description: 'Preferences',
-        icon: Icons.notifications_outlined,
-        route: '/settings/notifications',
-        color: context.categoryColorByName('card'),
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'Security',
-        description: 'Password',
-        icon: Icons.security,
-        route: '/settings/security',
-        color: context.colors.warning,
-        isActive: false,
-      ),
-      // Management
-      NavigationCard(
-        title: 'Database',
-        description: 'View data',
-        icon: Icons.storage,
-        route: AppRoute.database.path,
-        color: context.categoryColorByName('timesheet'),
-        isActive: true,
-      ),
-      NavigationCard(
-        title: 'Users',
-        description: 'Manage users',
-        icon: Icons.group,
-        route: '/settings/users',
-        color: context.categoryColorByName('receipt'),
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'Reports',
-        description: 'Generate',
-        icon: Icons.assessment,
-        route: '/settings/reports',
-        color: context.colors.secondary,
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'Backup',
-        description: 'Backup data',
-        icon: Icons.backup,
-        route: '/settings/backup',
-        color: context.colors.success,
-        isActive: false,
-      ),
-      // Advanced
-      NavigationCard(
-        title: 'Image Processing',
-        description: 'Debug info',
-        icon: Icons.image_search,
-        route: '/settings/image-processing-debug',
-        color: context.colors.primary,
-        isActive: true,
-      ),
-      NavigationCard(
-        title: 'Debug',
-        description: 'Dev tools',
-        icon: Icons.bug_report,
-        route: '/settings/debug',
-        color: context.colors.error,
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'System',
-        description: 'View info',
-        icon: Icons.info_outline,
-        route: '/settings/system',
-        color: context.colors.textSecondary,
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'Logs',
-        description: 'View logs',
-        icon: Icons.article_outlined,
-        route: '/settings/logs',
-        color: context.categoryColorByName('receipt'),
-        isActive: false,
-      ),
-      NavigationCard(
-        title: 'About',
-        description: 'App info',
-        icon: Icons.help_outline,
-        route: '/settings/about',
-        color: context.colors.primary,
-        isActive: false,
-      ),
-    ];
+    final userRoleAsync = ref.watch(currentUserRoleProvider);
+    
+    return userRoleAsync.when(
+      data: (role) {
+        final isAdmin = role == UserRole.admin;
+        
+        // Cards disponíveis para todos os usuários
+        final userCards = [
+          NavigationCard(
+            title: 'Themes',
+            description: 'Choose theme',
+            icon: Icons.palette,
+            route: AppRoute.themeSelector.path,
+            color: context.colors.primary,
+            isActive: true,
+          ),
+          NavigationCard(
+            title: 'Profile',
+            description: 'Your info',
+            icon: Icons.person_outline,
+            route: '/settings/profile',
+            color: context.categoryColorByName('worker'),
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'Notifications',
+            description: 'Preferences',
+            icon: Icons.notifications_outlined,
+            route: '/settings/notifications',
+            color: context.categoryColorByName('card'),
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'Security',
+            description: 'Password',
+            icon: Icons.security,
+            route: '/settings/security',
+            color: context.colors.warning,
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'About',
+            description: 'App info',
+            icon: Icons.help_outline,
+            route: '/settings/about',
+            color: context.colors.primary,
+            isActive: false,
+          ),
+        ];
+        
+        // Cards exclusivos para admin
+        final adminCards = [
+          NavigationCard(
+            title: 'Database',
+            description: 'View data',
+            icon: Icons.storage,
+            route: AppRoute.database.path,
+            color: context.categoryColorByName('timesheet'),
+            isActive: true,
+          ),
+          NavigationCard(
+            title: 'Users',
+            description: 'Manage users',
+            icon: Icons.group,
+            route: '/settings/users',
+            color: context.categoryColorByName('receipt'),
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'Reports',
+            description: 'Generate',
+            icon: Icons.assessment,
+            route: '/settings/reports',
+            color: context.colors.secondary,
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'Backup',
+            description: 'Backup data',
+            icon: Icons.backup,
+            route: '/settings/backup',
+            color: context.colors.success,
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'Debug',
+            description: 'Dev tools',
+            icon: Icons.bug_report,
+            route: '/settings/debug',
+            color: context.colors.error,
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'System',
+            description: 'View info',
+            icon: Icons.info_outline,
+            route: '/settings/system',
+            color: context.colors.textSecondary,
+            isActive: false,
+          ),
+          NavigationCard(
+            title: 'Logs',
+            description: 'View logs',
+            icon: Icons.article_outlined,
+            route: '/settings/logs',
+            color: context.categoryColorByName('receipt'),
+            isActive: false,
+          ),
+        ];
+        
+        // Combinar cards baseado no role
+        final allCards = isAdmin ? [...userCards, ...adminCards] : userCards;
 
-    return ResponsiveGrid(
-      spacing: context.responsive<double>(
-        xs: context.dimensions.spacingS,
-        sm: context.dimensions.spacingM,
-        md: context.dimensions.spacingL,
+        return ResponsiveGrid(
+          spacing: context.responsive<double>(
+            xs: context.dimensions.spacingS,
+            sm: context.dimensions.spacingM,
+            md: context.dimensions.spacingL,
+          ),
+          xsColumns: 2,
+          smColumns: 3,
+          mdColumns: 4,
+          lgColumns: 5,
+          xlColumns: 6,
+          children: allCards,
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text(
+          'Error loading user role: $error',
+          style: context.textStyles.body.copyWith(
+            color: context.colors.error,
+          ),
+        ),
       ),
-      xsColumns: 2,
-      smColumns: 3,
-      mdColumns: 4,
-      lgColumns: 5,
-      xlColumns: 6,
-      children: allCards,
     );
   }
 

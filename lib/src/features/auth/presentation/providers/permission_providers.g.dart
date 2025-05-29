@@ -6,7 +6,7 @@ part of 'permission_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$canAccessRouteHash() => r'0d727d8a89780d836efae8fef88ed42add93b274';
+String _$canAccessRouteHash() => r'3d7b519115f38141deb413332a4a6af72ee4dc5c';
 
 /// Copied from Dart SDK
 class _SystemHash {

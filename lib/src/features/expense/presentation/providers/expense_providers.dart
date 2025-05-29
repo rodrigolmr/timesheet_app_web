@@ -4,6 +4,9 @@ import 'package:timesheet_app_web/src/features/expense/data/models/expense_model
 import 'package:timesheet_app_web/src/features/expense/data/repositories/firestore_expense_repository.dart';
 import 'package:timesheet_app_web/src/features/expense/domain/repositories/expense_repository.dart';
 import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_status.dart';
+import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 part 'expense_providers.g.dart';
 
@@ -115,6 +118,38 @@ Future<List<ExpenseModel>> expenses(ExpensesRef ref) {
 @riverpod
 Stream<List<ExpenseModel>> expensesStream(ExpensesStreamRef ref) {
   return ref.watch(expenseRepositoryProvider).watchAll();
+}
+
+/// Provider para observar despesas filtradas por permissão do usuário
+@Riverpod(keepAlive: true)
+Stream<List<ExpenseModel>> filteredExpensesStream(FilteredExpensesStreamRef ref) async* {
+  try {
+    final userProfile = await ref.watch(currentUserProfileProvider.future);
+    
+    if (userProfile == null) {
+      yield [];
+      return;
+    }
+    
+    final role = UserRole.fromString(userProfile.role);
+    
+    // Admin e Manager veem todas as despesas
+    if (role == UserRole.admin || role == UserRole.manager) {
+      yield* ref.watch(expensesStreamProvider.stream);
+    } else {
+      // User vê apenas suas próprias despesas
+      // Precisa verificar tanto pelo ID do usuário quanto pelo authUid
+      yield* ref.watch(expensesStreamProvider.stream).map((expenses) {
+        return expenses.where((expense) => 
+          expense.userId == userProfile.id || 
+          expense.userId == userProfile.authUid
+        ).toList();
+      });
+    }
+  } catch (e) {
+    // Em caso de erro, retorna lista vazia
+    yield [];
+  }
 }
 
 /// Provider para obter uma despesa específica por ID
@@ -251,5 +286,50 @@ class ExpenseState extends _$ExpenseState {
     } catch (e, stackTrace) {
       state = AsyncError(e, stackTrace);
     }
+  }
+}
+
+/// Provider para obter a lista de criadores das despesas com nomes
+@Riverpod(keepAlive: true)
+Future<List<({String id, String name})>> expenseCreators(ExpenseCreatorsRef ref) async {
+  try {
+    // Busca apenas as despesas filtradas por permissão
+    final expenses = await ref.watch(filteredExpensesStreamProvider.future);
+    
+    // Extraímos os IDs únicos dos criadores
+    final creatorIds = expenses.map((expense) => expense.userId).toSet().toList();
+    
+    // Lista para armazenar criadores com nomes
+    final List<({String id, String name})> creatorsWithNames = [];
+    
+    // Buscar todos os usuários uma vez só
+    final allUsers = await ref.read(usersProvider.future);
+    final usersMap = { for (var user in allUsers) user.id: user };
+    
+    // Para cada ID, buscar informações do usuário
+    for (final creatorId in creatorIds) {
+      // Busca por ID ou authUid
+      var user = usersMap[creatorId];
+      if (user == null) {
+        // Tenta buscar por authUid
+        try {
+          user = allUsers.firstWhere((u) => u.authUid == creatorId);
+        } catch (e) {
+          user = null;
+        }
+      }
+                   
+      if (user != null) {
+        final name = '${user.firstName} ${user.lastName}'.trim();
+        creatorsWithNames.add((id: creatorId, name: name));
+      } else {
+        creatorsWithNames.add((id: creatorId, name: 'Unknown User'));
+      }
+    }
+    
+    return creatorsWithNames..sort((a, b) => a.name.compareTo(b.name));
+  } catch (e) {
+    // Em caso de erro, retorna lista vazia
+    return [];
   }
 }

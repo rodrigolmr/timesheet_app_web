@@ -13,6 +13,8 @@ import 'package:timesheet_app_web/src/features/job_record/presentation/providers
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_card.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_filters.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/services/job_record_print_service.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 
 class JobRecordsScreen extends ConsumerStatefulWidget {
@@ -65,6 +67,9 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     final selectionState = ref.watch(jobRecordSelectionProvider);
     
     if (selectionState.isSelectionMode) {
+      final canDeleteAsync = ref.watch(canDeleteJobRecordProvider);
+      final canDelete = canDeleteAsync.valueOrNull ?? false;
+      
       return AppBar(
         backgroundColor: context.colors.primary,
         foregroundColor: context.colors.onPrimary,
@@ -81,11 +86,12 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         ),
         actions: [
           if (selectionState.hasSelection) ...[
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
-              tooltip: 'Delete selected',
-            ),
+            if (canDelete)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
+                tooltip: 'Delete selected',
+              ),
             IconButton(
               icon: const Icon(Icons.print),
               onPressed: () => _printSelected(selectionState.selectedIds),
@@ -244,16 +250,89 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
   }
 
   void _deleteSelectedRecords(Set<String> selectedIds) async {
-    // TODO: Implementar exclusão em lote
-    // Por enquanto, mostra mensagem de sucesso
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Deleted ${selectedIds.length} record${selectedIds.length > 1 ? 's' : ''}'),
-        backgroundColor: context.colors.success,
+    // Verificar permissão para deletar
+    final canDelete = await ref.read(canDeleteJobRecordProvider.future);
+    
+    if (!canDelete) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You do not have permission to delete job records'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+      return;
+    }
+    
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
     
-    ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode();
+    try {
+      // Deletar cada registro
+      int successCount = 0;
+      int errorCount = 0;
+      
+      for (final id in selectedIds) {
+        try {
+          await ref.read(jobRecordStateProvider(id).notifier).delete(id);
+          successCount++;
+        } catch (e) {
+          errorCount++;
+          debugPrint('Error deleting job record $id: $e');
+        }
+      }
+      
+      // Fechar loading
+      if (mounted) Navigator.of(context).pop();
+      
+      // Mostrar resultado
+      if (mounted) {
+        if (errorCount == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully deleted $successCount record${successCount > 1 ? 's' : ''}'),
+              backgroundColor: context.colors.success,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Deleted $successCount record${successCount > 1 ? 's' : ''}, $errorCount failed'),
+              backgroundColor: context.colors.warning,
+            ),
+          );
+        }
+      }
+      
+      // Remover registros deletados da seleção e sair do modo seleção se necessário
+      ref.read(jobRecordSelectionProvider.notifier).removeDeletedRecords(
+        selectedIds.where((id) => successCount > 0).toSet()
+      );
+      
+      // Se todos foram deletados, sair do modo seleção
+      if (successCount == selectedIds.length) {
+        ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode();
+      }
+    } catch (e) {
+      // Fechar loading
+      if (mounted) Navigator.of(context).pop();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting records: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _printSelected(Set<String> selectedIds) async {
@@ -369,6 +448,28 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
   }
 
   String _buildEmptyMessage() {
+    // Verifica se há filtros ativos
+    final hasFilters = _searchQuery.isNotEmpty || 
+                      _selectedDateRange != null || 
+                      _selectedCreator != null;
+    
+    if (!hasFilters) {
+      // Sem filtros - mensagem padrão baseada no role
+      final userRoleAsync = ref.read(currentUserRoleProvider);
+      return userRoleAsync.when(
+        data: (role) {
+          if (role == UserRole.user) {
+            return 'You have no job records yet';
+          } else {
+            return 'No job records found';
+          }
+        },
+        loading: () => 'No records found',
+        error: (_, __) => 'No records found',
+      );
+    }
+    
+    // Com filtros - mensagem específica
     String message = 'No records found';
     if (_searchQuery.isNotEmpty) {
       message += ' matching "$_searchQuery"';
