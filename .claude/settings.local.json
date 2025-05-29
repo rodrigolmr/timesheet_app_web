@@ -23,7 +23,8 @@
       "Bash(firebase deploy:*)",
       "Bash(git log:*)",
       "Bash(gsutil cors:*)",
-      "Bash(./generate_icons.sh:*)"
+      "Bash(./generate_icons.sh:*)",
+      "Bash(flutter:*)"
     ],
     "deny": []
   },

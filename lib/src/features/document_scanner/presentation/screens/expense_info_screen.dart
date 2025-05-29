@@ -59,6 +59,43 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
     super.dispose();
   }
 
+  Future<bool> _showCancelConfirmation() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancel Document Creation'),
+          content: const Text('Are you sure you want to cancel? The document creation will be discarded.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('No, Continue'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: dialogContext.colors.error,
+              ),
+              child: const Text('Yes, Cancel'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
+
+  void _handleCancel() async {
+    final shouldCancel = await _showCancelConfirmation();
+    if (shouldCancel && mounted) {
+      debugPrint('=== CANCEL CONFIRMED ===');
+      
+      // Since we're in a modal navigation stack on top of /expenses,
+      // we need to ensure we return to the expenses screen properly
+      context.go('/expenses');
+    }
+  }
+
   Future<void> _saveExpense() async {
     // Validate fields manually
     bool hasErrors = false;
@@ -149,22 +186,11 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
         // Wait a bit for the snackbar to show, then navigate
         await Future.delayed(const Duration(milliseconds: 500));
         
-        // Navigate to expenses screen
+        // Navigate back to expenses screen
         if (mounted) {
-          debugPrint('Navigating to expenses screen...');
-          debugPrint('Current route: ${GoRouter.of(context).routeInformationProvider.value.uri}');
-          
-          // Pop all routes and go to expenses
-          while (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
-          
-          // Small delay to ensure all pops are processed
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          if (mounted) {
-            context.go('/expenses');
-          }
+          debugPrint('Navigating back after save...');
+          // Use go to ensure we return to expenses screen
+          context.go('/expenses');
         }
       }
     } catch (e) {
@@ -184,16 +210,23 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
   Widget build(BuildContext context) {
     final cardsAsync = ref.watch(companyCardsStreamProvider);
 
-    return StaticLoadingOverlay(
-      isVisible: _isLoading,
-      message: 'Saving expense...',
-      child: Scaffold(
-        backgroundColor: context.colors.background,
-        appBar: AppHeader(
-          title: 'Receipt Information',
-          showBackButton: true,
-        ),
-        body: SingleChildScrollView(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        _handleCancel();
+      },
+      child: StaticLoadingOverlay(
+        isVisible: _isLoading,
+        message: 'Saving expense...',
+        child: Scaffold(
+          backgroundColor: context.colors.background,
+          appBar: AppHeader(
+            title: 'Receipt Information',
+            showBackButton: true,
+            onBackPressed: _handleCancel,
+          ),
+          body: SingleChildScrollView(
         child: ResponsiveContainer(
           child: Padding(
             padding: context.dimensions.padding,
@@ -280,7 +313,7 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
                     children: [
                       Expanded(
                         child: TextButton(
-                          onPressed: _isLoading ? null : () => context.pop(),
+                          onPressed: _isLoading ? null : _handleCancel,
                           child: const Text('Cancel'),
                         ),
                       ),
@@ -362,6 +395,7 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
             ),
           ),
         ),
+      ),
       ),
       ),
     );
