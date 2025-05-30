@@ -91,7 +91,7 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
 
     try {
       // Add a small delay to ensure the loading indicator is visible
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
       
       // Apply perspective transformation
       final croppedImage = await img_service.ImageProcessingService.perspectiveTransform(

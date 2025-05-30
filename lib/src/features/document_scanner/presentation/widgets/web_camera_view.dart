@@ -93,15 +93,8 @@ class _WebCameraViewState extends State<WebCameraView> {
   Future<void> _captureImage() async {
     if (_videoElement == null || _isCapturing) return;
     
-    setState(() {
-      _isCapturing = true;
-    });
-    
     try {
-      // Wait a bit for any UI updates
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      // Create canvas with video dimensions
+      // Create canvas with video dimensions immediately
       final canvas = html.CanvasElement(
         width: _videoElement!.videoWidth,
         height: _videoElement!.videoHeight,

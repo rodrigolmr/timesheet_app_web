@@ -63,13 +63,43 @@ class _DocumentScannerScreenState extends ConsumerState<DocumentScannerScreen> {
     );
     
     if (result != null && mounted) {
-      // Mark as navigated before pushing to crop
-      _hasNavigated = true;
-      // Go directly to crop screen using GoRouter
-      context.push(
-        '/document-scanner/crop',
-        extra: {'imageData': result},
+      // Show loading dialog immediately after capture
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: Container(
+            color: Colors.black.withOpacity(0.7),
+            child: const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: StaticLoadingIndicator(
+                    message: 'Processing image',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       );
+      
+      // Small delay to ensure loading is visible
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      if (mounted) {
+        // Close loading dialog
+        Navigator.of(context).pop();
+        
+        // Mark as navigated before pushing to crop
+        _hasNavigated = true;
+        // Go directly to crop screen using GoRouter
+        context.push(
+          '/document-scanner/crop',
+          extra: {'imageData': result},
+        );
+      }
     } else if (mounted) {
       // User cancelled, go back
       context.pop();
