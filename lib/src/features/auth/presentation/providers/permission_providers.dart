@@ -120,3 +120,21 @@ Future<Set<AppRoute>> allowedRoutes(AllowedRoutesRef ref) async {
   final role = await ref.watch(currentUserRoleProvider.future);
   return role != null ? RolePermissions.getAllowedRoutes(role) : {};
 }
+
+@riverpod
+Future<bool> canGenerateTimesheet(CanGenerateTimesheetRef ref) async {
+  final role = await ref.watch(currentUserRoleProvider.future);
+  return role != null ? RolePermissions.canGenerateTimesheet(role) : false;
+}
+
+@riverpod
+Future<bool> canPrintJobRecords(CanPrintJobRecordsRef ref) async {
+  final role = await ref.watch(currentUserRoleProvider.future);
+  return role != null ? RolePermissions.canPrintJobRecords(role) : false;
+}
+
+@riverpod
+Future<bool> canPrintExpenses(CanPrintExpensesRef ref) async {
+  final role = await ref.watch(currentUserRoleProvider.future);
+  return role != null ? RolePermissions.canPrintExpenses(role) : false;
+}

@@ -7,6 +7,7 @@ import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 
 class JobRecordCard extends ConsumerWidget {
   final JobRecordModel record;
@@ -96,14 +97,14 @@ class JobRecordCard extends ConsumerWidget {
               height: cardHeight,
               decoration: BoxDecoration(
                 color: isSelected ? colors.primary.withOpacity(0.1) : colors.surface,
-                border: Border.all(
-                  color: isSelected ? colors.primary : colors.secondary, 
-                  width: isSelected ? 2 : 1,
-                ),
                 borderRadius: BorderRadius.circular(4),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Row(
+              child: Stack(
+                children: [
+                  // Conteúdo principal com clipping
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Row(
                 children: [
                   // Date section - mais compacto
                   Container(
@@ -152,79 +153,99 @@ class JobRecordCard extends ConsumerWidget {
                   
                   // Job name
                   Expanded(
-                    child: Container(
-                      alignment: Alignment.center,
-                      color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
-                      padding: EdgeInsets.symmetric(
-                        horizontal: context.responsive<double>(xs: 4, sm: 6, md: 8),
-                      ),
-                      child: Text(
-                        record.jobName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: textStyles.body.copyWith(
-                          fontSize: context.responsive<double>(xs: 13, sm: 14, md: 14),
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  // Vertical divider
-                  Container(
-                    width: 1, // Mais fino para economizar espaço
-                    height: double.infinity, 
-                    color: colors.background,
-                  ),
-                  
-                  // Creator and hours info - mais compacto
-                  Container(
-                    width: creatorWidth,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
-                      borderRadius: selectionState.isSelectionMode ? null : const BorderRadius.only(
-                        topRight: Radius.circular(3),
-                        bottomRight: Radius.circular(3),
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: FutureBuilder<({String firstName, String lastName})>(
-                      future: _getCreatorNames(ref, record.userId),
-                      builder: (context, snapshot) {
-                        final names = snapshot.data ?? (firstName: 'Loading', lastName: '...');
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Primeiro nome
-                            Text(
-                              names.firstName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: textStyles.caption.copyWith(
-                                fontStyle: FontStyle.italic,
-                                fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
-                              ),
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final canViewAllAsync = ref.watch(canViewAllJobRecordsProvider);
+                        final canViewAll = canViewAllAsync.valueOrNull ?? false;
+                        
+                        return Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.responsive<double>(xs: 4, sm: 6, md: 8),
+                          ),
+                          child: Text(
+                            record.jobName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: textStyles.body.copyWith(
+                              fontSize: context.responsive<double>(xs: 13, sm: 14, md: 14),
                             ),
-                            // Pequeno espaçamento
-                            SizedBox(height: 1),
-                            // Sobrenome
-                            Text(
-                              names.lastName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: textStyles.caption.copyWith(
-                                fontStyle: FontStyle.italic,
-                                fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
-                                height: 0.9, // Reduz o espaçamento de linha
-                              ),
-                            ),
-                          ],
+                          ),
                         );
                       },
                     ),
+                  ),
+                  
+                  // Creator and hours info - mais compacto
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final canViewAllAsync = ref.watch(canViewAllJobRecordsProvider);
+                      final canViewAll = canViewAllAsync.valueOrNull ?? false;
+                      
+                      if (!canViewAll) {
+                        // Para usuários regulares, não mostra informações do criador
+                        return const SizedBox.shrink();
+                      }
+                      
+                      return Row(
+                        children: [
+                          // Vertical divider - apenas quando há conteúdo do criador
+                          Container(
+                            width: 1,
+                            height: double.infinity,
+                            color: colors.background,
+                          ),
+                          Container(
+                            width: creatorWidth,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: colors.surfaceAccent.withOpacity(0.85), // Preenchimento igual aos inputs
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: FutureBuilder<({String firstName, String lastName})>(
+                          future: _getCreatorNames(ref, record.userId),
+                          builder: (context, snapshot) {
+                            final names = snapshot.data ?? (firstName: 'Loading', lastName: '...');
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Primeiro nome
+                                Text(
+                                  names.firstName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: textStyles.caption.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                                  ),
+                                ),
+                                // Pequeno espaçamento
+                                SizedBox(height: 1),
+                                // Sobrenome
+                                Text(
+                                  names.lastName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: textStyles.caption.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                                    height: 0.9, // Reduz o espaçamento de linha
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   
                   // Checkbox para modo de seleção
@@ -233,10 +254,6 @@ class JobRecordCard extends ConsumerWidget {
                       width: 40,
                       decoration: BoxDecoration(
                         color: colors.surfaceAccent.withOpacity(0.85),
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(3),
-                          bottomRight: Radius.circular(3),
-                        ),
                       ),
                       child: Center(
                         child: Checkbox(
@@ -252,6 +269,21 @@ class JobRecordCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                ],
+                    ),
+                  ),
+                  // Borda aplicada por cima
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected ? colors.primary : colors.secondary,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

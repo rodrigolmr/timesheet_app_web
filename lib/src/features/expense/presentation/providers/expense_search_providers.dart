@@ -8,8 +8,8 @@ part 'expense_search_providers.g.dart';
 /// Provider para armazenar todas as despesas em cache
 @Riverpod(keepAlive: true)
 Stream<List<ExpenseModel>> cachedExpenses(CachedExpensesRef ref) {
-  // Usamos o stream existente que já está com persistência
-  return ref.watch(expensesStreamProvider);
+  // Usamos o stream filtrado por permissões do usuário
+  return ref.watch(filteredExpensesStreamProvider);
 }
 
 /// Enumeração para ordenação de despesas

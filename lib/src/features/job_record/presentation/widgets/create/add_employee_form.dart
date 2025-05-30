@@ -719,34 +719,40 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
                         ),
                         
                         // Center - Absolute positioned Add button
-                        IconButton(
-                          onPressed: _handleSubmit,
-                          tooltip: widget.employeeToEdit != null ? 'Update' : 'Add Employee',
-                          iconSize: context.responsive<double>(
-                            xs: 26,
-                            sm: 28,
-                            md: 30,
-                          ),
-                          icon: Icon(
-                            widget.employeeToEdit != null ? Icons.save : Icons.add_circle,
-                            color: context.colors.onPrimary,
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor: context.colors.primary,
-                            padding: EdgeInsets.all(context.dimensions.spacingXS),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          constraints: BoxConstraints.tightFor(
-                            width: context.responsive<double>(
-                              xs: 44,
-                              sm: 48,
-                              md: 52,
-                            ),
-                            height: context.responsive<double>(
-                              xs: 44,
-                              sm: 48,
-                              md: 52,
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _handleSubmit,
+                            borderRadius: BorderRadius.circular(100),
+                            child: Tooltip(
+                              message: widget.employeeToEdit != null ? 'Update' : 'Add Employee',
+                              child: Container(
+                                width: context.responsive<double>(
+                                  xs: 44,
+                                  sm: 48,
+                                  md: 52,
+                                ),
+                                height: context.responsive<double>(
+                                  xs: 44,
+                                  sm: 48,
+                                  md: 52,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.colors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    widget.employeeToEdit != null ? Icons.save : Icons.add_circle,
+                                    color: context.colors.onPrimary,
+                                    size: context.responsive<double>(
+                                      xs: 26,
+                                      sm: 28,
+                                      md: 30,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),

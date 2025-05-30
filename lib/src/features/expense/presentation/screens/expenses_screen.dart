@@ -109,15 +109,20 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       );
     }
     
+    // Check if user can use selection mode (only managers and admins)
+    final canUseSelectionModeAsync = ref.watch(canDeleteExpenseProvider);
+    final canUseSelectionMode = canUseSelectionModeAsync.valueOrNull ?? false;
+    
     return AppHeader(
       title: 'Expenses',
       subtitle: 'View and manage expense reports',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.checklist),
-          onPressed: () => ref.read(expenseSelectionProvider.notifier).enterSelectionMode(),
-          tooltip: 'Select expenses',
-        ),
+        if (canUseSelectionMode)
+          IconButton(
+            icon: const Icon(Icons.checklist),
+            onPressed: () => ref.read(expenseSelectionProvider.notifier).enterSelectionMode(),
+            tooltip: 'Select expenses',
+          ),
       ],
     );
   }
@@ -381,12 +386,6 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           ref.read(expenseSelectionProvider.notifier).toggleSelection(expense.id);
         } else {
           context.push('/expenses/${expense.id}');
-        }
-      },
-      onLongPress: () {
-        if (!selectionState.isSelectionMode) {
-          ref.read(expenseSelectionProvider.notifier).enterSelectionMode();
-          ref.read(expenseSelectionProvider.notifier).toggleSelection(expense.id);
         }
       },
       borderRadius: BorderRadius.circular(4),

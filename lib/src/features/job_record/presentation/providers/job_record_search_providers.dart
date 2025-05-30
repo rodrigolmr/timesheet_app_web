@@ -8,8 +8,8 @@ part 'job_record_search_providers.g.dart';
 /// Provider para armazenar todos os registros de trabalho em cache
 @Riverpod(keepAlive: true)
 Stream<List<JobRecordModel>> cachedJobRecords(CachedJobRecordsRef ref) {
-  // Usamos o stream existente que já está com persistência
-  return ref.watch(jobRecordsStreamProvider);
+  // Usamos o stream filtrado por permissões do usuário
+  return ref.watch(filteredJobRecordsStreamProvider);
 }
 
 /// Enumeração para ordenação de registros de trabalho

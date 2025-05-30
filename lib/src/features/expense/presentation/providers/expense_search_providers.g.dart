@@ -6,7 +6,7 @@ part of 'expense_search_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$cachedExpensesHash() => r'ccb8f52f564a04bcd5d477e9e58fadef61ad5e77';
+String _$cachedExpensesHash() => r'0f0da158185560d1c5f8b01ab2edcfccfec5076d';
 
 /// Provider para armazenar todas as despesas em cache
 ///

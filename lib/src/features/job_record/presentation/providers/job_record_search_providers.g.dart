@@ -6,7 +6,7 @@ part of 'job_record_search_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$cachedJobRecordsHash() => r'd1dfb69c6d16c06481ba46103620fdc58a56122e';
+String _$cachedJobRecordsHash() => r'363dbe8edb4f12065b3d57979ac883d8e4fdc61d';
 
 /// Provider para armazenar todos os registros de trabalho em cache
 ///

@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/employee/data/models/employee_model.dart';
+import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 class TimeSheetPdfService {
   static final _dateFormat = DateFormat('MM/dd/yyyy');
@@ -15,7 +16,12 @@ class TimeSheetPdfService {
     required DateTime endDate,
     required List<JobRecordModel> jobRecords,
     required List<EmployeeModel> employees,
+    UserRole? userRole,
   }) async {
+    // Security check - only admin and manager can generate timesheets
+    if (userRole != null && userRole != UserRole.admin && userRole != UserRole.manager) {
+      throw Exception('Unauthorized: Only managers and administrators can generate timesheets');
+    }
     final pdf = pw.Document();
     
     // Calculate data for each employee

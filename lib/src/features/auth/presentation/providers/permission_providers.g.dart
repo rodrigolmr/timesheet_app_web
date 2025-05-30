@@ -599,5 +599,61 @@ final allowedRoutesProvider = AutoDisposeFutureProvider<Set<AppRoute>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AllowedRoutesRef = AutoDisposeFutureProviderRef<Set<AppRoute>>;
+String _$canGenerateTimesheetHash() =>
+    r'd267cbc49eceb7c8c3450d1f3d48466e7001c9f3';
+
+/// See also [canGenerateTimesheet].
+@ProviderFor(canGenerateTimesheet)
+final canGenerateTimesheetProvider = AutoDisposeFutureProvider<bool>.internal(
+  canGenerateTimesheet,
+  name: r'canGenerateTimesheetProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$canGenerateTimesheetHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CanGenerateTimesheetRef = AutoDisposeFutureProviderRef<bool>;
+String _$canPrintJobRecordsHash() =>
+    r'41a499c2b6d5927b19dcfb7fd389ce794725c9c2';
+
+/// See also [canPrintJobRecords].
+@ProviderFor(canPrintJobRecords)
+final canPrintJobRecordsProvider = AutoDisposeFutureProvider<bool>.internal(
+  canPrintJobRecords,
+  name: r'canPrintJobRecordsProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$canPrintJobRecordsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CanPrintJobRecordsRef = AutoDisposeFutureProviderRef<bool>;
+String _$canPrintExpensesHash() => r'c41cbcff927ea7899f8c9564725741fb1f813fb3';
+
+/// See also [canPrintExpenses].
+@ProviderFor(canPrintExpenses)
+final canPrintExpensesProvider = AutoDisposeFutureProvider<bool>.internal(
+  canPrintExpenses,
+  name: r'canPrintExpensesProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$canPrintExpensesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CanPrintExpensesRef = AutoDisposeFutureProviderRef<bool>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

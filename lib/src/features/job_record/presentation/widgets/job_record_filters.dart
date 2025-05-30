@@ -46,6 +46,10 @@ class JobRecordFilters extends ConsumerStatefulWidget {
 class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
   @override
   Widget build(BuildContext context) {
+    // Check if user can view all records (only managers and admins)
+    final canViewAllAsync = ref.watch(canViewAllJobRecordsProvider);
+    final canViewAll = canViewAllAsync.valueOrNull ?? false;
+    
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: context.responsive<double>(xs: 12, sm: 16, md: 20),

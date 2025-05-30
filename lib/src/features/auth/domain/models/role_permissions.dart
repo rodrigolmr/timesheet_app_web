@@ -59,10 +59,8 @@ class RolePermissions {
   }
 
   static bool canEditJobRecord(UserRole role, String creatorId, String currentUserId) {
-    if (role == UserRole.admin || role == UserRole.manager) {
-      return true; // Admin and Manager can edit any record
-    }
-    return creatorId == currentUserId; // User can only edit their own records
+    // Only Admin and Manager can edit job records
+    return role == UserRole.admin || role == UserRole.manager;
   }
 
   static bool canDeleteJobRecord(UserRole role) {
@@ -78,10 +76,8 @@ class RolePermissions {
   }
 
   static bool canEditExpense(UserRole role, String creatorId, String currentUserId) {
-    if (role == UserRole.admin || role == UserRole.manager) {
-      return true; // Admin and Manager can edit any expense
-    }
-    return creatorId == currentUserId; // User can only edit their own expenses
+    // Only Admin and Manager can edit expenses
+    return role == UserRole.admin || role == UserRole.manager;
   }
 
   static bool canDeleteExpense(UserRole role) {
@@ -106,5 +102,17 @@ class RolePermissions {
 
   static bool canAccessDatabase(UserRole role) {
     return role == UserRole.admin;
+  }
+
+  static bool canGenerateTimesheet(UserRole role) {
+    return role == UserRole.admin || role == UserRole.manager;
+  }
+
+  static bool canPrintJobRecords(UserRole role) {
+    return role == UserRole.admin || role == UserRole.manager;
+  }
+
+  static bool canPrintExpenses(UserRole role) {
+    return role == UserRole.admin || role == UserRole.manager;
   }
 }

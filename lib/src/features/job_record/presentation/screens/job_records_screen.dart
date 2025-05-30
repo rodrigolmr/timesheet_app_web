@@ -70,6 +70,8 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     if (selectionState.isSelectionMode) {
       final canDeleteAsync = ref.watch(canDeleteJobRecordProvider);
       final canDelete = canDeleteAsync.valueOrNull ?? false;
+      final canPrintAsync = ref.watch(canPrintJobRecordsProvider);
+      final canPrint = canPrintAsync.valueOrNull ?? false;
       
       return AppBar(
         backgroundColor: context.colors.primary,
@@ -93,11 +95,12 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
                 onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
                 tooltip: 'Delete selected',
               ),
-            IconButton(
-              icon: const Icon(Icons.print),
-              onPressed: () => _printSelected(selectionState.selectedIds),
-              tooltip: 'Print selected',
-            ),
+            if (canPrint)
+              IconButton(
+                icon: const Icon(Icons.print),
+                onPressed: () => _printSelected(selectionState.selectedIds),
+                tooltip: 'Print selected',
+              ),
           ],
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -117,36 +120,46 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       );
     }
     
+    // Check if user can generate timesheet
+    final canGenerateTimesheetAsync = ref.watch(canGenerateTimesheetProvider);
+    final canGenerateTimesheet = canGenerateTimesheetAsync.valueOrNull ?? false;
+    
+    // Check if user can use selection mode (only managers and admins)
+    final canUseSelectionModeAsync = ref.watch(canDeleteJobRecordProvider);
+    final canUseSelectionMode = canUseSelectionModeAsync.valueOrNull ?? false;
+    
     return AppHeader(
       title: 'Job Records',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.checklist),
-          onPressed: () => ref.read(jobRecordSelectionProvider.notifier).enterSelectionMode(),
-          tooltip: 'Select records',
-        ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            switch (value) {
-              case 'generate_timesheet':
-                _showTimeSheetDialog();
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'generate_timesheet',
-              child: Row(
-                children: [
-                  Icon(Icons.table_chart_outlined, size: 20),
-                  SizedBox(width: 8),
-                  Text('Generate Timesheet'),
-                ],
+        if (canUseSelectionMode)
+          IconButton(
+            icon: const Icon(Icons.checklist),
+            onPressed: () => ref.read(jobRecordSelectionProvider.notifier).enterSelectionMode(),
+            tooltip: 'Select records',
+          ),
+        if (canGenerateTimesheet)
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'generate_timesheet':
+                  _showTimeSheetDialog();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'generate_timesheet',
+                child: Row(
+                  children: [
+                    Icon(Icons.table_chart_outlined, size: 20),
+                    SizedBox(width: 8),
+                    Text('Generate Timesheet'),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }
@@ -360,6 +373,20 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
 
   void _printSelected(Set<String> selectedIds) async {
     if (selectedIds.isEmpty) return;
+
+    // Check permission first
+    final canPrint = await ref.read(canPrintJobRecordsProvider.future);
+    if (!canPrint) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You do not have permission to print job records'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(

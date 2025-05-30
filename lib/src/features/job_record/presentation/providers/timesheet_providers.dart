@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/services/timesheet_pdf_service.dart';
 import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:universal_html/html.dart' as html;
 
 part 'timesheet_providers.g.dart';
@@ -22,6 +23,15 @@ class TimeSheetGenerator extends _$TimeSheetGenerator {
     state = const AsyncLoading();
     
     try {
+      // Check permission first
+      final canGenerate = await ref.read(canGenerateTimesheetProvider.future);
+      if (!canGenerate) {
+        throw Exception('Unauthorized: You do not have permission to generate timesheets');
+      }
+      
+      // Get current user role for additional security
+      final userRole = await ref.read(currentUserRoleProvider.future);
+      
       // Get all job records
       final jobRecords = await ref.read(jobRecordsProvider.future);
       
@@ -34,12 +44,13 @@ class TimeSheetGenerator extends _$TimeSheetGenerator {
       // Get all employees
       final employees = await ref.read(employeesProvider.future);
       
-      // Generate PDF
+      // Generate PDF with role verification
       final pdfBytes = await TimeSheetPdfService.generateTimeSheet(
         startDate: startDate,
         endDate: endDate,
         jobRecords: filteredRecords,
         employees: employees,
+        userRole: userRole,
       );
       
       // Save/share the PDF

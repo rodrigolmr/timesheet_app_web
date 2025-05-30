@@ -51,6 +51,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
 
   PreferredSizeWidget _buildAppBar() {
     final canDeleteAsync = ref.watch(canDeleteJobRecordProvider);
+    final canPrintAsync = ref.watch(canPrintJobRecordsProvider);
     
     return AppHeader(
       title: 'Job Record Details',
@@ -61,6 +62,7 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
           onSelected: _handleMenuAction,
           itemBuilder: (context) {
             final canDelete = canDeleteAsync.valueOrNull ?? false;
+            final canPrint = canPrintAsync.valueOrNull ?? false;
             
             final items = <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
@@ -73,17 +75,23 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                   ],
                 ),
               ),
-              const PopupMenuItem<String>(
-                value: 'print',
-                child: Row(
-                  children: [
-                    Icon(Icons.print, size: 20),
-                    SizedBox(width: 8),
-                    Text('Print'),
-                  ],
-                ),
-              ),
             ];
+            
+            // Add print option only if user has permission
+            if (canPrint) {
+              items.add(
+                const PopupMenuItem<String>(
+                  value: 'print',
+                  child: Row(
+                    children: [
+                      Icon(Icons.print, size: 20),
+                      SizedBox(width: 8),
+                      Text('Print'),
+                    ],
+                  ),
+                ),
+              );
+            }
             
             // Adiciona delete apenas se tem permissão
             if (canDelete) {
@@ -281,6 +289,12 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
     final iconSize = context.responsive<double>(xs: 14, sm: 16, md: 18);
     final fontSize = context.responsive<double>(xs: 12, sm: 14, md: 16);
     
+    // Watch permissions
+    final canEditAsync = ref.watch(canEditJobRecordProvider(record.userId));
+    final canPrintAsync = ref.watch(canPrintJobRecordsProvider);
+    final canEdit = canEditAsync.valueOrNull ?? false;
+    final canPrint = canPrintAsync.valueOrNull ?? false;
+    
     if (isSmallScreen) {
       // Layout empilhado para telas pequenas
       return Container(
@@ -289,19 +303,20 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
           children: [
             Row(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _editRecord(),
-                    icon: Icon(Icons.edit, size: iconSize),
-                    label: Text('Edit', style: TextStyle(fontSize: fontSize)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.colors.primary,
-                      foregroundColor: context.colors.onPrimary,
+                if (canEdit)
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _editRecord(),
+                      icon: Icon(Icons.edit, size: iconSize),
+                      label: Text('Edit', style: TextStyle(fontSize: fontSize)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.colors.primary,
+                        foregroundColor: context.colors.onPrimary,
                       padding: buttonPadding,
                     ),
                   ),
                 ),
-                SizedBox(width: context.dimensions.spacingS),
+                if (canEdit) SizedBox(width: context.dimensions.spacingS),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => _duplicateRecord(record),
@@ -316,20 +331,22 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                 ),
               ],
             ),
-            SizedBox(height: context.dimensions.spacingS),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _printRecord(record),
-                icon: Icon(Icons.print, size: iconSize),
-                label: Text('Print', style: TextStyle(fontSize: fontSize)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.success,
-                  foregroundColor: context.colors.onSuccess,
-                  padding: buttonPadding,
+            if (canPrint) ...[
+              SizedBox(height: context.dimensions.spacingS),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _printRecord(record),
+                  icon: Icon(Icons.print, size: iconSize),
+                  label: Text('Print', style: TextStyle(fontSize: fontSize)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.colors.success,
+                    foregroundColor: context.colors.onSuccess,
+                    padding: buttonPadding,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       );
@@ -339,19 +356,21 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
         width: containerWidth,
         child: Row(
           children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _editRecord(),
-                icon: Icon(Icons.edit, size: iconSize),
-                label: Text('Edit', style: TextStyle(fontSize: fontSize)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.primary,
-                  foregroundColor: context.colors.onPrimary,
-                  padding: buttonPadding,
+            if (canEdit) ...[
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _editRecord(),
+                  icon: Icon(Icons.edit, size: iconSize),
+                  label: Text('Edit', style: TextStyle(fontSize: fontSize)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.colors.primary,
+                    foregroundColor: context.colors.onPrimary,
+                    padding: buttonPadding,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: context.dimensions.spacingS),
+              SizedBox(width: context.dimensions.spacingS),
+            ],
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _duplicateRecord(record),
@@ -364,19 +383,21 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                 ),
               ),
             ),
-            SizedBox(width: context.dimensions.spacingS),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _printRecord(record),
-                icon: Icon(Icons.print, size: iconSize),
-                label: Text('Print', style: TextStyle(fontSize: fontSize)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.success,
-                  foregroundColor: context.colors.onSuccess,
-                  padding: buttonPadding,
+            if (canPrint) ...[
+              SizedBox(width: context.dimensions.spacingS),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _printRecord(record),
+                  icon: Icon(Icons.print, size: iconSize),
+                  label: Text('Print', style: TextStyle(fontSize: fontSize)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.colors.success,
+                    foregroundColor: context.colors.onSuccess,
+                    padding: buttonPadding,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       );
@@ -384,7 +405,25 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   }
 
   // Action handlers
-  void _editRecord() {
+  void _editRecord() async {
+    // Get the record to check creator
+    final record = ref.read(jobRecordProvider(widget.recordId)).valueOrNull;
+    if (record == null) return;
+    
+    // Check permission
+    final canEdit = await ref.read(canEditJobRecordProvider(record.userId).future);
+    if (!canEdit) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You do not have permission to edit job records'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+      return;
+    }
+    
     context.push('/job-records/edit/${widget.recordId}');
   }
 
@@ -459,6 +498,20 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   }
 
   void _printRecord(JobRecordModel record) async {
+    // Check permission first
+    final canPrint = await ref.read(canPrintJobRecordsProvider.future);
+    if (!canPrint) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You do not have permission to print job records'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+      return;
+    }
+    
     try {
       // Show loading
       ScaffoldMessenger.of(context).showSnackBar(
