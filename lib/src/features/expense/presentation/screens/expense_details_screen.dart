@@ -15,7 +15,6 @@ import '../widgets/pdf_viewer_dialog.dart';
 import 'package:timesheet_app_web/src/core/widgets/fullscreen_viewer_base.dart';
 import 'dart:html' as html;
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
-import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 
 class ExpenseDetailsScreen extends ConsumerWidget {
   final String expenseId;
@@ -28,8 +27,6 @@ class ExpenseDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expenseAsync = ref.watch(expenseByIdStreamProvider(expenseId));
-    final canDeleteAsync = ref.watch(canDeleteExpenseProvider);
-    final canDelete = canDeleteAsync.valueOrNull ?? false;
 
     return Scaffold(
       backgroundColor: context.colors.background,
@@ -37,33 +34,38 @@ class ExpenseDetailsScreen extends ConsumerWidget {
         title: 'Expense Details',
         showBackButton: true,
         actions: [
-          if (canDelete) 
-            expenseAsync.whenOrNull(
-              data: (expense) {
-                if (expense == null) return const SizedBox.shrink();
-                
-                return PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) {
-                    if (value == 'delete') {
-                      _showDeleteDialog(context, ref, expense);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem<String>(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 20, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
+          expenseAsync.whenOrNull(
+            data: (expense) {
+              if (expense == null) return const SizedBox.shrink();
+              
+              // Check if user can delete this specific expense
+              final canDeleteAsync = ref.watch(canDeleteOwnExpenseProvider(expense.userId));
+              final canDelete = canDeleteAsync.valueOrNull ?? false;
+              
+              if (!canDelete) return const SizedBox.shrink();
+              
+              return PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _showDeleteDialog(context, ref, expense);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, size: 20, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete', style: TextStyle(color: Colors.red)),
+                      ],
                     ),
-                  ],
-                );
-              },
-            ) ?? const SizedBox.shrink(),
+                  ),
+                ],
+              );
+            },
+          ) ?? const SizedBox.shrink(),
         ],
       ),
       body: expenseAsync.when(
@@ -108,19 +110,16 @@ class ExpenseDetailsScreen extends ConsumerWidget {
   }
 
   void _showDeleteDialog(BuildContext context, WidgetRef ref, ExpenseModel expense) async {
-    // Verificar se é o criador da despesa (para usuários regulares)
-    final userRole = await ref.read(currentUserRoleProvider.future);
-    if (userRole == UserRole.user) {
-      final currentUser = await ref.read(currentUserProfileProvider.future);
-      if (currentUser != null && expense.userId != currentUser.id && expense.userId != currentUser.authUid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('You can only delete your own expenses'),
-            backgroundColor: context.colors.error,
-          ),
-        );
-        return;
-      }
+    // Check if user can delete this specific expense
+    final canDelete = await ref.read(canDeleteOwnExpenseProvider(expense.userId).future);
+    if (!canDelete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('You do not have permission to delete this expense'),
+          backgroundColor: context.colors.error,
+        ),
+      );
+      return;
     }
     
     showDialog(

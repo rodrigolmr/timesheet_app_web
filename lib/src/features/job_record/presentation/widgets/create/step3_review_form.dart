@@ -45,13 +45,7 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
   }
 
   String _getDateDisplay(DateTime date) {
-    final today = DateTime.now();
-    // Check if the date is today (default value)
-    if (date.year == today.year && 
-        date.month == today.month && 
-        date.day == today.day) {
-      return ""; // Return empty string if date wasn't selected
-    }
+    // Always show the date, regardless of whether it's today or not
     return intl.DateFormat("M/d/yy, EEEE").format(date);
   }
 

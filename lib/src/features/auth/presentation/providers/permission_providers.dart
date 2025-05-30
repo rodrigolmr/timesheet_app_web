@@ -58,7 +58,7 @@ Future<bool> canEditJobRecord(
   if (userProfile == null) return false;
   
   final role = UserRole.fromString(userProfile.role);
-  return RolePermissions.canEditJobRecord(role, recordCreatorId, userProfile.id);
+  return RolePermissions.canEditJobRecord(role, recordCreatorId, userProfile.authUid);
 }
 
 @riverpod
@@ -82,7 +82,7 @@ Future<bool> canEditExpense(
   if (userProfile == null) return false;
   
   final role = UserRole.fromString(userProfile.role);
-  return RolePermissions.canEditExpense(role, expenseCreatorId, userProfile.id);
+  return RolePermissions.canEditExpense(role, expenseCreatorId, userProfile.authUid);
 }
 
 @riverpod
@@ -137,4 +137,16 @@ Future<bool> canPrintJobRecords(CanPrintJobRecordsRef ref) async {
 Future<bool> canPrintExpenses(CanPrintExpensesRef ref) async {
   final role = await ref.watch(currentUserRoleProvider.future);
   return role != null ? RolePermissions.canPrintExpenses(role) : false;
+}
+
+@riverpod
+Future<bool> canDeleteOwnExpense(
+  CanDeleteOwnExpenseRef ref,
+  String expenseCreatorId,
+) async {
+  final userProfile = await ref.watch(currentUserProfileProvider.future);
+  if (userProfile == null) return false;
+  
+  final role = UserRole.fromString(userProfile.role);
+  return RolePermissions.canDeleteOwnExpense(role, expenseCreatorId, userProfile.authUid);
 }

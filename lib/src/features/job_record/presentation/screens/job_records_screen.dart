@@ -550,11 +550,8 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
             children: [
               _buildMinimalHeader(weekGroup),
               
-              // Records for this week with minimal spacing
-              ...weekGroup.records.map((record) => Padding(
-                padding: const EdgeInsets.only(bottom: 2.0),
-                child: JobRecordCard(record: record),
-              )),
+              // Build records grouped by day
+              ..._buildDayGroups(weekGroup),
               
               // Spacer between weeks
               SizedBox(height: context.responsive<double>(xs: 8, sm: 10, md: 12)),
@@ -565,6 +562,128 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     );
   }
 
+  List<Widget> _buildDayGroups(WeekGroup weekGroup) {
+    // Check if user is manager or admin
+    final canViewAllAsync = ref.watch(canViewAllJobRecordsProvider);
+    final canViewAll = canViewAllAsync.valueOrNull ?? false;
+    
+    if (!canViewAll) {
+      // For regular users, just return the records without day grouping
+      return weekGroup.records.map((record) => Padding(
+        padding: const EdgeInsets.only(bottom: 2.0),
+        child: JobRecordCard(record: record),
+      )).toList();
+    }
+    
+    // For managers/admins, group by day
+    final Map<int, List<JobRecordModel>> recordsByDay = {};
+    
+    // Group records by weekday
+    for (final record in weekGroup.records) {
+      final weekday = record.date.weekday;
+      if (!recordsByDay.containsKey(weekday)) {
+        recordsByDay[weekday] = [];
+      }
+      recordsByDay[weekday]!.add(record);
+    }
+    
+    // Sort days in chronological order within the week (Friday to Thursday)
+    // Friday = 5, Saturday = 6, Sunday = 7, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4
+    final sortedDays = recordsByDay.keys.toList()..sort((a, b) {
+      // Convert to week order (Friday first)
+      final orderA = a >= 5 ? a - 5 : a + 2;  // Fri=0, Sat=1, Sun=2, Mon=3, Tue=4, Wed=5, Thu=6
+      final orderB = b >= 5 ? b - 5 : b + 2;
+      return orderB.compareTo(orderA); // Reverse for most recent first
+    });
+    
+    final List<Widget> dayWidgets = [];
+    
+    for (final weekday in sortedDays) {
+      final dayRecords = recordsByDay[weekday]!;
+      final dayName = _getDayName(weekday);
+      final date = dayRecords.first.date;
+      
+      // Add day header
+      dayWidgets.add(_buildDayHeader(dayName, date));
+      
+      // Add records for this day
+      dayWidgets.addAll(
+        dayRecords.map((record) => Padding(
+          padding: const EdgeInsets.only(bottom: 2.0),
+          child: JobRecordCard(record: record),
+        )),
+      );
+    }
+    
+    return dayWidgets;
+  }
+  
+  Widget _buildDayHeader(String dayName, DateTime date) {
+    final colors = context.colors;
+    final textStyles = context.textStyles;
+    
+    // Use same width as cards
+    final headerWidth = context.responsive<double>(
+      xs: 300,
+      sm: 340,
+      md: 360,
+      lg: 400,
+      xl: 440,
+    );
+    
+    return Center(
+      child: SizedBox(
+        width: headerWidth,
+        child: Padding(
+          padding: const EdgeInsets.only(
+            top: 8,
+            bottom: 4,
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  dayName,
+                  style: textStyles.caption.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: context.responsive<double>(xs: 11, sm: 12, md: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                DateFormat('d MMM').format(date),
+                style: textStyles.caption.copyWith(
+                  color: colors.textSecondary,
+                  fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  String _getDayName(int weekday) {
+    switch (weekday) {
+      case 1: return 'Monday';
+      case 2: return 'Tuesday';
+      case 3: return 'Wednesday';
+      case 4: return 'Thursday';
+      case 5: return 'Friday';
+      case 6: return 'Saturday';
+      case 7: return 'Sunday';
+      default: return '';
+    }
+  }
+  
   Widget _buildErrorState(Object error) {
     return Center(
       child: Text(
@@ -581,42 +700,54 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     final colors = context.colors;
     final textStyles = context.textStyles;
     
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: 6,
-        top: context.responsive<double>(xs: 6, sm: 8, md: 10),
-        left: context.responsive<double>(xs: 1, sm: 2, md: 6),
-        right: context.responsive<double>(xs: 1, sm: 2, md: 6),
-      ),
-      child: Row(
-        children: [
-          // Título
-          Text(
-            weekGroup.weekTitle,
-            style: textStyles.body.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: context.responsive<double>(xs: 12, sm: 13, md: 14),
-            ),
+    // Use same width as cards
+    final headerWidth = context.responsive<double>(
+      xs: 300,
+      sm: 340,
+      md: 360,
+      lg: 400,
+      xl: 440,
+    );
+    
+    return Center(
+      child: SizedBox(
+        width: headerWidth,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: 6,
+            top: context.responsive<double>(xs: 6, sm: 8, md: 10),
           ),
-          
-          // Separador
-          Expanded(
-            child: Container(
-              height: 1,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              color: colors.primary.withOpacity(0.2),
-            ),
+          child: Row(
+            children: [
+              // Título
+              Text(
+                weekGroup.weekTitle,
+                style: textStyles.body.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: context.responsive<double>(xs: 12, sm: 13, md: 14),
+                ),
+              ),
+              
+              // Separador
+              Expanded(
+                child: Container(
+                  height: 1,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: colors.primary.withOpacity(0.2),
+                ),
+              ),
+              
+              // Range de datas
+              Text(
+                weekGroup.weekRange,
+                style: textStyles.caption.copyWith(
+                  color: colors.textSecondary,
+                  fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
+                ),
+              ),
+            ],
           ),
-          
-          // Range de datas
-          Text(
-            weekGroup.weekRange,
-            style: textStyles.caption.copyWith(
-              color: colors.textSecondary,
-              fontSize: context.responsive<double>(xs: 10, sm: 11, md: 12),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

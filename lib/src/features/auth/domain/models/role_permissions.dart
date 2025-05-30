@@ -59,15 +59,31 @@ class RolePermissions {
   }
 
   static bool canEditJobRecord(UserRole role, String creatorId, String currentUserId) {
-    // Only Admin and Manager can edit job records
-    return role == UserRole.admin || role == UserRole.manager;
+    // Admin and Manager can edit all records
+    if (role == UserRole.admin || role == UserRole.manager) {
+      return true;
+    }
+    // Regular users can only edit their own records
+    return role == UserRole.user && (creatorId == currentUserId || creatorId.isEmpty);
   }
 
   static bool canDeleteJobRecord(UserRole role) {
+    // Only Admin and Manager can delete job records (controls selection mode)
     return role == UserRole.admin || role == UserRole.manager;
   }
 
+  static bool canDeleteOwnJobRecord(UserRole role, String creatorId, String currentUserId) {
+    // Admin and Manager can delete any record
+    if (role == UserRole.admin || role == UserRole.manager) {
+      return true;
+    }
+    // Regular users can delete their own records
+    return role == UserRole.user && (creatorId == currentUserId || creatorId.isEmpty);
+  }
+
   static bool canViewAllJobRecords(UserRole role) {
+    // Only Admin and Manager can view all job records
+    // Regular users can only view their own
     return role == UserRole.admin || role == UserRole.manager;
   }
 
@@ -76,15 +92,31 @@ class RolePermissions {
   }
 
   static bool canEditExpense(UserRole role, String creatorId, String currentUserId) {
-    // Only Admin and Manager can edit expenses
-    return role == UserRole.admin || role == UserRole.manager;
+    // Admin and Manager can edit all expenses
+    if (role == UserRole.admin || role == UserRole.manager) {
+      return true;
+    }
+    // Regular users can only edit their own expenses
+    return role == UserRole.user && (creatorId == currentUserId || creatorId.isEmpty);
   }
 
   static bool canDeleteExpense(UserRole role) {
+    // Only Admin and Manager can delete expenses (controls selection mode)
     return role == UserRole.admin || role == UserRole.manager;
   }
 
+  static bool canDeleteOwnExpense(UserRole role, String creatorId, String currentUserId) {
+    // Admin and Manager can delete any expense
+    if (role == UserRole.admin || role == UserRole.manager) {
+      return true;
+    }
+    // Regular users can delete their own expenses
+    return role == UserRole.user && (creatorId == currentUserId || creatorId.isEmpty);
+  }
+
   static bool canViewAllExpenses(UserRole role) {
+    // Only Admin and Manager can view all expenses
+    // Regular users can only view their own
     return role == UserRole.admin || role == UserRole.manager;
   }
 

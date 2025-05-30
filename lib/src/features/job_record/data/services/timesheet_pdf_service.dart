@@ -8,8 +8,8 @@ import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart'
 
 class TimeSheetPdfService {
   static final _dateFormat = DateFormat('MM/dd/yyyy');
-  static final _dayFormat = DateFormat('d');
-  static final _dayNameFormat = DateFormat('E');
+  static final _fullDayNameFormat = DateFormat('EEEE');
+  static final _fullDateFormat = DateFormat('MM/dd/yyyy');
   
   static Future<Uint8List> generateTimeSheet({
     required DateTime startDate,
@@ -97,47 +97,23 @@ class TimeSheetPdfService {
   }
   
   static pw.Widget _buildHeader(DateTime startDate, DateTime endDate) {
-    return pw.Column(
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(
-              'TIMESHEET',
-              style: pw.TextStyle(
-                fontSize: 24,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey800,
-              ),
-            ),
-            pw.Text(
-              'Central Island Floor, Inc.',
-              style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey800,
-              ),
-            ),
-          ],
-        ),
-        pw.SizedBox(height: 8),
-        pw.Container(
-          width: double.infinity,
-          padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          decoration: const pw.BoxDecoration(
-            color: PdfColors.grey100,
-            border: pw.Border(
-              bottom: pw.BorderSide(color: PdfColors.grey400, width: 1),
-            ),
+        pw.Text(
+          'TIMESHEET',
+          style: pw.TextStyle(
+            fontSize: 24,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey800,
           ),
-          child: pw.Text(
-            'Period: ${_dateFormat.format(startDate)} - ${_dateFormat.format(endDate)}',
-            style: pw.TextStyle(
-              fontSize: 14,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.grey700,
-            ),
-            textAlign: pw.TextAlign.center,
+        ),
+        pw.Text(
+          'Central Island Floor, Inc.',
+          style: pw.TextStyle(
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.grey800,
           ),
         ),
       ],
@@ -148,11 +124,11 @@ class TimeSheetPdfService {
     List<DateTime> dates,
     Map<String, EmployeeTimeData> employeeData,
   ) {
-    // Create date headers with day name and number
+    // Create date headers with full day name and date
     final dateHeaders = dates.map((date) {
-      final dayName = _dayNameFormat.format(date).substring(0, 3).toUpperCase();
-      final dayNumber = _dayFormat.format(date);
-      return '$dayName\n$dayNumber';
+      final dayName = _fullDayNameFormat.format(date);
+      final fullDate = _fullDateFormat.format(date);
+      return '$dayName\n$fullDate';
     }).toList();
     
     // Table headers - first row
@@ -204,9 +180,9 @@ class TimeSheetPdfService {
     return pw.Table(
       border: pw.TableBorder.all(color: borderColor, width: 0.5),
       columnWidths: {
-        0: const pw.FlexColumnWidth(3), // Employee name column wider
+        0: const pw.FlexColumnWidth(2.5), // Employee name column
         for (int i = 1; i <= dates.length; i++)
-          i: const pw.FlexColumnWidth(1), // Date columns
+          i: const pw.FlexColumnWidth(1.3), // Date columns - wider to accommodate full day names
         dates.length + 1: const pw.FlexColumnWidth(1.2), // Total hours
         dates.length + 2: const pw.FlexColumnWidth(1.2), // Travel
         dates.length + 3: const pw.FlexColumnWidth(1.5), // Meal
@@ -217,19 +193,29 @@ class TimeSheetPdfService {
           decoration: const pw.BoxDecoration(
             color: headerBgColor,
           ),
-          children: headers.map((header) => pw.Container(
-            alignment: pw.Alignment.center,
-            padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: pw.Text(
-              header,
-              style: pw.TextStyle(
-                fontSize: 10,
-                fontWeight: pw.FontWeight.bold,
-                color: headerTextColor,
+          verticalAlignment: pw.TableCellVerticalAlignment.middle,
+          children: headers.asMap().entries.map((entry) {
+            final index = entry.key;
+            final header = entry.value;
+            final isDateColumn = index > 0 && index <= dates.length;
+            
+            return pw.Container(
+              alignment: pw.Alignment.center,
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 1,
+                vertical: 8,
               ),
-              textAlign: pw.TextAlign.center,
-            ),
-          )).toList(),
+              child: pw.Text(
+                header,
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                  color: headerTextColor,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            );
+          }).toList(),
         ),
         // Data rows
         ...data.asMap().entries.map((entry) {

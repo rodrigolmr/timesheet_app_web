@@ -12,6 +12,7 @@ import 'package:timesheet_app_web/src/features/user/presentation/providers/user_
 import 'package:timesheet_app_web/src/features/job_record/data/services/job_record_print_service.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/features/auth/domain/models/role_permissions.dart';
 
 class JobRecordDetailsScreen extends ConsumerStatefulWidget {
   static const routePath = '/job-records/:id';
@@ -50,8 +51,10 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final canDeleteAsync = ref.watch(canDeleteJobRecordProvider);
     final canPrintAsync = ref.watch(canPrintJobRecordsProvider);
+    final userRoleAsync = ref.watch(currentUserRoleProvider);
+    final currentUserAsync = ref.watch(currentUserProfileProvider);
+    final recordAsync = ref.watch(jobRecordProvider(widget.recordId));
     
     return AppHeader(
       title: 'Job Record Details',
@@ -61,21 +64,22 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
           icon: const Icon(Icons.more_vert),
           onSelected: _handleMenuAction,
           itemBuilder: (context) {
-            final canDelete = canDeleteAsync.valueOrNull ?? false;
             final canPrint = canPrintAsync.valueOrNull ?? false;
+            final userRole = userRoleAsync.valueOrNull ?? UserRole.user;
+            final currentUser = currentUserAsync.valueOrNull;
+            final record = recordAsync.valueOrNull;
             
-            final items = <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'duplicate',
-                child: Row(
-                  children: [
-                    Icon(Icons.copy, size: 20),
-                    SizedBox(width: 8),
-                    Text('Duplicate'),
-                  ],
-                ),
-              ),
-            ];
+            // Check if user can delete this specific record
+            bool canDeleteThisRecord = false;
+            if (currentUser != null && record != null) {
+              canDeleteThisRecord = RolePermissions.canDeleteOwnJobRecord(
+                userRole,
+                record.userId,
+                currentUser.authUid,
+              );
+            }
+            
+            final items = <PopupMenuEntry<String>>[];
             
             // Add print option only if user has permission
             if (canPrint) {
@@ -93,8 +97,8 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
               );
             }
             
-            // Adiciona delete apenas se tem permissão
-            if (canDelete) {
+            // Add delete option if user can delete this specific record
+            if (canDeleteThisRecord) {
               items.add(const PopupMenuDivider());
               items.add(
                 const PopupMenuItem<String>(
@@ -301,36 +305,20 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
         width: containerWidth,
         child: Column(
           children: [
-            Row(
-              children: [
-                if (canEdit)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _editRecord(),
-                      icon: Icon(Icons.edit, size: iconSize),
-                      label: Text('Edit', style: TextStyle(fontSize: fontSize)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.primary,
-                        foregroundColor: context.colors.onPrimary,
-                      padding: buttonPadding,
-                    ),
+            if (canEdit)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _editRecord(),
+                  icon: Icon(Icons.edit, size: iconSize),
+                  label: Text('Edit', style: TextStyle(fontSize: fontSize)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.colors.primary,
+                    foregroundColor: context.colors.onPrimary,
+                    padding: buttonPadding,
                   ),
                 ),
-                if (canEdit) SizedBox(width: context.dimensions.spacingS),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _duplicateRecord(record),
-                    icon: Icon(Icons.copy, size: iconSize),
-                    label: Text('Duplicate', style: TextStyle(fontSize: fontSize)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.colors.secondary,
-                      foregroundColor: context.colors.onSecondary,
-                      padding: buttonPadding,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
             if (canPrint) ...[
               SizedBox(height: context.dimensions.spacingS),
               SizedBox(
@@ -369,22 +357,9 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
                   ),
                 ),
               ),
-              SizedBox(width: context.dimensions.spacingS),
+              if (canPrint) SizedBox(width: context.dimensions.spacingS),
             ],
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _duplicateRecord(record),
-                icon: Icon(Icons.copy, size: iconSize),
-                label: Text('Duplicate', style: TextStyle(fontSize: fontSize)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.colors.secondary,
-                  foregroundColor: context.colors.onSecondary,
-                  padding: buttonPadding,
-                ),
-              ),
-            ),
             if (canPrint) ...[
-              SizedBox(width: context.dimensions.spacingS),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _printRecord(record),
@@ -427,75 +402,6 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
     context.push('/job-records/edit/${widget.recordId}');
   }
 
-  void _duplicateRecord(JobRecordModel record) {
-    // Show confirmation dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-        ),
-        title: Text(
-          'Duplicate Job Record',
-          style: context.textStyles.title,
-        ),
-        content: Text(
-          'This will create a new job record with the same details but with today\'s date. Continue?',
-          style: context.textStyles.body,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: context.colors.textSecondary,
-            ),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _performDuplication(record);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.primary,
-              foregroundColor: context.colors.onPrimary,
-            ),
-            child: const Text('Duplicate'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _performDuplication(JobRecordModel record) {
-    // Create a copy of the record with new date and no ID
-    final duplicatedRecord = record.copyWith(
-      id: '', // No ID to create new record
-      date: DateTime.now(), // Update to today's date
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    // Reset providers and set up for duplication
-    ref.read(isEditModeProvider.notifier).setEditMode(false); // Duplication is like creating new
-    ref.read(currentStepNotifierProvider.notifier).setStep(0); // Start from step 1
-    
-    // Store the duplicated record temporarily in the form state
-    ref.read(jobRecordFormStateProvider.notifier).loadFromExistingRecord(duplicatedRecord);
-    
-    // Navigate to create screen
-    context.push('/job-record-create');
-    
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Record duplicated. Review and submit the new record.'),
-        backgroundColor: context.colors.success,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
 
   void _printRecord(JobRecordModel record) async {
     // Check permission first
@@ -548,36 +454,29 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
   }
 
   void _deleteRecord() async {
-    // Verificar permissão primeiro
-    final canDelete = await ref.read(canDeleteJobRecordProvider.future);
-    
-    if (!canDelete) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('You do not have permission to delete job records'),
-          backgroundColor: context.colors.error,
-        ),
-      );
-      return;
-    }
-    
     // Obter o registro atual
     final record = ref.read(jobRecordProvider(widget.recordId)).valueOrNull;
     if (record == null) return;
     
-    // Verificar se é o criador do registro (para usuários regulares)
+    // Verificar permissão para deletar este registro específico
     final userRole = await ref.read(currentUserRoleProvider.future);
-    if (userRole == UserRole.user) {
-      final currentUser = await ref.read(currentUserProfileProvider.future);
-      if (currentUser != null && record.userId != currentUser.id && record.userId != currentUser.authUid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('You can only delete your own job records'),
-            backgroundColor: context.colors.error,
-          ),
-        );
-        return;
-      }
+    final currentUser = await ref.read(currentUserProfileProvider.future);
+    if (currentUser == null || userRole == null) return;
+    
+    final canDelete = RolePermissions.canDeleteOwnJobRecord(
+      userRole,
+      record.userId,
+      currentUser.authUid,
+    );
+    
+    if (!canDelete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('You do not have permission to delete this job record'),
+          backgroundColor: context.colors.error,
+        ),
+      );
+      return;
     }
     
     showDialog(
@@ -666,10 +565,6 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
 
   void _handleMenuAction(String action) {
     switch (action) {
-      case 'duplicate':
-        final record = ref.read(jobRecordProvider(widget.recordId)).valueOrNull;
-        if (record != null) _duplicateRecord(record);
-        break;
       case 'print':
         final record = ref.read(jobRecordProvider(widget.recordId)).valueOrNull;
         if (record != null) _printRecord(record);

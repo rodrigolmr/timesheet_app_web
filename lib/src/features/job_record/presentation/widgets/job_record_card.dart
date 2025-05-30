@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
+import 'package:timesheet_app_web/src/core/theme/app_colors.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
@@ -12,11 +13,13 @@ import 'package:timesheet_app_web/src/features/auth/presentation/providers/permi
 class JobRecordCard extends ConsumerWidget {
   final JobRecordModel record;
   final VoidCallback? onTap;
+  final bool showWeekdayIndicator;
 
   const JobRecordCard({
     super.key,
     required this.record,
     this.onTap,
+    this.showWeekdayIndicator = false,
   });
 
   @override
@@ -26,6 +29,9 @@ class JobRecordCard extends ConsumerWidget {
     final month = DateFormat('MMM').format(date);
     final colors = context.colors;
     final textStyles = context.textStyles;
+    
+    // Get weekday color
+    final weekdayColor = _getWeekdayColor(date.weekday, colors);
     
     // Watch selection state
     final selectionState = ref.watch(jobRecordSelectionProvider);
@@ -101,19 +107,39 @@ class JobRecordCard extends ConsumerWidget {
               ),
               child: Stack(
                 children: [
+                  // Weekday indicator line (only for managers/admins)
+                  if (showWeekdayIndicator)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 4,
+                        decoration: BoxDecoration(
+                          color: weekdayColor,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  
                   // Conteúdo principal com clipping
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Row(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: showWeekdayIndicator ? 4 : 0),
+                      child: Row(
                 children: [
                   // Date section - mais compacto
                   Container(
                     width: dateWidth,
                     decoration: BoxDecoration(
                       color: colors.primary.withOpacity(0.2), // Cor primária com opacidade 0.2
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(3),
-                        bottomLeft: Radius.circular(3),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(showWeekdayIndicator ? 0 : 3),
+                        bottomLeft: Radius.circular(showWeekdayIndicator ? 0 : 3),
                       ),
                     ),
                     child: Column(
@@ -148,8 +174,8 @@ class JobRecordCard extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      ),
                     ),
-                  ),
                   
                   // Job name
                   Expanded(
@@ -270,6 +296,7 @@ class JobRecordCard extends ConsumerWidget {
                       ),
                     ),
                 ],
+                      ),
                     ),
                   ),
                   // Borda aplicada por cima
@@ -337,5 +364,27 @@ class JobRecordCard extends ConsumerWidget {
     final defaultNames = (firstName: 'User', lastName: '');
     _nameCache[userId] = defaultNames;
     return defaultNames;
+  }
+  
+  Color _getWeekdayColor(int weekday, AppColors colors) {
+    // 1 = Monday, 7 = Sunday
+    switch (weekday) {
+      case 1: // Monday
+        return colors.primary;
+      case 2: // Tuesday
+        return colors.success;
+      case 3: // Wednesday
+        return colors.warning;
+      case 4: // Thursday
+        return colors.info;
+      case 5: // Friday
+        return colors.secondary;
+      case 6: // Saturday
+        return colors.error;
+      case 7: // Sunday
+        return colors.error.withOpacity(0.7);
+      default:
+        return colors.primary;
+    }
   }
 }

@@ -205,7 +205,7 @@ final canViewAllJobRecordsProvider = AutoDisposeFutureProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CanViewAllJobRecordsRef = AutoDisposeFutureProviderRef<bool>;
-String _$canEditJobRecordHash() => r'01b5069f7bd8ed08a9403fa8cb0445d295c8aa19';
+String _$canEditJobRecordHash() => r'f72343c82e0e3c3fbeb99bf8afe025c183d49f69';
 
 /// See also [canEditJobRecord].
 @ProviderFor(canEditJobRecord)
@@ -366,7 +366,7 @@ final canViewAllExpensesProvider = AutoDisposeFutureProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CanViewAllExpensesRef = AutoDisposeFutureProviderRef<bool>;
-String _$canEditExpenseHash() => r'f7fe47aa78f4bdfe73bf39b3eb707ba45ac99ddb';
+String _$canEditExpenseHash() => r'7ce83ad9b4d8b35cf2a6da4e856c266a6686bd13';
 
 /// See also [canEditExpense].
 @ProviderFor(canEditExpense)
@@ -655,5 +655,132 @@ final canPrintExpensesProvider = AutoDisposeFutureProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CanPrintExpensesRef = AutoDisposeFutureProviderRef<bool>;
+String _$canDeleteOwnExpenseHash() =>
+    r'da2f2c23b07bade5b276f7536fab5f012a8c76d6';
+
+/// See also [canDeleteOwnExpense].
+@ProviderFor(canDeleteOwnExpense)
+const canDeleteOwnExpenseProvider = CanDeleteOwnExpenseFamily();
+
+/// See also [canDeleteOwnExpense].
+class CanDeleteOwnExpenseFamily extends Family<AsyncValue<bool>> {
+  /// See also [canDeleteOwnExpense].
+  const CanDeleteOwnExpenseFamily();
+
+  /// See also [canDeleteOwnExpense].
+  CanDeleteOwnExpenseProvider call(String expenseCreatorId) {
+    return CanDeleteOwnExpenseProvider(expenseCreatorId);
+  }
+
+  @override
+  CanDeleteOwnExpenseProvider getProviderOverride(
+    covariant CanDeleteOwnExpenseProvider provider,
+  ) {
+    return call(provider.expenseCreatorId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'canDeleteOwnExpenseProvider';
+}
+
+/// See also [canDeleteOwnExpense].
+class CanDeleteOwnExpenseProvider extends AutoDisposeFutureProvider<bool> {
+  /// See also [canDeleteOwnExpense].
+  CanDeleteOwnExpenseProvider(String expenseCreatorId)
+    : this._internal(
+        (ref) => canDeleteOwnExpense(
+          ref as CanDeleteOwnExpenseRef,
+          expenseCreatorId,
+        ),
+        from: canDeleteOwnExpenseProvider,
+        name: r'canDeleteOwnExpenseProvider',
+        debugGetCreateSourceHash:
+            const bool.fromEnvironment('dart.vm.product')
+                ? null
+                : _$canDeleteOwnExpenseHash,
+        dependencies: CanDeleteOwnExpenseFamily._dependencies,
+        allTransitiveDependencies:
+            CanDeleteOwnExpenseFamily._allTransitiveDependencies,
+        expenseCreatorId: expenseCreatorId,
+      );
+
+  CanDeleteOwnExpenseProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.expenseCreatorId,
+  }) : super.internal();
+
+  final String expenseCreatorId;
+
+  @override
+  Override overrideWith(
+    FutureOr<bool> Function(CanDeleteOwnExpenseRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: CanDeleteOwnExpenseProvider._internal(
+        (ref) => create(ref as CanDeleteOwnExpenseRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        expenseCreatorId: expenseCreatorId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<bool> createElement() {
+    return _CanDeleteOwnExpenseProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CanDeleteOwnExpenseProvider &&
+        other.expenseCreatorId == expenseCreatorId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, expenseCreatorId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin CanDeleteOwnExpenseRef on AutoDisposeFutureProviderRef<bool> {
+  /// The parameter `expenseCreatorId` of this provider.
+  String get expenseCreatorId;
+}
+
+class _CanDeleteOwnExpenseProviderElement
+    extends AutoDisposeFutureProviderElement<bool>
+    with CanDeleteOwnExpenseRef {
+  _CanDeleteOwnExpenseProviderElement(super.provider);
+
+  @override
+  String get expenseCreatorId =>
+      (origin as CanDeleteOwnExpenseProvider).expenseCreatorId;
+}
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
