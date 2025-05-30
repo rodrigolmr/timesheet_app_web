@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timesheet_app_web/src/core/config/firebase_options.dart';
 import 'package:timesheet_app_web/src/core/theme/theme.dart';
 import 'package:timesheet_app_web/src/core/navigation/routes.dart';
+import 'package:timesheet_app_web/src/core/widgets/auth_state_wrapper.dart';
 // import 'package:timesheet_app_web/src/core/services/app_initialization.dart';
 
 void main() async {
@@ -55,6 +56,11 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: themeData,
       routerConfig: goRouter,
+      builder: (context, child) {
+        return AuthStateWrapper(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

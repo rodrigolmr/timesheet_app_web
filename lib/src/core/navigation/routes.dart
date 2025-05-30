@@ -7,6 +7,7 @@ import 'package:timesheet_app_web/src/features/auth/presentation/screens/login_s
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/home/presentation/screens/home_screen.dart';
+import 'package:timesheet_app_web/src/features/home/presentation/screens/home_screen_wrapper.dart';
 import 'package:timesheet_app_web/src/features/employee/presentation/screens/employees_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_settings_screen.dart';
 import 'package:timesheet_app_web/src/features/settings/presentation/screens/theme_selector_screen.dart';
@@ -131,7 +132,7 @@ GoRouter goRouter(GoRouterRef ref) {
       GoRoute(
         path: AppRoute.home.path,
         name: AppRoute.home.name,
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const HomeScreenWrapper(),
       ),
       GoRoute(
         path: AppRoute.accessDenied.path,

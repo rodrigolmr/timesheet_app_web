@@ -47,16 +47,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      // Navigation is handled by AuthStateProvider
+      // Navigation is handled automatically by the router
+      // The router will redirect to home when auth state changes
     } catch (e) {
       if (mounted) {
         setState(() {
           _errorMessage = _formatErrorMessage(e.toString());
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
           _isLoading = false;
         });
       }
