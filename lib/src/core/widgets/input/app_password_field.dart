@@ -118,6 +118,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       expands: false,
       readOnly: false,
       obscureText: _obscureText,
+      onSubmitted: widget.onSubmitted,
     );
   }
 }

@@ -96,7 +96,7 @@ class HomeScreen extends ConsumerWidget {
               lg: 400,
             ),
           ),
-          child: const AppLogo(
+          child: AppLogo(
             displayMode: LogoDisplayMode.vertical,
             small: false,
             centered: true,

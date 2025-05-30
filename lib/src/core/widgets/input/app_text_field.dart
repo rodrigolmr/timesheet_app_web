@@ -125,6 +125,7 @@ class AppTextField extends StatelessWidget {
       expands: false,
       readOnly: false,
       obscureText: false,
+      onSubmitted: onSubmitted,
     );
   }
 

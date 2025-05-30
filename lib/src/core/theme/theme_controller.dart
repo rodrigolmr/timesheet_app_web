@@ -24,8 +24,8 @@ class ThemeController extends _$ThemeController {
   AppThemeData build() {
     _setupThemeListener();
     
-    // Inicialmente retorna o tema light como padrão
-    // O tema correto será definido quando o listener reagir às mudanças
+    // Por padrão, retorna o tema light
+    // O tema correto será carregado pelo listener assim que o usuário for identificado
     return AppThemeData.light();
   }
 
@@ -37,8 +37,10 @@ class ThemeController extends _$ThemeController {
         if (themeVariant != null) {
           // Se o usuário tem uma preferência de tema definida no Firestore, use-a
           state = AppThemeData.fromVariant(themeVariant);
+          // Sincroniza com o armazenamento local para manter consistência
+          _saveLocalThemePreference(themeVariant);
         } else {
-          // Se não, tente carregar do armazenamento local
+          // Se não há usuário logado, tente carregar do armazenamento local
           _loadLocalTheme();
         }
       });
@@ -75,6 +77,7 @@ class ThemeController extends _$ThemeController {
     
     // Altera o tema localmente
     state = AppThemeData.fromVariant(variant);
+    
     
     // Salva a preferência local
     _saveLocalThemePreference(variant);

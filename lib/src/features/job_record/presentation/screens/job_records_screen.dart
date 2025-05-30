@@ -15,6 +15,7 @@ import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/j
 import 'package:timesheet_app_web/src/features/job_record/data/services/job_record_print_service.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/timesheet_date_range_dialog.dart';
 
 
 class JobRecordsScreen extends ConsumerStatefulWidget {
@@ -123,6 +124,28 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
           icon: const Icon(Icons.checklist),
           onPressed: () => ref.read(jobRecordSelectionProvider.notifier).enterSelectionMode(),
           tooltip: 'Select records',
+        ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          onSelected: (value) {
+            switch (value) {
+              case 'generate_timesheet':
+                _showTimeSheetDialog();
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'generate_timesheet',
+              child: Row(
+                children: [
+                  Icon(Icons.table_chart_outlined, size: 20),
+                  SizedBox(width: 8),
+                  Text('Generate Timesheet'),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -641,5 +664,12 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     
     // Navigate to create screen
     context.push('/job-record-create');
+  }
+
+  void _showTimeSheetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const TimeSheetDateRangeDialog(),
+    );
   }
 }

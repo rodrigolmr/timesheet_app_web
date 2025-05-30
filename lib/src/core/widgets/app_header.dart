@@ -260,7 +260,7 @@ class _AppHeaderWithTabs extends AppHeader {
     super.onBackPressed,
     super.backgroundColor,
     super.foregroundColor,
-    super.elevation = 2,
+    super.elevation = 0,
     required this.showNavigationMenu,
     super.key,
   }) : super(hasTabBar: true, showNavigationMenu: showNavigationMenu);

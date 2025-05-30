@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_dimensions.dart';
@@ -94,8 +95,11 @@ class AppThemeData {
   /// Converte este tema para um ThemeData do Flutter para uso no MaterialApp
   ThemeData toThemeData() {
     return ThemeData(
+      useMaterial3: false,  // Desabilitar Material 3 para evitar comportamentos padrão
       brightness: brightness,
       primaryColor: colors.primary,
+      primaryColorDark: colors.primary,
+      primaryColorLight: colors.secondary,
       scaffoldBackgroundColor: colors.background,
       colorScheme: ColorScheme(
         brightness: brightness,
@@ -118,6 +122,30 @@ class AppThemeData {
         bodyMedium: textStyles.body,
         labelLarge: textStyles.button,
         bodySmall: textStyles.caption,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: colors.onPrimary),
+        actionsIconTheme: IconThemeData(color: colors.onPrimary),
+        systemOverlayStyle: brightness == Brightness.light
+            ? SystemUiOverlayStyle.dark.copyWith(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.light,
+                systemNavigationBarColor: colors.background,
+                systemNavigationBarIconBrightness: Brightness.dark,
+              )
+            : SystemUiOverlayStyle.light.copyWith(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                systemNavigationBarColor: colors.background,
+                systemNavigationBarIconBrightness: Brightness.light,
+              ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

@@ -23,9 +23,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill credentials for testing
-    _emailController.text = 'rodrigo.lmr@hotmail.com';
-    _passwordController.text = '120118';
   }
 
   @override
@@ -147,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildLogo(BuildContext context) {
-    return const AppLogo(
+    return AppLogo(
       displayMode: LogoDisplayMode.vertical,
       small: false,
       centered: true,
@@ -185,6 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           controller: _emailController,
           label: 'Email',
           hintText: 'Enter your email address',
+          onSubmitted: (_) => _handleLogin(),
         ),
         
         SizedBox(height: context.dimensions.spacingM),

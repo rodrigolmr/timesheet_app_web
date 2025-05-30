@@ -88,6 +88,9 @@ class AppInputFieldBase extends StatelessWidget {
   /// Padding interno do campo
   final EdgeInsetsGeometry? contentPadding;
 
+  /// Callback quando o campo é submetido (Enter pressionado)
+  final ValueChanged<String>? onSubmitted;
+
   /// Construtor padrão
   const AppInputFieldBase({
     Key? key,
@@ -118,6 +121,7 @@ class AppInputFieldBase extends StatelessWidget {
     this.readOnly = false,
     this.obscureText = false,
     this.contentPadding,
+    this.onSubmitted,
   }) : super(key: key);
 
   @override
@@ -178,6 +182,7 @@ class AppInputFieldBase extends StatelessWidget {
         onChanged: onChanged,
         readOnly: readOnly,
         obscureText: obscureText,
+        onSubmitted: onSubmitted,
         onTap: () {
           // Sempre limpa o erro ao clicar se houver callback
           if (hasError && onClearError != null) {

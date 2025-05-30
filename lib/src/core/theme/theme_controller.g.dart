@@ -26,7 +26,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SharedPreferencesRef = ProviderRef<SharedPreferences>;
-String _$themeControllerHash() => r'd72c81a496bca8a780dd58f1ba3e1283b2aa4e58';
+String _$themeControllerHash() => r'8d3cf18230c801a43eb7628dea4ded8b965d68ab';
 
 /// Controller para gerenciar o tema atual da aplicação
 ///
