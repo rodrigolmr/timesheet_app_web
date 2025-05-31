@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timesheet_app_web/src/features/database/data/models/database_stats_model.dart';
 import 'package:timesheet_app_web/src/features/database/domain/repositories/database_repository.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:csv/csv.dart';
 
 class FirestoreDatabaseRepository implements DatabaseRepository {
   final FirebaseFirestore _firestore;
@@ -298,22 +300,70 @@ class FirestoreDatabaseRepository implements DatabaseRepository {
 
   @override
   Future<void> exportCollection(String collectionName) async {
-    // This would typically export to a file or external storage
-    // For now, we'll just print stats
-    final snapshot = await _firestore.collection(collectionName).get();
-    print('Exporting ${snapshot.size} documents from $collectionName');
-    // TODO: Implement actual export functionality
+    try {
+      final snapshot = await _firestore.collection(collectionName).get();
+      final documents = snapshot.docs.map((doc) => {
+        'id': doc.id,
+        ...doc.data(),
+      }).toList();
+      
+      final jsonString = const JsonEncoder.withIndent('  ').convert({
+        'collection': collectionName,
+        'exportDate': DateTime.now().toIso8601String(),
+        'documentCount': documents.length,
+        'documents': documents,
+      });
+      
+      // Create and download file
+      final bytes = utf8.encode(jsonString);
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.document.createElement('a') as html.AnchorElement
+        ..href = url
+        ..download = '${collectionName}_export_${DateTime.now().millisecondsSinceEpoch}.json';
+      anchor.click();
+      html.Url.revokeObjectUrl(url);
+    } catch (e) {
+      print('Error exporting collection: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> backupDatabase() async {
-    // This would create a backup of all collections
-    // For now, we'll just print what would be backed up
-    for (final collection in _collections) {
-      final snapshot = await _firestore.collection(collection).get();
-      print('Would backup ${snapshot.size} documents from $collection');
+    try {
+      final backupData = <String, dynamic>{
+        'backupDate': DateTime.now().toIso8601String(),
+        'version': '1.0',
+        'collections': {},
+      };
+      
+      for (final collection in _collections) {
+        final snapshot = await _firestore.collection(collection).get();
+        final documents = snapshot.docs.map((doc) => {
+          'id': doc.id,
+          ...doc.data(),
+        }).toList();
+        
+        backupData['collections'][collection] = {
+          'documentCount': documents.length,
+          'documents': documents,
+        };
+      }
+      
+      final jsonString = const JsonEncoder.withIndent('  ').convert(backupData);
+      final bytes = utf8.encode(jsonString);
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.document.createElement('a') as html.AnchorElement
+        ..href = url
+        ..download = 'database_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+      anchor.click();
+      html.Url.revokeObjectUrl(url);
+    } catch (e) {
+      print('Error backing up database: $e');
+      rethrow;
     }
-    // TODO: Implement actual backup functionality
   }
 
   @override

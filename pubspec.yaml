@@ -73,6 +73,9 @@ dependencies:
   
   # HTML utilities for web
   universal_html: ^2.2.4
+  
+  # CSV handling
+  csv: ^6.0.0
 
 dev_dependencies:
   flutter_test:

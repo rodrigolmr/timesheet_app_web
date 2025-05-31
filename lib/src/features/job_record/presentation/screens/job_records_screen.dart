@@ -441,6 +441,9 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         return;
       }
 
+      // Sort records by date in ascending order (oldest first)
+      selectedRecords.sort((a, b) => a.date.compareTo(b.date));
+
       // Call print service
       await JobRecordPrintService.printJobRecords(selectedRecords);
 

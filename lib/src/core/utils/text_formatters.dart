@@ -14,6 +14,15 @@ class WordCapitalizationFormatter extends TextInputFormatter {
     final words = text.split(' ');
     final capitalizedWords = words.map((word) {
       if (word.isEmpty) return word;
+      
+      // Se a palavra já tem letras maiúsculas além da primeira, mantém como está
+      // Isso permite que o usuário digite palavras em ALL CAPS
+      final hasUppercaseLetters = word.substring(1).contains(RegExp(r'[A-Z]'));
+      if (hasUppercaseLetters) {
+        return word;
+      }
+      
+      // Caso contrário, capitaliza apenas a primeira letra
       return word[0].toUpperCase() + word.substring(1).toLowerCase();
     }).toList();
 
