@@ -97,9 +97,56 @@ class SettingsScreen extends ConsumerWidget {
     return userRoleAsync.when(
       data: (role) {
         final isAdmin = role == UserRole.admin;
+        final isManager = role == UserRole.manager;
+        final isManagerOrAdmin = isAdmin || isManager;
         
-        // Cards disponíveis para todos os usuários
-        final userCards = [
+        // Cards ativos organizados na ordem solicitada
+        final activeCards = <Widget>[];
+        
+        // 1. Users (para managers e admins)
+        if (isManagerOrAdmin) {
+          activeCards.add(
+            NavigationCard(
+              title: 'Users',
+              description: 'Manage system users',
+              icon: Icons.manage_accounts,
+              route: AppRoute.users.path,
+              color: context.categoryColorByName('user'),
+              isActive: true,
+            ),
+          );
+        }
+        
+        // 2. Employees (para managers e admins)
+        if (isManagerOrAdmin) {
+          activeCards.add(
+            NavigationCard(
+              title: 'Employees',
+              description: 'Manage employee information',
+              icon: Icons.people,
+              route: AppRoute.employees.path,
+              color: context.categoryColorByName('worker'),
+              isActive: true,
+            ),
+          );
+        }
+        
+        // 3. Company Cards (para managers e admins)
+        if (isManagerOrAdmin) {
+          activeCards.add(
+            NavigationCard(
+              title: 'Company Cards',
+              description: 'View and manage company credit cards',
+              icon: Icons.credit_card,
+              route: AppRoute.companyCards.path,
+              color: context.categoryColorByName('card'),
+              isActive: true,
+            ),
+          );
+        }
+        
+        // 4. Themes (para todos)
+        activeCards.add(
           NavigationCard(
             title: 'Themes',
             description: 'Choose theme',
@@ -108,6 +155,24 @@ class SettingsScreen extends ConsumerWidget {
             color: context.colors.primary,
             isActive: true,
           ),
+        );
+        
+        // 5. Database (apenas para admin)
+        if (isAdmin) {
+          activeCards.add(
+            NavigationCard(
+              title: 'Database',
+              description: 'View data',
+              icon: Icons.storage,
+              route: AppRoute.database.path,
+              color: context.categoryColorByName('timesheet'),
+              isActive: true,
+            ),
+          );
+        }
+        
+        // Cards inativos (soon) - disponíveis para todos
+        final inactiveCards = <Widget>[
           NavigationCard(
             title: 'Profile',
             description: 'Your info',
@@ -142,68 +207,54 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ];
         
-        // Cards exclusivos para admin
-        final adminCards = [
-          NavigationCard(
-            title: 'Database',
-            description: 'View data',
-            icon: Icons.storage,
-            route: AppRoute.database.path,
-            color: context.categoryColorByName('timesheet'),
-            isActive: true,
-          ),
-          NavigationCard(
-            title: 'Users',
-            description: 'Manage users',
-            icon: Icons.group,
-            route: '/settings/users',
-            color: context.categoryColorByName('receipt'),
-            isActive: false,
-          ),
-          NavigationCard(
-            title: 'Reports',
-            description: 'Generate',
-            icon: Icons.assessment,
-            route: '/settings/reports',
-            color: context.colors.secondary,
-            isActive: false,
-          ),
-          NavigationCard(
-            title: 'Backup',
-            description: 'Backup data',
-            icon: Icons.backup,
-            route: '/settings/backup',
-            color: context.colors.success,
-            isActive: false,
-          ),
-          NavigationCard(
-            title: 'Debug',
-            description: 'Dev tools',
-            icon: Icons.bug_report,
-            route: '/settings/debug',
-            color: context.colors.error,
-            isActive: false,
-          ),
-          NavigationCard(
-            title: 'System',
-            description: 'View info',
-            icon: Icons.info_outline,
-            route: '/settings/system',
-            color: context.colors.textSecondary,
-            isActive: false,
-          ),
-          NavigationCard(
-            title: 'Logs',
-            description: 'View logs',
-            icon: Icons.article_outlined,
-            route: '/settings/logs',
-            color: context.categoryColorByName('receipt'),
-            isActive: false,
-          ),
-        ];
+        // Cards inativos exclusivos para admin
+        if (isAdmin) {
+          inactiveCards.addAll([
+            NavigationCard(
+              title: 'Reports',
+              description: 'Generate',
+              icon: Icons.assessment,
+              route: '/settings/reports',
+              color: context.colors.secondary,
+              isActive: false,
+            ),
+            NavigationCard(
+              title: 'Backup',
+              description: 'Backup data',
+              icon: Icons.backup,
+              route: '/settings/backup',
+              color: context.colors.success,
+              isActive: false,
+            ),
+            NavigationCard(
+              title: 'Debug',
+              description: 'Dev tools',
+              icon: Icons.bug_report,
+              route: '/settings/debug',
+              color: context.colors.error,
+              isActive: false,
+            ),
+            NavigationCard(
+              title: 'System',
+              description: 'View info',
+              icon: Icons.info_outline,
+              route: '/settings/system',
+              color: context.colors.textSecondary,
+              isActive: false,
+            ),
+            NavigationCard(
+              title: 'Logs',
+              description: 'View logs',
+              icon: Icons.article_outlined,
+              route: '/settings/logs',
+              color: context.categoryColorByName('receipt'),
+              isActive: false,
+            ),
+          ]);
+        }
         
-        // Combinar cards baseado no role
-        final allCards = isAdmin ? [...userCards, ...adminCards] : userCards;
+        // Combinar cards: ativos primeiro, depois inativos
+        final allCards = [...activeCards, ...inactiveCards];
 
         return ResponsiveGrid(
           spacing: context.responsive<double>(

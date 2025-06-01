@@ -78,8 +78,9 @@ dependencies:
   csv: ^6.0.0
   
   # Google Places for address autocomplete
-  google_places_flutter: ^2.0.6
+  google_places_autocomplete_text_field: ^1.1.0
   http: ^1.2.0
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:

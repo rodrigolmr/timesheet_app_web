@@ -5,9 +5,7 @@ import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/app_text_field.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/app_multiline_text_field.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/app_dropdown_field.dart';
+import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/pigtail/data/models/pigtail_model.dart';
 import 'package:timesheet_app_web/src/features/pigtail/presentation/providers/pigtail_providers.dart';
@@ -132,9 +130,28 @@ class _PigtailScreenState extends ConsumerState<PigtailScreen> {
 
   Widget _buildPigtailList(BuildContext context, List<PigtailModel> allPigtails) {
     final searchResults = ref.watch(pigtailSearchResultsProvider);
-    final pigtails = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all' && _selectedType == null
+    var pigtails = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all' && _selectedType == null
         ? allPigtails
         : searchResults;
+    
+    // Sort pigtails: installed first (by date desc), then removed (by date desc)
+    pigtails = List<PigtailModel>.from(pigtails)..sort((a, b) {
+      // First, separate by status (installed vs removed)
+      if (a.isRemoved != b.isRemoved) {
+        return a.isRemoved ? 1 : -1; // Installed first
+      }
+      
+      // Then sort by date (most recent first)
+      if (a.isRemoved && b.isRemoved) {
+        // Both removed: sort by removal date
+        final aDate = a.removedDate ?? a.installedDate;
+        final bDate = b.removedDate ?? b.installedDate;
+        return bDate.compareTo(aDate);
+      } else {
+        // Both installed: sort by installation date
+        return b.installedDate.compareTo(a.installedDate);
+      }
+    });
     
     if (pigtails.isEmpty) {
       return _buildEmptyState(context);
@@ -581,29 +598,15 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
   final _notesController = TextEditingController();
   final List<PigtailItem> _pigtailItems = [];
   bool _isLoading = false;
+  DateTime _selectedDate = DateTime.now();
   
   // Validation states
   bool _jobNameHasError = false;
   bool _addressHasError = false;
   
-  // For address suggestions
-  List<String> _addressSuggestions = [];
-  List<String> _filteredSuggestions = [];
-
   @override
   void initState() {
     super.initState();
-    _loadAddressSuggestions();
-  }
-  
-  Future<void> _loadAddressSuggestions() async {
-    final addresses = await widget.ref.read(uniquePigtailAddressesProvider.future);
-    if (mounted) {
-      setState(() {
-        _addressSuggestions = addresses;
-        _filteredSuggestions = addresses.take(5).toList();
-      });
-    }
   }
 
   @override
@@ -670,125 +673,37 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
                   },
                 ),
                 SizedBox(height: context.dimensions.spacingS),
-                Autocomplete<String>(
-                  optionsBuilder: (TextEditingValue textEditingValue) async {
-                    if (textEditingValue.text.isEmpty) {
-                      return _addressSuggestions.take(5);
-                    }
-                    // Get dynamic suggestions based on query
-                    final suggestions = await widget.ref.read(
-                      addressSuggestionsProvider(textEditingValue.text).future
-                    );
-                    return suggestions;
+                AppAddressField(
+                  label: 'Address',
+                  hintText: 'Enter installation address',
+                  controller: _addressController,
+                  hasError: _addressHasError,
+                  errorText: _addressHasError ? 'Address is required' : null,
+                  isRequired: true,
+                  onClearError: () {
+                    setState(() {
+                      _addressHasError = false;
+                    });
                   },
-                  onSelected: (String selection) {
-                    _addressController.text = selection;
-                    if (_addressHasError) {
+                  onChanged: (value) {
+                    if (_addressHasError && value.trim().isNotEmpty) {
                       setState(() {
                         _addressHasError = false;
                       });
                     }
                   },
-                  fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, 
-                      FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
-                    return AppTextField(
-                      controller: fieldTextEditingController,
-                      focusNode: fieldFocusNode,
-                      label: 'Address',
-                      hintText: 'Enter installation address',
-                      hasError: _addressHasError,
-                      errorText: _addressHasError ? 'Address is required' : null,
-                      onClearError: () {
-                        setState(() {
-                          _addressHasError = false;
-                        });
-                      },
-                      onChanged: (value) {
-                        _addressController.text = value;
-                        if (_addressHasError && value.trim().isNotEmpty) {
-                          setState(() {
-                            _addressHasError = false;
-                          });
-                        }
-                      },
-                    );
-                  },
-                  optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, 
-                      Iterable<String> options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4,
-                        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxHeight: 240, // 6 items * 40px each
-                            maxWidth: context.isMobile ? MediaQuery.of(context).size.width - 32 : 500,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.colors.surface,
-                            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                            border: Border.all(color: context.colors.outline),
-                          ),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: options.length,
-                            itemExtent: 40.0, // Fixed height for each item
-                            itemBuilder: (BuildContext context, int index) {
-                              final String option = options.elementAt(index);
-                              final isExistingAddress = _addressSuggestions.contains(option);
-                              
-                              return InkWell(
-                                onTap: () => onSelected(option),
-                                child: Container(
-                                  height: 40,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: context.dimensions.spacingM,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: context.colors.outline.withOpacity(0.2),
-                                        width: 1,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isExistingAddress 
-                                            ? Icons.history 
-                                            : Icons.location_on_outlined,
-                                        size: 16,
-                                        color: isExistingAddress
-                                            ? context.colors.primary
-                                            : context.colors.textSecondary,
-                                      ),
-                                      SizedBox(width: context.dimensions.spacingS),
-                                      Expanded(
-                                        child: Text(
-                                          option,
-                                          style: context.textStyles.body.copyWith(
-                                            fontSize: context.isMobile ? 12 : 14,
-                                            color: isExistingAddress
-                                                ? context.colors.textPrimary
-                                                : context.colors.textSecondary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    );
+                ),
+                SizedBox(height: context.dimensions.spacingS),
+                AppDatePickerField(
+                  label: 'Installation Date',
+                  hintText: 'Select installation date',
+                  initialDate: _selectedDate,
+                  onDateSelected: (date) {
+                    if (date != null) {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    }
                   },
                 ),
                 SizedBox(height: context.dimensions.spacingS),
@@ -954,7 +869,7 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
         address: _addressController.text.trim(),
         pigtailItems: _pigtailItems,
         installedBy: currentUser.id,
-        installedDate: DateTime.now(),
+        installedDate: _selectedDate,
         isRemoved: false,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         createdAt: DateTime.now(),
@@ -1186,16 +1101,14 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
   late final TextEditingController _addressController;
   late final TextEditingController _notesController;
   late final List<PigtailItem> _pigtailItems;
+  late DateTime _selectedDate;
+  DateTime? _removedDate;
   bool _isLoading = false;
   
   // Validation states
   bool _jobNameHasError = false;
   bool _addressHasError = false;
   
-  // For address suggestions
-  List<String> _addressSuggestions = [];
-  List<String> _filteredSuggestions = [];
-
   @override
   void initState() {
     super.initState();
@@ -1203,18 +1116,8 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
     _addressController = TextEditingController(text: widget.pigtail.address);
     _notesController = TextEditingController(text: widget.pigtail.notes ?? "");
     _pigtailItems = List.from(widget.pigtail.pigtailItems);
-    
-    _loadAddressSuggestions();
-  }
-  
-  Future<void> _loadAddressSuggestions() async {
-    final addresses = await widget.ref.read(uniquePigtailAddressesProvider.future);
-    if (mounted) {
-      setState(() {
-        _addressSuggestions = addresses;
-        _filteredSuggestions = addresses.take(5).toList();
-      });
-    }
+    _selectedDate = widget.pigtail.installedDate;
+    _removedDate = widget.pigtail.removedDate;
   }
 
   @override
@@ -1281,129 +1184,53 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
                   },
                 ),
                 SizedBox(height: context.dimensions.spacingS),
-                Autocomplete<String>(
-                  initialValue: TextEditingValue(text: _addressController.text),
-                  optionsBuilder: (TextEditingValue textEditingValue) async {
-                    if (textEditingValue.text.isEmpty) {
-                      return _addressSuggestions.take(5);
-                    }
-                    // Get dynamic suggestions based on query
-                    final suggestions = await widget.ref.read(
-                      addressSuggestionsProvider(textEditingValue.text).future
-                    );
-                    return suggestions;
+                AppAddressField(
+                  label: 'Address',
+                  hintText: 'Enter installation address',
+                  controller: _addressController,
+                  hasError: _addressHasError,
+                  errorText: _addressHasError ? 'Address is required' : null,
+                  isRequired: true,
+                  onClearError: () {
+                    setState(() {
+                      _addressHasError = false;
+                    });
                   },
-                  onSelected: (String selection) {
-                    _addressController.text = selection;
-                    if (_addressHasError) {
+                  onChanged: (value) {
+                    if (_addressHasError && value.trim().isNotEmpty) {
                       setState(() {
                         _addressHasError = false;
                       });
                     }
                   },
-                  fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, 
-                      FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
-                    return AppTextField(
-                      controller: fieldTextEditingController,
-                      focusNode: fieldFocusNode,
-                      label: 'Address',
-                      hintText: 'Enter installation address',
-                      hasError: _addressHasError,
-                      errorText: _addressHasError ? 'Address is required' : null,
-                      onClearError: () {
-                        setState(() {
-                          _addressHasError = false;
-                        });
-                      },
-                      onChanged: (value) {
-                        _addressController.text = value;
-                        if (_addressHasError && value.trim().isNotEmpty) {
-                          setState(() {
-                            _addressHasError = false;
-                          });
-                        }
-                      },
-                    );
-                  },
-                  optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, 
-                      Iterable<String> options) {
-                    return Align(
-                      alignment: Alignment.topLeft,
-                      child: Material(
-                        elevation: 4,
-                        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxHeight: 240, // 6 items * 40px each
-                            maxWidth: context.isMobile ? MediaQuery.of(context).size.width - 32 : 500,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.colors.surface,
-                            borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-                            border: Border.all(color: context.colors.outline),
-                          ),
-                          child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            itemCount: options.length,
-                            itemExtent: 40.0, // Fixed height for each item
-                            itemBuilder: (BuildContext context, int index) {
-                              final String option = options.elementAt(index);
-                              final isExistingAddress = _addressSuggestions.contains(option);
-                              
-                              return InkWell(
-                                onTap: () => onSelected(option),
-                                child: Container(
-                                  height: 40,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: context.dimensions.spacingM,
-                                  ),
-                                  alignment: Alignment.centerLeft,
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: context.colors.outline.withOpacity(0.2),
-                                        width: 1,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isExistingAddress 
-                                            ? Icons.history 
-                                            : Icons.location_on_outlined,
-                                        size: 16,
-                                        color: isExistingAddress
-                                            ? context.colors.primary
-                                            : context.colors.textSecondary,
-                                      ),
-                                      SizedBox(width: context.dimensions.spacingS),
-                                      Expanded(
-                                        child: Text(
-                                          option,
-                                          style: context.textStyles.body.copyWith(
-                                            fontSize: context.isMobile ? 12 : 14,
-                                            color: isExistingAddress
-                                                ? context.colors.textPrimary
-                                                : context.colors.textSecondary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    );
+                ),
+                SizedBox(height: context.dimensions.spacingS),
+                AppDatePickerField(
+                  label: 'Installation Date',
+                  hintText: 'Select installation date',
+                  initialDate: _selectedDate,
+                  onDateSelected: (date) {
+                    if (date != null) {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    }
                   },
                 ),
                 SizedBox(height: context.dimensions.spacingS),
+                if (widget.pigtail.isRemoved) ...[
+                  AppDatePickerField(
+                    label: 'Removal Date',
+                    hintText: 'Select removal date',
+                    initialDate: _removedDate ?? DateTime.now(),
+                    onDateSelected: (date) {
+                      setState(() {
+                        _removedDate = date;
+                      });
+                    },
+                  ),
+                  SizedBox(height: context.dimensions.spacingS),
+                ],
                 AppMultilineTextField(
                   controller: _notesController,
                   label: "Notes (optional)",
@@ -1561,6 +1388,8 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
         jobName: _jobNameController.text.trim(),
         address: _addressController.text.trim(),
         pigtailItems: _pigtailItems,
+        installedDate: _selectedDate,
+        removedDate: widget.pigtail.isRemoved ? _removedDate : null,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         updatedAt: DateTime.now(),
       );
@@ -1878,15 +1707,39 @@ class _PigtailDetailsDialog extends ConsumerWidget {
                     icon: const Icon(Icons.check_circle_outline),
                     label: const Text("Mark as Removed"),
                     onPressed: () async {
-                      await ref.read(pigtailStateProvider.notifier)
-                          .markAsRemoved(pigtail.id, pigtail);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text("Pigtail marked as removed"),
-                            backgroundColor: context.colors.success,
-                          ),
-                        );
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Mark as Removed?'),
+                          content: Text('Are you sure you want to mark this pigtail installation at ${pigtail.jobName} as removed?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.colors.primary,
+                                foregroundColor: context.colors.onPrimary,
+                              ),
+                              child: const Text('Mark Removed'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        await ref.read(pigtailStateProvider.notifier)
+                            .markAsRemoved(pigtail.id, pigtail);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text("Pigtail marked as removed"),
+                              backgroundColor: context.colors.success,
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -1899,15 +1752,39 @@ class _PigtailDetailsDialog extends ConsumerWidget {
                     icon: const Icon(Icons.replay),
                     label: const Text("Mark as Installed"),
                     onPressed: () async {
-                      await ref.read(pigtailStateProvider.notifier)
-                          .markAsInstalled(pigtail.id, pigtail);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text("Pigtail marked as installed"),
-                            backgroundColor: context.colors.success,
-                          ),
-                        );
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Mark as Installed?'),
+                          content: Text('Are you sure you want to mark this pigtail at ${pigtail.jobName} as installed again?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.colors.primary,
+                                foregroundColor: context.colors.onPrimary,
+                              ),
+                              child: const Text('Mark Installed'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        await ref.read(pigtailStateProvider.notifier)
+                            .markAsInstalled(pigtail.id, pigtail);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text("Pigtail marked as installed"),
+                              backgroundColor: context.colors.success,
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
