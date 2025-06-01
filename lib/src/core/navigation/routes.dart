@@ -27,7 +27,7 @@ import 'package:timesheet_app_web/src/features/user/presentation/screens/users_s
 import 'package:timesheet_app_web/src/features/company_card/presentation/screens/company_cards_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/data_import_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/access_denied_screen.dart';
-import 'package:timesheet_app_web/src/features/pigtail/presentation/screens/pigtail_screen.dart';
+import 'package:timesheet_app_web/src/features/pigtail/presentation/screens/pigtails_screen.dart';
 
 part 'routes.g.dart';
 
