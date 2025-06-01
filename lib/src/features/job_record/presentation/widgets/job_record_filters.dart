@@ -85,26 +85,22 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Primeira linha: Date Range + Creator (se não for user regular)
-        Row(
-          children: [
-            _buildDateRangeField(),
-            // Só mostra o dropdown de criador se não for um user regular
-            userRoleAsync.when(
-              data: (role) {
-                if (role == UserRole.admin || role == UserRole.manager) {
-                  return Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      _buildCreatorDropdown(),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-          ],
+        userRoleAsync.when(
+          data: (role) {
+            if (role == UserRole.admin || role == UserRole.manager) {
+              return Row(
+                children: [
+                  _buildDateRangeField(),
+                  const SizedBox(width: 8),
+                  _buildCreatorDropdown(),
+                ],
+              );
+            } else {
+              return _buildDateRangeField();
+            }
+          },
+          loading: () => _buildDateRangeField(),
+          error: (_, __) => _buildDateRangeField(),
         ),
         const SizedBox(height: 6),
         // Segunda linha: Search + Botões

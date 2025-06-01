@@ -14,6 +14,7 @@ import 'package:timesheet_app_web/src/features/expense/presentation/widgets/crea
 import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 // Group expenses by month
 class ExpensePeriod {
@@ -630,34 +631,18 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     return filteredExpenses;
   }
 
-  void _showDeleteConfirmDialog(Set<String> selectedIds) {
-    showDialog<bool>(
+  void _showDeleteConfirmDialog(Set<String> selectedIds) async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Expenses'),
-        content: Text(
-          'Are you sure you want to delete ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.error,
-              foregroundColor: context.colors.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true) {
-        _deleteSelectedExpenses(selectedIds);
-      }
-    });
+      title: 'Delete Expenses',
+      message: 'Are you sure you want to delete ${selectedIds.length} expense${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.',
+      confirmText: 'Delete',
+      actionType: ConfirmActionType.danger,
+    );
+    
+    if (confirmed == true) {
+      _deleteSelectedExpenses(selectedIds);
+    }
   }
 
   void _deleteSelectedExpenses(Set<String> selectedIds) async {
@@ -666,23 +651,20 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     
     if (!canDelete) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('You do not have permission to delete expenses'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Permission Denied',
+          message: 'You do not have permission to delete expenses.',
         );
       }
       return;
     }
     
     // Mostrar loading
-    showDialog(
+    showAppProgressDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      title: 'Deleting Expenses',
+      message: 'Please wait...',
     );
     
     try {
@@ -706,18 +688,16 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       // Mostrar resultado
       if (mounted) {
         if (errorCount == 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully deleted $successCount expense${successCount > 1 ? 's' : ''}'),
-              backgroundColor: context.colors.success,
-            ),
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: 'Successfully deleted $successCount expense${successCount > 1 ? 's' : ''}.',
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Deleted $successCount expense${successCount > 1 ? 's' : ''}, $errorCount failed'),
-              backgroundColor: context.colors.warning,
-            ),
+          await showWarningDialog(
+            context: context,
+            title: 'Partial Success',
+            message: 'Deleted $successCount expense${successCount > 1 ? 's' : ''}, $errorCount failed.',
           );
         }
       }
@@ -736,11 +716,10 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       if (mounted) Navigator.of(context).pop();
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting expenses: $e'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to delete expenses: $e',
         );
       }
     }

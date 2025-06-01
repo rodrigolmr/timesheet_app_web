@@ -10,6 +10,7 @@ import 'package:timesheet_app_web/src/features/database/presentation/widgets/imp
 import 'package:timesheet_app_web/src/features/database/presentation/widgets/collection_documents_dialog.dart';
 import 'package:universal_html/html.dart' as html;
 import 'dart:convert';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 class DatabaseScreen extends ConsumerWidget {
   const DatabaseScreen({super.key});

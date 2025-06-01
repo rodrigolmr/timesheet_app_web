@@ -89,24 +89,21 @@ class _ExpenseFiltersState extends ConsumerState<ExpenseFilters> {
         ),
         const SizedBox(height: 6),
         // Segunda linha: Creator (se não for user regular) + Botões
-        Row(
-          children: [
-            // Só mostra o dropdown de criador se não for um user regular
-            userRoleAsync.when(
-              data: (role) {
-                if (role == UserRole.admin || role == UserRole.manager) {
-                  return Expanded(
-                    child: _buildCreatorDropdown(),
-                  );
-                }
-                return const Expanded(child: SizedBox.shrink());
-              },
-              loading: () => const Expanded(child: SizedBox.shrink()),
-              error: (_, __) => const Expanded(child: SizedBox.shrink()),
-            ),
-            const SizedBox(width: 8),
-            _buildActionButtons(),
-          ],
+        userRoleAsync.when(
+          data: (role) {
+            if (role == UserRole.admin || role == UserRole.manager) {
+              return Row(
+                children: [
+                  _buildCreatorDropdown(),
+                  const SizedBox(width: 8),
+                  _buildActionButtons(),
+                ],
+              );
+            }
+            return _buildActionButtons();
+          },
+          loading: () => _buildActionButtons(),
+          error: (_, __) => _buildActionButtons(),
         ),
       ],
     );

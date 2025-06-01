@@ -10,6 +10,7 @@ import 'package:timesheet_app_web/src/features/company_card/presentation/provide
 import 'package:timesheet_app_web/src/core/widgets/input/app_text_field.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/features/company_card/presentation/widgets/company_card_filters.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 class CompanyCardsScreen extends ConsumerStatefulWidget {
   const CompanyCardsScreen({super.key});
@@ -326,16 +327,16 @@ class _CompanyCardsScreenState extends ConsumerState<CompanyCardsScreen> {
   }
 }
 
-class _CreateCompanyCardDialog extends StatefulWidget {
+class _CreateCompanyCardDialog extends ConsumerStatefulWidget {
   final WidgetRef ref;
 
   const _CreateCompanyCardDialog({required this.ref});
 
   @override
-  State<_CreateCompanyCardDialog> createState() => _CreateCompanyCardDialogState();
+  ConsumerState<_CreateCompanyCardDialog> createState() => _CreateCompanyCardDialogState();
 }
 
-class _CreateCompanyCardDialogState extends State<_CreateCompanyCardDialog> {
+class _CreateCompanyCardDialogState extends ConsumerState<_CreateCompanyCardDialog> {
   final _formKey = GlobalKey<FormState>();
   final _holderNameController = TextEditingController();
   final _lastFourDigitsController = TextEditingController();
@@ -351,8 +352,10 @@ class _CreateCompanyCardDialogState extends State<_CreateCompanyCardDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Company Card'),
+    return AppFormDialog(
+      title: 'Add Company Card',
+      icon: Icons.credit_card,
+      mode: DialogMode.create,
       content: Form(
         key: _formKey,
         child: Column(
@@ -382,23 +385,10 @@ class _CreateCompanyCardDialogState extends State<_CreateCompanyCardDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Add'),
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.create,
+          onConfirm: _handleSubmit,
         ),
       ],
     );
@@ -408,11 +398,10 @@ class _CreateCompanyCardDialogState extends State<_CreateCompanyCardDialog> {
     if (_holderNameController.text.trim().isEmpty ||
         _lastFourDigitsController.text.trim().isEmpty ||
         _lastFourDigitsController.text.trim().length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill in all fields correctly'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Invalid Information',
+        message: 'Please fill in all fields correctly. Last 4 digits must be exactly 4 numbers.',
       );
       return;
     }
@@ -433,20 +422,18 @@ class _CreateCompanyCardDialogState extends State<_CreateCompanyCardDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Company card added successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'Company card added successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to add company card: ${e.toString()}',
         );
       }
     } finally {
@@ -494,8 +481,10 @@ class _EditCompanyCardDialogState extends State<_EditCompanyCardDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit Company Card'),
+    return AppFormDialog(
+      title: 'Edit Company Card',
+      icon: Icons.edit,
+      mode: DialogMode.edit,
       content: Form(
         key: _formKey,
         child: Column(
@@ -525,23 +514,10 @@ class _EditCompanyCardDialogState extends State<_EditCompanyCardDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save'),
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.edit,
+          onConfirm: _handleSubmit,
         ),
       ],
     );
@@ -551,11 +527,10 @@ class _EditCompanyCardDialogState extends State<_EditCompanyCardDialog> {
     if (_holderNameController.text.trim().isEmpty ||
         _lastFourDigitsController.text.trim().isEmpty ||
         _lastFourDigitsController.text.trim().length != 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill in all fields correctly'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Invalid Information',
+        message: 'Please fill in all fields correctly. Last 4 digits must be exactly 4 numbers.',
       );
       return;
     }
@@ -577,20 +552,18 @@ class _EditCompanyCardDialogState extends State<_EditCompanyCardDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Company card updated successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'Company card updated successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to update company card: ${e.toString()}',
         );
       }
     } finally {

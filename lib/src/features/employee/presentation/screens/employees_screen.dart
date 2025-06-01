@@ -10,6 +10,7 @@ import 'package:timesheet_app_web/src/features/employee/presentation/providers/e
 import 'package:timesheet_app_web/src/core/widgets/input/app_text_field.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/features/employee/presentation/widgets/employee_filters.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 class EmployeesScreen extends ConsumerStatefulWidget {
   const EmployeesScreen({super.key});
@@ -310,16 +311,16 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
   }
 }
 
-class _CreateEmployeeDialog extends StatefulWidget {
+class _CreateEmployeeDialog extends ConsumerStatefulWidget {
   final WidgetRef ref;
 
   const _CreateEmployeeDialog({required this.ref});
 
   @override
-  State<_CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
+  ConsumerState<_CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
 }
 
-class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
+class _CreateEmployeeDialogState extends ConsumerState<_CreateEmployeeDialog> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -335,8 +336,10 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Employee'),
+    return AppFormDialog(
+      title: 'Add Employee',
+      icon: Icons.person_add,
+      mode: DialogMode.create,
       content: Form(
         key: _formKey,
         child: Column(
@@ -365,23 +368,10 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Add'),
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.create,
+          onConfirm: _handleSubmit,
         ),
       ],
     );
@@ -390,11 +380,10 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
   Future<void> _handleSubmit() async {
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill in all fields'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please fill in all required fields.',
       );
       return;
     }
@@ -415,20 +404,18 @@ class _CreateEmployeeDialogState extends State<_CreateEmployeeDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Employee added successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'Employee added successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to add employee: ${e.toString()}',
         );
       }
     } finally {
@@ -476,8 +463,10 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit Employee'),
+    return AppFormDialog(
+      title: 'Edit Employee',
+      icon: Icons.edit,
+      mode: DialogMode.edit,
       content: Form(
         key: _formKey,
         child: Column(
@@ -506,23 +495,10 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save'),
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.edit,
+          onConfirm: _handleSubmit,
         ),
       ],
     );
@@ -531,11 +507,10 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
   Future<void> _handleSubmit() async {
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill in all fields'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please fill in all required fields.',
       );
       return;
     }
@@ -557,20 +532,18 @@ class _EditEmployeeDialogState extends State<_EditEmployeeDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Employee updated successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'Employee updated successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to update employee: ${e.toString()}',
         );
       }
     } finally {

@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
-import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
+import 'package:timesheet_app_web/src/core/widgets/widgets.dart';
 import 'package:timesheet_app_web/src/features/user/data/models/user_model.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_search_providers.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/app_text_field.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/widgets/user_filters.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -341,16 +341,16 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   }
 }
 
-class _CreateUserDialog extends StatefulWidget {
+class _CreateUserDialog extends ConsumerStatefulWidget {
   final WidgetRef ref;
 
   const _CreateUserDialog({required this.ref});
 
   @override
-  State<_CreateUserDialog> createState() => _CreateUserDialogState();
+  ConsumerState<_CreateUserDialog> createState() => _CreateUserDialogState();
 }
 
-class _CreateUserDialogState extends State<_CreateUserDialog> {
+class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -369,8 +369,17 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add User'),
+    return AppFormDialog(
+      title: 'Add User',
+      icon: Icons.person_add,
+      mode: DialogMode.create,
+      actions: [
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.create,
+          onConfirm: _handleSubmit,
+        ),
+      ],
       content: Form(
         key: _formKey,
         child: Column(
@@ -419,26 +428,6 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Add'),
-        ),
-      ],
     );
   }
 
@@ -446,11 +435,10 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill in all fields'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please fill in all required fields.',
       );
       return;
     }
@@ -474,20 +462,18 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('User added successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'User added successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to add user: ${e.toString()}',
         );
       }
     } finally {
@@ -540,8 +526,10 @@ class _EditUserDialogState extends State<_EditUserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit User'),
+    return AppFormDialog(
+      title: 'Edit User',
+      icon: Icons.edit,
+      mode: DialogMode.edit,
       content: Form(
         key: _formKey,
         child: Column(
@@ -591,23 +579,10 @@ class _EditUserDialogState extends State<_EditUserDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _handleSubmit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save'),
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.edit,
+          onConfirm: _handleSubmit,
         ),
       ],
     );
@@ -617,11 +592,10 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill in all fields'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please fill in all required fields.',
       );
       return;
     }
@@ -645,20 +619,18 @@ class _EditUserDialogState extends State<_EditUserDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('User updated successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'User updated successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to update user: ${e.toString()}',
         );
       }
     } finally {

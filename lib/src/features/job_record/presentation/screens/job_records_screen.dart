@@ -16,6 +16,7 @@ import 'package:timesheet_app_web/src/features/job_record/data/services/job_reco
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/timesheet_date_range_dialog.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 
 class JobRecordsScreen extends ConsumerStatefulWidget {
@@ -255,34 +256,18 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     });
   }
 
-  void _showDeleteConfirmDialog(Set<String> selectedIds) {
-    showDialog<bool>(
+  void _showDeleteConfirmDialog(Set<String> selectedIds) async {
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Records'),
-        content: Text(
-          'Are you sure you want to delete ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.error,
-              foregroundColor: context.colors.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true) {
-        _deleteSelectedRecords(selectedIds);
-      }
-    });
+      title: 'Delete Records',
+      message: 'Are you sure you want to delete ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.',
+      confirmText: 'Delete',
+      actionType: ConfirmActionType.danger,
+    );
+    
+    if (confirmed == true) {
+      _deleteSelectedRecords(selectedIds);
+    }
   }
 
   void _deleteSelectedRecords(Set<String> selectedIds) async {
@@ -291,23 +276,20 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     
     if (!canDelete) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('You do not have permission to delete job records'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Permission Denied',
+          message: 'You do not have permission to delete job records.',
         );
       }
       return;
     }
     
     // Mostrar loading
-    showDialog(
+    showAppProgressDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      title: 'Deleting Records',
+      message: 'Please wait...',
     );
     
     try {
@@ -331,18 +313,16 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       // Mostrar resultado
       if (mounted) {
         if (errorCount == 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully deleted $successCount record${successCount > 1 ? 's' : ''}'),
-              backgroundColor: context.colors.success,
-            ),
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: 'Successfully deleted $successCount record${successCount > 1 ? 's' : ''}.',
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Deleted $successCount record${successCount > 1 ? 's' : ''}, $errorCount failed'),
-              backgroundColor: context.colors.warning,
-            ),
+          await showWarningDialog(
+            context: context,
+            title: 'Partial Success',
+            message: 'Deleted $successCount record${successCount > 1 ? 's' : ''}, $errorCount failed.',
           );
         }
       }
@@ -361,11 +341,10 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       if (mounted) Navigator.of(context).pop();
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting records: $e'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to delete records: $e',
         );
       }
     }
@@ -378,39 +357,21 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     final canPrint = await ref.read(canPrintJobRecordsProvider.future);
     if (!canPrint) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('You do not have permission to print job records'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Permission Denied',
+          message: 'You do not have permission to print job records.',
         );
       }
       return;
     }
 
     // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Print Confirmation'),
-        content: Text(
-          'Are you sure you want to print ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}? This will open the print dialog in your browser.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.primary,
-              foregroundColor: context.colors.onPrimary,
-            ),
-            child: const Text('Print'),
-          ),
-        ],
-      ),
+      title: 'Print Confirmation',
+      message: 'Are you sure you want to print ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}? This will open the print dialog in your browser.',
+      confirmText: 'Print',
     );
 
     if (confirmed != true) return;
@@ -431,11 +392,10 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
 
       if (selectedRecords.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('No records found to print'),
-              backgroundColor: context.colors.error,
-            ),
+          await showWarningDialog(
+            context: context,
+            title: 'No Records',
+            message: 'No records found to print.',
           );
         }
         return;
@@ -451,20 +411,18 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Print initiated for ${selectedRecords.length} record${selectedRecords.length > 1 ? 's' : ''}'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Print Started',
+          message: 'Print initiated for ${selectedRecords.length} record${selectedRecords.length > 1 ? 's' : ''}.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error printing records: $e'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Print Error',
+          message: 'Failed to print records: $e',
         );
       }
     }
