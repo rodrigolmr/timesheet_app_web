@@ -442,109 +442,120 @@ class _PigtailScreenState extends ConsumerState<PigtailScreen> {
   }
 
   Future<void> _markAsRemoved(BuildContext context, PigtailModel pigtail) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Mark as Removed?'),
-        content: Text('Are you sure you want to mark this pigtail installation at ${pigtail.jobName} as removed?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.primary,
-              foregroundColor: context.colors.onPrimary,
-            ),
-            child: const Text('Mark Removed'),
-          ),
-        ],
-      ),
+      title: 'Mark as Removed?',
+      message: 'Are you sure you want to mark this pigtail installation at ${pigtail.jobName} as removed?',
+      confirmText: 'Mark Removed',
+      actionType: ConfirmActionType.warning,
     );
 
     if (confirmed == true) {
-      await ref.read(pigtailStateProvider.notifier).markAsRemoved(pigtail.id, pigtail);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Pigtail marked as removed'),
-            backgroundColor: context.colors.success,
-          ),
+      try {
+        showAppProgressDialog(
+          context: context,
+          title: 'Updating...',
+          message: 'Marking pigtail as removed',
         );
+        
+        await ref.read(pigtailStateProvider.notifier).markAsRemoved(pigtail.id, pigtail);
+        
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close progress
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: 'Pigtail marked as removed successfully.',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close progress
+          await showErrorDialog(
+            context: context,
+            title: 'Error',
+            message: 'Failed to update pigtail: ${e.toString()}',
+          );
+        }
       }
     }
   }
 
   Future<void> _markAsInstalled(BuildContext context, PigtailModel pigtail) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Mark as Installed?'),
-        content: Text('Are you sure you want to mark this pigtail at ${pigtail.jobName} as installed again?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.primary,
-              foregroundColor: context.colors.onPrimary,
-            ),
-            child: const Text('Mark Installed'),
-          ),
-        ],
-      ),
+      title: 'Mark as Installed?',
+      message: 'Are you sure you want to mark this pigtail at ${pigtail.jobName} as installed again?',
+      confirmText: 'Mark Installed',
     );
 
     if (confirmed == true) {
-      await ref.read(pigtailStateProvider.notifier).markAsInstalled(pigtail.id, pigtail);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Pigtail marked as installed'),
-            backgroundColor: context.colors.success,
-          ),
+      try {
+        showAppProgressDialog(
+          context: context,
+          title: 'Updating...',
+          message: 'Marking pigtail as installed',
         );
+        
+        await ref.read(pigtailStateProvider.notifier).markAsInstalled(pigtail.id, pigtail);
+        
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close progress
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: 'Pigtail marked as installed successfully.',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close progress
+          await showErrorDialog(
+            context: context,
+            title: 'Error',
+            message: 'Failed to update pigtail: ${e.toString()}',
+          );
+        }
       }
     }
   }
 
   Future<void> _deletePigtail(BuildContext context, PigtailModel pigtail) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete Pigtail?'),
-        content: Text('Are you sure you want to permanently delete this pigtail record at ${pigtail.jobName}? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colors.error,
-              foregroundColor: context.colors.onError,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: 'Delete Pigtail?',
+      message: 'Are you sure you want to permanently delete this pigtail record at ${pigtail.jobName}? This action cannot be undone.',
+      confirmText: 'Delete',
+      actionType: ConfirmActionType.danger,
     );
 
     if (confirmed == true) {
-      await ref.read(pigtailStateProvider.notifier).delete(pigtail.id);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Pigtail deleted successfully'),
-            backgroundColor: context.colors.success,
-          ),
+      try {
+        showAppProgressDialog(
+          context: context,
+          title: 'Deleting...',
+          message: 'Please wait',
         );
+        
+        await ref.read(pigtailStateProvider.notifier).delete(pigtail.id);
+        
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close progress
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: 'Pigtail deleted successfully.',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Close progress
+          await showErrorDialog(
+            context: context,
+            title: 'Error',
+            message: 'Failed to delete pigtail: ${e.toString()}',
+          );
+        }
       }
     }
   }
@@ -771,11 +782,10 @@ class _CreatePigtailDialogState extends ConsumerState<_CreatePigtailDialog> {
     if (_jobNameHasError || _addressHasError) return;
     
     if (_pigtailItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please add at least one pigtail type'),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please add at least one pigtail type before proceeding.',
       );
       return;
     }
@@ -803,20 +813,18 @@ class _CreatePigtailDialogState extends ConsumerState<_CreatePigtailDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Pigtail installation added successfully'),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'Pigtail installation added successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to add pigtail: ${e.toString()}',
         );
       }
     } finally {
@@ -854,8 +862,17 @@ class _AddPigtailTypeDialogState extends State<_AddPigtailTypeDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Pigtail Type'),
+    return AppFormDialog(
+      title: 'Add Pigtail Type',
+      icon: Icons.electrical_services,
+      mode: DialogMode.create,
+      actions: [
+        AppFormDialogActions(
+          mode: DialogMode.create,
+          confirmText: 'Add',
+          onConfirm: _handleAdd,
+        ),
+      ],
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -960,46 +977,38 @@ class _AddPigtailTypeDialogState extends State<_AddPigtailTypeDialog> {
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final type = _typeController.text.trim();
-            final quantity = int.tryParse(_quantityController.text);
-            
-            // Validate quantity
-            setState(() {
-              _quantityHasError = quantity == null || quantity < 1;
-            });
-            
-            if (type.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Please select or enter a type'),
-                  backgroundColor: context.colors.error,
-                ),
-              );
-              return;
-            }
-            
-            if (_quantityHasError) {
-              return;
-            }
-            
-            widget.onAdd(type, quantity!);
-            Navigator.of(context).pop();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.colors.primary,
-            foregroundColor: context.colors.onPrimary,
-          ),
-          child: const Text('Add'),
-        ),
-      ],
     );
+  }
+
+  Future<void> _handleAdd() async {
+    final type = _typeController.text.trim();
+    final quantity = int.tryParse(_quantityController.text);
+    
+    // Validate quantity
+    setState(() {
+      _quantityHasError = quantity == null || quantity < 1;
+    });
+    
+    if (type.isEmpty) {
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Type',
+        message: 'Please select or enter a pigtail type.',
+      );
+      return;
+    }
+    
+    if (_quantityHasError) {
+      await showWarningDialog(
+        context: context,
+        title: 'Invalid Quantity',
+        message: 'Please enter a valid quantity (1 or more).',
+      );
+      return;
+    }
+    
+    widget.onAdd(type, quantity!);
+    Navigator.of(context).pop();
   }
 }
 
@@ -1250,11 +1259,10 @@ class _EditPigtailDialogState extends ConsumerState<_EditPigtailDialog> {
     if (_jobNameHasError || _addressHasError) return;
     
     if (_pigtailItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Please add at least one pigtail type"),
-          backgroundColor: context.colors.error,
-        ),
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please add at least one pigtail type before proceeding.',
       );
       return;
     }
@@ -1279,20 +1287,18 @@ class _EditPigtailDialogState extends ConsumerState<_EditPigtailDialog> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Pigtail installation updated successfully"),
-            backgroundColor: context.colors.success,
-          ),
+        await showSuccessDialog(
+          context: context,
+          title: 'Success',
+          message: 'Pigtail installation updated successfully.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error: ${e.toString()}"),
-            backgroundColor: context.colors.error,
-          ),
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to update pigtail: ${e.toString()}',
         );
       }
     } finally {
@@ -1514,38 +1520,33 @@ class _PigtailDetailsDialog extends ConsumerWidget {
                     icon: const Icon(Icons.check_circle_outline),
                     label: const Text("Mark as Removed"),
                     onPressed: () async {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed = await showAppConfirmDialog(
                         context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Mark as Removed?'),
-                          content: Text('Are you sure you want to mark this pigtail installation at ${pigtail.jobName} as removed?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: const Text('Cancel'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.colors.primary,
-                                foregroundColor: context.colors.onPrimary,
-                              ),
-                              child: const Text('Mark Removed'),
-                            ),
-                          ],
-                        ),
+                        title: 'Mark as Removed?',
+                        message: 'Are you sure you want to mark this pigtail installation at ${pigtail.jobName} as removed?',
+                        confirmText: 'Mark Removed',
+                        actionType: ConfirmActionType.warning,
                       );
 
                       if (confirmed == true) {
-                        await ref.read(pigtailStateProvider.notifier)
-                            .markAsRemoved(pigtail.id, pigtail);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text("Pigtail marked as removed"),
-                              backgroundColor: context.colors.success,
-                            ),
-                          );
+                        try {
+                          await ref.read(pigtailStateProvider.notifier)
+                              .markAsRemoved(pigtail.id, pigtail);
+                          if (context.mounted) {
+                            await showSuccessDialog(
+                              context: context,
+                              title: 'Success',
+                              message: 'Pigtail marked as removed successfully.',
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            await showErrorDialog(
+                              context: context,
+                              title: 'Error',
+                              message: 'Failed to update pigtail: ${e.toString()}',
+                            );
+                          }
                         }
                       }
                     },
@@ -1559,38 +1560,32 @@ class _PigtailDetailsDialog extends ConsumerWidget {
                     icon: const Icon(Icons.replay),
                     label: const Text("Mark as Installed"),
                     onPressed: () async {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed = await showAppConfirmDialog(
                         context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Mark as Installed?'),
-                          content: Text('Are you sure you want to mark this pigtail at ${pigtail.jobName} as installed again?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: const Text('Cancel'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: context.colors.primary,
-                                foregroundColor: context.colors.onPrimary,
-                              ),
-                              child: const Text('Mark Installed'),
-                            ),
-                          ],
-                        ),
+                        title: 'Mark as Installed?',
+                        message: 'Are you sure you want to mark this pigtail at ${pigtail.jobName} as installed again?',
+                        confirmText: 'Mark Installed',
                       );
 
                       if (confirmed == true) {
-                        await ref.read(pigtailStateProvider.notifier)
-                            .markAsInstalled(pigtail.id, pigtail);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text("Pigtail marked as installed"),
-                              backgroundColor: context.colors.success,
-                            ),
-                          );
+                        try {
+                          await ref.read(pigtailStateProvider.notifier)
+                              .markAsInstalled(pigtail.id, pigtail);
+                          if (context.mounted) {
+                            await showSuccessDialog(
+                              context: context,
+                              title: 'Success',
+                              message: 'Pigtail marked as installed successfully.',
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            await showErrorDialog(
+                              context: context,
+                              title: 'Error',
+                              message: 'Failed to update pigtail: ${e.toString()}',
+                            );
+                          }
                         }
                       }
                     },
@@ -1628,38 +1623,33 @@ class _PigtailDetailsDialog extends ConsumerWidget {
                         icon: const Icon(Icons.delete_outline),
                         label: const Text("Delete"),
                         onPressed: () async {
-                          final confirmed = await showDialog<bool>(
+                          final confirmed = await showAppConfirmDialog(
                             context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text('Delete Pigtail?'),
-                              content: Text('Are you sure you want to permanently delete this pigtail record at ${pigtail.jobName}? This action cannot be undone.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(true),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: context.colors.error,
-                                    foregroundColor: context.colors.onError,
-                                  ),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            ),
+                            title: 'Delete Pigtail?',
+                            message: 'Are you sure you want to permanently delete this pigtail record at ${pigtail.jobName}? This action cannot be undone.',
+                            confirmText: 'Delete',
+                            actionType: ConfirmActionType.danger,
                           );
 
                           if (confirmed == true) {
                             Navigator.of(context).pop();
-                            await ref.read(pigtailStateProvider.notifier).delete(pigtail.id);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Pigtail deleted successfully'),
-                                  backgroundColor: context.colors.success,
-                                ),
-                              );
+                            try {
+                              await ref.read(pigtailStateProvider.notifier).delete(pigtail.id);
+                              if (context.mounted) {
+                                await showSuccessDialog(
+                                  context: context,
+                                  title: 'Success',
+                                  message: 'Pigtail deleted successfully.',
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                await showErrorDialog(
+                                  context: context,
+                                  title: 'Error',
+                                  message: 'Failed to delete pigtail: ${e.toString()}',
+                                );
+                              }
                             }
                           }
                         },

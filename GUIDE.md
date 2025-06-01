@@ -838,6 +838,360 @@ AppIconButton(
 )
 ```
 
+### Diálogos Padronizados
+
+O projeto oferece um conjunto completo de diálogos padronizados para manter consistência visual e facilitar o desenvolvimento.
+
+#### 1. AppFormDialog - Para formulários
+
+```dart
+// Criação de novo item
+showAppFormDialog(
+  context: context,
+  title: 'Add Employee',
+  icon: Icons.person_add,
+  mode: DialogMode.create,
+  content: MyFormWidget(),
+  actions: [
+    AppFormDialogActions(
+      isLoading: _isLoading,
+      mode: DialogMode.create,
+      onConfirm: _handleSubmit,
+    ),
+  ],
+);
+
+// Edição de item existente
+showAppFormDialog(
+  context: context,
+  title: 'Edit Employee',
+  icon: Icons.edit,
+  mode: DialogMode.edit,
+  content: MyFormWidget(),
+);
+```
+
+#### 2. AppDetailsDialog - Para visualização de detalhes
+
+```dart
+showAppDetailsDialog(
+  context: context,
+  title: 'Employee Details',
+  icon: Icons.person,
+  statusBadge: StatusBadgeWidget(), // Opcional
+  content: DetailsContentWidget(),
+  actions: [ // Opcional
+    ElevatedButton(
+      onPressed: () => _editEmployee(),
+      child: Text('Edit'),
+    ),
+  ],
+);
+```
+
+#### 3. AppConfirmDialog - Para confirmações
+
+```dart
+// Confirmação normal
+final confirmed = await showAppConfirmDialog(
+  context: context,
+  title: 'Confirm Action',
+  message: 'Are you sure you want to proceed?',
+  confirmText: 'Yes',
+  cancelText: 'No',
+);
+
+// Ação perigosa (botão vermelho)
+final confirmed = await showAppConfirmDialog(
+  context: context,
+  title: 'Delete Item',
+  message: 'This action cannot be undone.',
+  actionType: ConfirmActionType.danger,
+  confirmText: 'Delete',
+);
+
+// Aviso (botão amarelo)
+final confirmed = await showAppConfirmDialog(
+  context: context,
+  title: 'Warning',
+  message: 'This will affect other records.',
+  actionType: ConfirmActionType.warning,
+);
+```
+
+#### 4. AppAlertDialog - Para notificações
+
+```dart
+// Erro
+await showErrorDialog(
+  context: context,
+  title: 'Operation Failed',
+  message: 'Unable to save the record.',
+);
+
+// Sucesso
+await showSuccessDialog(
+  context: context,
+  title: 'Success!',
+  message: 'Record saved successfully.',
+);
+
+// Aviso
+await showWarningDialog(
+  context: context,
+  title: 'Attention',
+  message: 'Some fields need review.',
+);
+
+// Informação
+await showInfoDialog(
+  context: context,
+  title: 'Information',
+  message: 'New features are available.',
+);
+```
+
+#### 5. AppChoiceDialog - Para seleção de opções
+
+```dart
+// Seleção única
+final selected = await showAppChoiceDialog<String>(
+  context: context,
+  title: 'Select Status',
+  items: [
+    ChoiceItem(
+      value: 'active',
+      label: 'Active',
+      icon: Icons.check_circle,
+      color: Colors.green,
+    ),
+    ChoiceItem(
+      value: 'inactive',
+      label: 'Inactive',
+      icon: Icons.cancel,
+      color: Colors.red,
+    ),
+  ],
+  selectedValue: currentStatus,
+);
+
+// Seleção múltipla
+final selected = await showAppMultipleChoiceDialog<String>(
+  context: context,
+  title: 'Select Permissions',
+  items: permissionsList,
+);
+```
+
+#### 6. AppProgressDialog - Para operações em andamento
+
+```dart
+// Progresso indeterminado
+showAppProgressDialog(
+  context: context,
+  title: 'Loading...',
+  message: 'Please wait',
+);
+
+// Progresso com porcentagem
+showAppProgressDialog(
+  context: context,
+  title: 'Uploading',
+  message: 'Uploading file...',
+  progress: 0.75,
+  showProgress: true,
+);
+
+// Com controller para atualização dinâmica
+final controller = ProgressDialogController(
+  title: 'Processing',
+  showProgress: true,
+);
+
+await showAppProgressDialogWithController(
+  context: context,
+  controller: controller,
+  task: () async {
+    for (int i = 0; i <= 100; i++) {
+      controller.updateBoth(
+        'Processing item $i of 100',
+        i / 100,
+      );
+      await Future.delayed(Duration(milliseconds: 50));
+    }
+  },
+);
+```
+
+### Boas Práticas para Diálogos
+
+#### Quando usar cada tipo de diálogo:
+
+1. **AppFormDialog**: Criação e edição de registros
+2. **AppDetailsDialog**: Visualização de informações detalhadas
+3. **AppConfirmDialog**: Confirmações de ações (deletar, alterar status)
+4. **AppAlertDialog**: Mensagens de erro, sucesso, avisos
+5. **AppChoiceDialog**: Seleção entre opções pré-definidas
+6. **AppProgressDialog**: Operações assíncronas longas
+
+#### Padrões de implementação:
+
+```dart
+// Exemplo completo: CRUD com diálogos padronizados
+class EmployeeScreen extends ConsumerWidget {
+  // Criar novo registro
+  void _showCreateDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => _CreateEmployeeDialog(),
+    );
+  }
+  
+  // Visualizar detalhes
+  void _showDetailsDialog(BuildContext context, Employee employee) {
+    showDialog(
+      context: context,
+      builder: (_) => _EmployeeDetailsDialog(employee: employee),
+    );
+  }
+  
+  // Deletar com confirmação
+  Future<void> _deleteEmployee(BuildContext context, Employee employee) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: 'Delete Employee?',
+      message: 'This action cannot be undone.',
+      actionType: ConfirmActionType.danger,
+      confirmText: 'Delete',
+    );
+    
+    if (confirmed == true) {
+      try {
+        // Mostrar progresso
+        showAppProgressDialog(
+          context: context,
+          title: 'Deleting...',
+          message: 'Please wait',
+        );
+        
+        await repository.delete(employee.id);
+        
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Fechar progresso
+          
+          // Mostrar sucesso
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: 'Employee deleted successfully.',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Fechar progresso
+          
+          // Mostrar erro
+          await showErrorDialog(
+            context: context,
+            title: 'Error',
+            message: 'Failed to delete employee: $e',
+          );
+        }
+      }
+    }
+  }
+}
+
+// Widget de criação com AppFormDialog
+class _CreateEmployeeDialog extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_CreateEmployeeDialog> createState() => _CreateEmployeeDialogState();
+}
+
+class _CreateEmployeeDialogState extends ConsumerState<_CreateEmployeeDialog> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  
+  @override
+  Widget build(BuildContext context) {
+    return AppFormDialog(
+      title: 'Create Employee',
+      icon: Icons.person_add,
+      mode: DialogMode.create,
+      actions: [
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.create,
+          onConfirm: _handleSubmit,
+        ),
+      ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Campos do formulário
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Widget de detalhes com AppDetailsDialog
+class _EmployeeDetailsDialog extends ConsumerWidget {
+  final Employee employee;
+  
+  const _EmployeeDetailsDialog({required this.employee});
+  
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return AppDetailsDialog(
+      title: employee.name,
+      icon: Icons.person,
+      statusBadge: _buildStatusBadge(context),
+      content: Column(
+        children: [
+          // Conteúdo dos detalhes
+        ],
+      ),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.edit),
+                label: Text('Edit'),
+                onPressed: () => _showEditDialog(context),
+              ),
+            ),
+            SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.delete),
+                label: Text('Delete'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.colors.error,
+                ),
+                onPressed: () => _deleteEmployee(context),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+```
+
+#### Dicas importantes:
+
+1. **Sempre use `context.mounted`** após operações assíncronas
+2. **Feche diálogos de progresso** antes de mostrar outros diálogos
+3. **Use tipos de ação apropriados** para confirmações (danger para deletar)
+4. **Mantenha consistência** nos textos dos botões
+5. **Trate erros adequadamente** com diálogos de erro
+6. **Use statusBadge** em detalhes para indicar estado visual
+
 ### Campos de Entrada
 
 ```dart
