@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 import 'job_employee_model.dart';
 
 part 'job_record_model.freezed.dart';
@@ -31,6 +32,12 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
     // Notas adicionais
     @Default('') String notes,
     
+    // Campos de aprovação
+    @Default(JobRecordStatus.pending) JobRecordStatus status,
+    String? approverNote,
+    DateTime? approvedAt,
+    String? approverId,
+    
     // Campos de controle
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -56,6 +63,14 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
           .map((e) => JobEmployeeModel.fromJson(e as Map<String, dynamic>))
           .toList() : [],
       notes: data['notes'] as String? ?? '',
+      status: data['status'] != null 
+          ? JobRecordStatus.values.firstWhere((e) => e.name == data['status'])
+          : JobRecordStatus.pending,
+      approverNote: data['approver_note'] as String?,
+      approvedAt: data['approved_at'] != null 
+          ? (data['approved_at'] as Timestamp).toDate()
+          : null,
+      approverId: data['approver_id'] as String?,
       createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : DateTime.now(),
       updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : DateTime.now(),
     );
@@ -74,6 +89,10 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
       'vehicle': vehicle,
       'employees': employees.map((e) => e.toFirestore()).toList(),
       'notes': notes,
+      'status': status.name,
+      if (approverNote != null) 'approver_note': approverNote,
+      if (approvedAt != null) 'approved_at': Timestamp.fromDate(approvedAt!),
+      if (approverId != null) 'approver_id': approverId,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

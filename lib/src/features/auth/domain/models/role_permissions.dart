@@ -148,4 +148,14 @@ class RolePermissions {
   static bool canPrintExpenses(UserRole role) {
     return role == UserRole.admin || role == UserRole.manager;
   }
+
+  static bool canApproveJobRecord(UserRole role) {
+    // Only Admin and Manager can approve job records
+    return role == UserRole.admin || role == UserRole.manager;
+  }
+
+  static bool canViewJobRecordApprovalActions(UserRole role) {
+    // Only Admin and Manager can see approval buttons
+    return role == UserRole.admin || role == UserRole.manager;
+  }
 }

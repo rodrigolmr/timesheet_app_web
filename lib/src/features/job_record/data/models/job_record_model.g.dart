@@ -23,6 +23,15 @@ _$JobRecordModelImpl _$$JobRecordModelImplFromJson(Map<String, dynamic> json) =>
               .map((e) => JobEmployeeModel.fromJson(e as Map<String, dynamic>))
               .toList(),
       notes: json['notes'] as String? ?? '',
+      status:
+          $enumDecodeNullable(_$JobRecordStatusEnumMap, json['status']) ??
+          JobRecordStatus.pending,
+      approverNote: json['approverNote'] as String?,
+      approvedAt:
+          json['approvedAt'] == null
+              ? null
+              : DateTime.parse(json['approvedAt'] as String),
+      approverId: json['approverId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -42,6 +51,15 @@ Map<String, dynamic> _$$JobRecordModelImplToJson(
   'vehicle': instance.vehicle,
   'employees': instance.employees,
   'notes': instance.notes,
+  'status': _$JobRecordStatusEnumMap[instance.status]!,
+  'approverNote': instance.approverNote,
+  'approvedAt': instance.approvedAt?.toIso8601String(),
+  'approverId': instance.approverId,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt.toIso8601String(),
+};
+
+const _$JobRecordStatusEnumMap = {
+  JobRecordStatus.pending: 'pending',
+  JobRecordStatus.approved: 'approved',
 };

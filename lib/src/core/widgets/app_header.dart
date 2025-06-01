@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/notification_badge.dart';
 
 /// Cabeçalho padrão utilizado em todas as telas do aplicativo
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
@@ -77,6 +79,12 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
     
     // Lista de ações
     final actionsList = <Widget>[];
+    
+    // Adiciona notificação badge para managers/admins
+    final canViewNotifications = ref.watch(canViewAllJobRecordsProvider).valueOrNull ?? false;
+    if (canViewNotifications) {
+      actionsList.add(const NotificationBadge());
+    }
     
     // Adiciona o botão de ação principal se fornecido
     if (actionIcon != null) {
@@ -278,6 +286,12 @@ class _AppHeaderWithTabs extends AppHeader {
     
     // Lista de ações
     final actionsList = <Widget>[];
+    
+    // Adiciona notificação badge para managers/admins
+    final canViewNotifications = ref.watch(canViewAllJobRecordsProvider).valueOrNull ?? false;
+    if (canViewNotifications) {
+      actionsList.add(const NotificationBadge());
+    }
     
     // Adiciona o botão de ação principal se fornecido
     if (actionIcon != null) {

@@ -408,7 +408,7 @@ class _JobRecordsDateRangeStreamProviderElement
 }
 
 String _$jobRecordsSearchStreamHash() =>
-    r'fdcaa22abd90b1db93e23bb0dee5a24a4db5545e';
+    r'8e33b045e1d713e9fd939e89322374756f03c33d';
 
 /// Provider unificado para aplicar todos os filtros
 ///
@@ -434,12 +434,14 @@ class JobRecordsSearchStreamFamily
     DateTime? startDate,
     DateTime? endDate,
     String? creatorId,
+    JobRecordStatus? status,
   }) {
     return JobRecordsSearchStreamProvider(
       searchQuery: searchQuery,
       startDate: startDate,
       endDate: endDate,
       creatorId: creatorId,
+      status: status,
     );
   }
 
@@ -452,6 +454,7 @@ class JobRecordsSearchStreamFamily
       startDate: provider.startDate,
       endDate: provider.endDate,
       creatorId: provider.creatorId,
+      status: provider.status,
     );
   }
 
@@ -483,6 +486,7 @@ class JobRecordsSearchStreamProvider
     DateTime? startDate,
     DateTime? endDate,
     String? creatorId,
+    JobRecordStatus? status,
   }) : this._internal(
          (ref) => jobRecordsSearchStream(
            ref as JobRecordsSearchStreamRef,
@@ -490,6 +494,7 @@ class JobRecordsSearchStreamProvider
            startDate: startDate,
            endDate: endDate,
            creatorId: creatorId,
+           status: status,
          ),
          from: jobRecordsSearchStreamProvider,
          name: r'jobRecordsSearchStreamProvider',
@@ -504,6 +509,7 @@ class JobRecordsSearchStreamProvider
          startDate: startDate,
          endDate: endDate,
          creatorId: creatorId,
+         status: status,
        );
 
   JobRecordsSearchStreamProvider._internal(
@@ -517,12 +523,14 @@ class JobRecordsSearchStreamProvider
     required this.startDate,
     required this.endDate,
     required this.creatorId,
+    required this.status,
   }) : super.internal();
 
   final String searchQuery;
   final DateTime? startDate;
   final DateTime? endDate;
   final String? creatorId;
+  final JobRecordStatus? status;
 
   @override
   Override overrideWith(
@@ -542,6 +550,7 @@ class JobRecordsSearchStreamProvider
         startDate: startDate,
         endDate: endDate,
         creatorId: creatorId,
+        status: status,
       ),
     );
   }
@@ -557,7 +566,8 @@ class JobRecordsSearchStreamProvider
         other.searchQuery == searchQuery &&
         other.startDate == startDate &&
         other.endDate == endDate &&
-        other.creatorId == creatorId;
+        other.creatorId == creatorId &&
+        other.status == status;
   }
 
   @override
@@ -567,6 +577,7 @@ class JobRecordsSearchStreamProvider
     hash = _SystemHash.combine(hash, startDate.hashCode);
     hash = _SystemHash.combine(hash, endDate.hashCode);
     hash = _SystemHash.combine(hash, creatorId.hashCode);
+    hash = _SystemHash.combine(hash, status.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -587,6 +598,9 @@ mixin JobRecordsSearchStreamRef
 
   /// The parameter `creatorId` of this provider.
   String? get creatorId;
+
+  /// The parameter `status` of this provider.
+  JobRecordStatus? get status;
 }
 
 class _JobRecordsSearchStreamProviderElement
@@ -604,6 +618,9 @@ class _JobRecordsSearchStreamProviderElement
   DateTime? get endDate => (origin as JobRecordsSearchStreamProvider).endDate;
   @override
   String? get creatorId => (origin as JobRecordsSearchStreamProvider).creatorId;
+  @override
+  JobRecordStatus? get status =>
+      (origin as JobRecordsSearchStreamProvider).status;
 }
 
 String _$jobRecordCreatorsHash() => r'9b6e67967756655fc46766b185c8c4bf17cbec1d';

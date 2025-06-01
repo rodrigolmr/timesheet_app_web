@@ -7,6 +7,7 @@ import 'package:timesheet_app_web/src/core/widgets/buttons/buttons.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 
 /// Widget de filtros para job records seguindo padrões do GUIDE.md
 class JobRecordFilters extends ConsumerStatefulWidget {
@@ -16,10 +17,12 @@ class JobRecordFilters extends ConsumerStatefulWidget {
   final DateTimeRange? selectedDateRange;
   final String searchQuery;
   final String? selectedCreator;
+  final JobRecordStatus? selectedStatus;
   final bool filtersExpanded;
   final ValueChanged<DateTimeRange?> onDateRangeChanged;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String?> onCreatorChanged;
+  final ValueChanged<JobRecordStatus?> onStatusChanged;
   final ValueChanged<bool> onExpandedChanged;
   final VoidCallback onClearFilters;
 
@@ -31,10 +34,12 @@ class JobRecordFilters extends ConsumerStatefulWidget {
     required this.selectedDateRange,
     required this.searchQuery,
     required this.selectedCreator,
+    required this.selectedStatus,
     required this.filtersExpanded,
     required this.onDateRangeChanged,
     required this.onSearchChanged,
     required this.onCreatorChanged,
+    required this.onStatusChanged,
     required this.onExpandedChanged,
     required this.onClearFilters,
   });
@@ -84,7 +89,7 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Primeira linha: Date Range + Creator (se não for user regular)
+        // Primeira linha: Date Range + Creator (se for manager/admin)
         userRoleAsync.when(
           data: (role) {
             if (role == UserRole.admin || role == UserRole.manager) {
@@ -103,10 +108,12 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
           error: (_, __) => _buildDateRangeField(),
         ),
         const SizedBox(height: 6),
-        // Segunda linha: Search + Botões
+        // Segunda linha: Search + Status + Botões
         Row(
           children: [
             _buildSearchField(),
+            const SizedBox(width: 8),
+            _buildStatusDropdown(),
             const SizedBox(width: 8),
             _buildActionButtons(),
           ],
@@ -134,7 +141,7 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
             ),
           ),
           // Indicadores dos filtros ativos
-          if (widget.searchQuery.isNotEmpty || widget.selectedCreator != null) ...[
+          if (widget.searchQuery.isNotEmpty || widget.selectedCreator != null || widget.selectedStatus != null) ...[
             const SizedBox(width: 6),
             Container(
               width: 6,
@@ -218,26 +225,26 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       widget.selectedDateRange != null 
-                          ? widget.dateFormat.format(widget.selectedDateRange!.start) 
+                          ? widget.dateFormat.format(widget.selectedDateRange!.start)
                           : "Start date",
                       style: context.textStyles.body.copyWith(
-                        fontSize: 14,
-                        height: 1.0,
+                        fontSize: 11,
+                        height: 1.2,
                         color: context.colors.textPrimary,
                       ),
                     ),
                     Text(
                       widget.selectedDateRange != null 
-                          ? widget.dateFormat.format(widget.selectedDateRange!.end) 
+                          ? widget.dateFormat.format(widget.selectedDateRange!.end)
                           : "End date",
                       style: context.textStyles.body.copyWith(
-                        fontSize: 14,
-                        height: 1.0,
+                        fontSize: 11,
+                        height: 1.2,
                         color: context.colors.textPrimary,
                       ),
                     ),
@@ -255,6 +262,7 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
       ),
     );
   }
+
 
   Widget _buildCreatorDropdown() {
     return Expanded(
@@ -398,6 +406,72 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
         ),
       ),
     );
+  }
+
+  Widget _buildStatusDropdown() {
+    return Container(
+      width: 100,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: context.colors.outline.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(4),
+          color: context.colors.surface,
+        ),
+        child: DropdownButtonHideUnderline(
+          child: ButtonTheme(
+            alignedDropdown: true,
+            child: DropdownButton<JobRecordStatus?>(
+              value: widget.selectedStatus,
+              hint: Text(
+                'Status',
+                style: context.textStyles.body.copyWith(
+                  fontSize: 12,
+                  color: context.colors.textSecondary,
+                ),
+              ),
+              icon: Icon(
+                Icons.arrow_drop_down,
+                size: 14,
+                color: context.colors.primary,
+              ),
+              isDense: true,
+              isExpanded: true,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              style: context.textStyles.body.copyWith(
+                fontSize: 12,
+                color: context.colors.textPrimary,
+              ),
+              items: [
+                DropdownMenuItem<JobRecordStatus?>(
+                  value: null,
+                  child: Text(
+                    'All',
+                    style: context.textStyles.body.copyWith(fontSize: 12),
+                  ),
+                ),
+                ...JobRecordStatus.values.map((status) => DropdownMenuItem<JobRecordStatus?>(
+                  value: status,
+                  child: Row(
+                    children: [
+                      Text(
+                        status.icon,
+                        style: context.textStyles.body.copyWith(fontSize: 12),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        status.displayName,
+                        style: context.textStyles.body.copyWith(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+              onChanged: widget.onStatusChanged,
+            ),
+          ),
+        ),
+      );
   }
 
   Widget _buildActionButtons() {

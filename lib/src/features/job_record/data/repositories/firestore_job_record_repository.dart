@@ -4,6 +4,7 @@ import 'package:timesheet_app_web/src/core/utils/text_formatters.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_employee_model.dart';
 import 'package:timesheet_app_web/src/features/job_record/domain/repositories/job_record_repository.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 
 class FirestoreJobRecordRepository extends FirestoreRepository<JobRecordModel>
     implements JobRecordRepository {
@@ -76,5 +77,24 @@ class FirestoreJobRecordRepository extends FirestoreRepository<JobRecordModel>
         return record.employees.any((employee) => employee.employeeId == employeeId);
       }).toList();
     });
+  }
+
+  @override
+  Future<void> approveJobRecord({
+    required String recordId,
+    required String approverId,
+    String? approverNote,
+  }) async {
+    try {
+      await collection.doc(recordId).update({
+        'status': JobRecordStatus.approved.name,
+        'approver_id': approverId,
+        'approver_note': approverNote,
+        'approved_at': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to approve job record: $e');
+    }
   }
 }

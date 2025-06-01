@@ -13,6 +13,8 @@ import 'package:timesheet_app_web/src/features/job_record/data/services/job_reco
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 import 'package:timesheet_app_web/src/features/auth/domain/models/role_permissions.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 
 class JobRecordDetailsScreen extends ConsumerStatefulWidget {
   static const routePath = '/job-records/:id';
@@ -209,6 +211,57 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
           // Add extra spacing above the record visualization
           SizedBox(height: context.dimensions.spacingM),
           
+          // Status indicator
+          Center(
+            child: Container(
+              width: containerWidth,
+              margin: EdgeInsets.only(bottom: context.dimensions.spacingM),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.dimensions.spacingM,
+                vertical: context.dimensions.spacingS,
+              ),
+              decoration: BoxDecoration(
+                color: record.status == JobRecordStatus.approved 
+                    ? context.colors.success.withOpacity(0.1)
+                    : context.colors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                border: Border.all(
+                  color: record.status == JobRecordStatus.approved
+                      ? context.colors.success.withOpacity(0.3)
+                      : context.colors.warning.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    record.status.icon,
+                    style: TextStyle(
+                      fontSize: context.responsive<double>(
+                        xs: 20,
+                        sm: 22,
+                        md: 24,
+                        lg: 26,
+                        xl: 28,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: context.dimensions.spacingS),
+                  Text(
+                    'Status: ${record.status.displayName}',
+                    style: context.textStyles.subtitle.copyWith(
+                      color: record.status == JobRecordStatus.approved
+                          ? context.colors.success
+                          : context.colors.warning,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
           // Job Record Layout - identical to Step 3
           Center(
             child: Container(
@@ -296,87 +349,73 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
     // Watch permissions
     final canEditAsync = ref.watch(canEditJobRecordProvider(record.userId));
     final canPrintAsync = ref.watch(canPrintJobRecordsProvider);
+    final userRoleAsync = ref.watch(currentUserRoleProvider);
     final canEdit = canEditAsync.valueOrNull ?? false;
     final canPrint = canPrintAsync.valueOrNull ?? false;
+    final userRole = userRoleAsync.valueOrNull ?? UserRole.user;
+    final canApprove = RolePermissions.canApproveJobRecord(userRole);
     
-    if (isSmallScreen) {
-      // Layout empilhado para telas pequenas
-      return Container(
-        width: containerWidth,
-        child: Column(
-          children: [
-            if (canEdit)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _editRecord(),
-                  icon: Icon(Icons.edit, size: iconSize),
-                  label: Text('Edit', style: TextStyle(fontSize: fontSize)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.primary,
-                    foregroundColor: context.colors.onPrimary,
-                    padding: buttonPadding,
-                  ),
+    return Container(
+      width: containerWidth,
+      child: Column(
+        children: [
+          // Approve button (first line - full width)
+          if (canApprove && record.status == JobRecordStatus.pending) ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _approveRecord(record),
+                icon: Icon(Icons.check_circle, size: iconSize),
+                label: Text('Approve', style: TextStyle(fontSize: fontSize)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.colors.success,
+                  foregroundColor: context.colors.onSuccess,
+                  padding: buttonPadding,
                 ),
               ),
-            if (canPrint) ...[
-              SizedBox(height: context.dimensions.spacingS),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _printRecord(record),
-                  icon: Icon(Icons.print, size: iconSize),
-                  label: Text('Print', style: TextStyle(fontSize: fontSize)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.success,
-                    foregroundColor: context.colors.onSuccess,
-                    padding: buttonPadding,
-                  ),
-                ),
-              ),
-            ],
+            ),
+            SizedBox(height: context.dimensions.spacingS),
           ],
-        ),
-      );
-    } else {
-      // Layout horizontal para telas grandes
-      return Container(
-        width: containerWidth,
-        child: Row(
-          children: [
-            if (canEdit) ...[
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _editRecord(),
-                  icon: Icon(Icons.edit, size: iconSize),
-                  label: Text('Edit', style: TextStyle(fontSize: fontSize)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.primary,
-                    foregroundColor: context.colors.onPrimary,
-                    padding: buttonPadding,
+          
+          // Print and Edit buttons (second line - side by side)
+          if (canEdit || canPrint) ...[
+            Row(
+              children: [
+                if (canPrint) ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _printRecord(record),
+                      icon: Icon(Icons.print, size: iconSize),
+                      label: Text('Print', style: TextStyle(fontSize: fontSize)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.colors.primary,
+                        foregroundColor: context.colors.onPrimary,
+                        padding: buttonPadding,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              if (canPrint) SizedBox(width: context.dimensions.spacingS),
-            ],
-            if (canPrint) ...[
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _printRecord(record),
-                  icon: Icon(Icons.print, size: iconSize),
-                  label: Text('Print', style: TextStyle(fontSize: fontSize)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.colors.success,
-                    foregroundColor: context.colors.onSuccess,
-                    padding: buttonPadding,
+                  if (canEdit) SizedBox(width: context.dimensions.spacingS),
+                ],
+                if (canEdit) ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _editRecord(),
+                      icon: Icon(Icons.edit, size: iconSize),
+                      label: Text('Edit', style: TextStyle(fontSize: fontSize)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.colors.secondary,
+                        foregroundColor: context.colors.onSecondary,
+                        padding: buttonPadding,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              ],
+            ),
           ],
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 
   // Action handlers
@@ -575,6 +614,116 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
     }
   }
 
+  void _approveRecord(JobRecordModel record) async {
+    final TextEditingController noteController = TextEditingController();
+    
+    // Show custom dialog with note field
+    final shouldApprove = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Approve Job Record',
+          style: context.textStyles.title,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to approve this job record?',
+              style: context.textStyles.body,
+            ),
+            SizedBox(height: context.dimensions.spacingL),
+            Text(
+              'Optionally add a note:',
+              style: context.textStyles.body.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: context.dimensions.spacingS),
+            TextField(
+              controller: noteController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Enter approval note (optional)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.success,
+              foregroundColor: context.colors.onSuccess,
+            ),
+            child: const Text('Approve'),
+          ),
+        ],
+      ),
+    );
+    
+    if (shouldApprove != true) return;
+    
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      
+      // Get current user ID
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null) throw Exception('User not authenticated');
+      
+      // Approve the record
+      await ref.read(jobRecordRepositoryProvider).approveJobRecord(
+        recordId: record.id,
+        approverId: currentUser.uid,
+        approverNote: noteController.text.isEmpty ? null : noteController.text,
+      );
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Invalidate the provider to refresh the data
+      ref.invalidate(jobRecordProvider(widget.recordId));
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Job record approved successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error approving record: $e'),
+            backgroundColor: context.colors.error,
+          ),
+        );
+      }
+    }
+  }
+
   // Utility methods (copied from Step 3)
   String _getDateDisplay(DateTime date) {
     return intl.DateFormat("M/d/yy, EEEE").format(date);
@@ -603,13 +752,13 @@ class _JobRecordDetailsScreenState extends ConsumerState<JobRecordDetailsScreen>
         text,
         style: TextStyle(
           fontSize: context.responsive<double>(
-          xs: 16,
-          sm: 18,
-          md: 20,
-          lg: 22,
-          xl: 24,
-        ),
-        fontWeight: FontWeight.bold,
+            xs: 16,
+            sm: 18,
+            md: 20,
+            lg: 22,
+            xl: 24,
+          ),
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

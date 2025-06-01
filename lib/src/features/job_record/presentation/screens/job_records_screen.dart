@@ -17,6 +17,9 @@ import 'package:timesheet_app_web/src/features/auth/presentation/providers/permi
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/timesheet_date_range_dialog.dart';
 import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
+import 'package:timesheet_app_web/src/features/auth/domain/models/role_permissions.dart';
+import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 
 
 class JobRecordsScreen extends ConsumerStatefulWidget {
@@ -37,6 +40,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
   DateTimeRange? _selectedDateRange;
   String _searchQuery = '';
   String? _selectedCreator;
+  JobRecordStatus? _selectedStatus;
   bool _filtersExpanded = false; // Estado para controlar se os filtros estão expandidos
 
   @override
@@ -106,16 +110,37 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _handleSelectionAction(value, selectionState),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'select_all',
-                child: Text('Select All'),
-              ),
-              const PopupMenuItem(
-                value: 'select_none',
-                child: Text('Select None'),
-              ),
-            ],
+            itemBuilder: (context) {
+              final userRoleAsync = ref.watch(currentUserRoleProvider);
+              final canApprove = userRoleAsync.maybeWhen(
+                data: (role) => RolePermissions.canApproveJobRecord(role ?? UserRole.user),
+                orElse: () => false,
+              );
+              
+              return [
+                const PopupMenuItem(
+                  value: 'select_all',
+                  child: Text('Select All'),
+                ),
+                const PopupMenuItem(
+                  value: 'select_none',
+                  child: Text('Select None'),
+                ),
+                if (canApprove && selectionState.hasSelection) ...[
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: 'approve_selected',
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 20, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('Approve Selected'),
+                      ],
+                    ),
+                  ),
+                ],
+              ];
+            },
           ),
         ],
       );
@@ -184,6 +209,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       selectedDateRange: _selectedDateRange,
       searchQuery: _searchQuery,
       selectedCreator: _selectedCreator,
+      selectedStatus: _selectedStatus,
       filtersExpanded: _filtersExpanded,
       onDateRangeChanged: (dateRange) {
         setState(() {
@@ -201,6 +227,11 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       onCreatorChanged: (creator) {
         setState(() {
           _selectedCreator = creator;
+        });
+      },
+      onStatusChanged: (status) {
+        setState(() {
+          _selectedStatus = status;
         });
       },
       onExpandedChanged: (expanded) {
@@ -227,6 +258,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       _searchController.clear();
       _searchQuery = '';
       _selectedCreator = null;
+      _selectedStatus = null;
       
       // Limpar datas completamente
       _selectedDateRange = null;
@@ -235,25 +267,30 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
   }
 
   void _handleSelectionAction(String action, JobRecordSelectionState selectionState) {
-    final recordsAsync = ref.read(jobRecordsSearchStreamProvider(
-      searchQuery: _searchQuery,
-      startDate: _selectedDateRange?.start,
-      endDate: _selectedDateRange?.end,
-      creatorId: _selectedCreator,
-    ).future);
+    switch (action) {
+      case 'select_all':
+        final recordsAsync = ref.read(jobRecordsSearchStreamProvider(
+          searchQuery: _searchQuery,
+          startDate: _selectedDateRange?.start,
+          endDate: _selectedDateRange?.end,
+          creatorId: _selectedCreator,
+          status: _selectedStatus,
+        ).future);
 
-    recordsAsync.then((records) {
-      final allIds = records.map((record) => record.id).toList();
-      
-      switch (action) {
-        case 'select_all':
+        recordsAsync.then((records) {
+          final allIds = records.map((record) => record.id).toList();
           ref.read(jobRecordSelectionProvider.notifier).selectAll(allIds);
-          break;
-        case 'select_none':
-          ref.read(jobRecordSelectionProvider.notifier).selectNone();
-          break;
-      }
-    });
+        });
+        break;
+        
+      case 'select_none':
+        ref.read(jobRecordSelectionProvider.notifier).selectNone();
+        break;
+        
+      case 'approve_selected':
+        _approveSelectedRecords(selectionState.selectedIds);
+        break;
+    }
   }
 
   void _showDeleteConfirmDialog(Set<String> selectedIds) async {
@@ -350,6 +387,135 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     }
   }
 
+  void _approveSelectedRecords(Set<String> selectedIds) async {
+    if (selectedIds.isEmpty) return;
+
+    // Check permission first
+    final userRole = await ref.read(currentUserRoleProvider.future);
+    if (!RolePermissions.canApproveJobRecord(userRole ?? UserRole.user)) {
+      if (mounted) {
+        await showErrorDialog(
+          context: context,
+          title: 'Permission Denied',
+          message: 'You do not have permission to approve job records.',
+        );
+      }
+      return;
+    }
+
+    // Get current user ID
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) {
+      if (mounted) {
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'User not authenticated.',
+        );
+      }
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: 'Approve Records',
+      message: 'Are you sure you want to approve ${selectedIds.length} job record${selectedIds.length > 1 ? 's' : ''}?',
+      confirmText: 'Approve',
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading
+    showAppProgressDialog(
+      context: context,
+      title: 'Approving Records',
+      message: 'Please wait...',
+    );
+
+    try {
+      // Get all selected records to check their current status
+      final allRecordsAsync = await ref.read(jobRecordsSearchStreamProvider(
+        searchQuery: _searchQuery,
+        startDate: _selectedDateRange?.start,
+        endDate: _selectedDateRange?.end,
+        creatorId: _selectedCreator,
+        status: _selectedStatus,
+      ).future);
+
+      // Filter only selected records that are pending
+      final pendingRecords = allRecordsAsync
+          .where((record) => selectedIds.contains(record.id) && record.status == JobRecordStatus.pending)
+          .toList();
+
+      if (pendingRecords.isEmpty) {
+        // Close loading dialog
+        if (mounted) Navigator.of(context).pop();
+        
+        if (mounted) {
+          await showWarningDialog(
+            context: context,
+            title: 'No Pending Records',
+            message: 'All selected records are already approved.',
+          );
+        }
+        return;
+      }
+
+      // Approve each pending record
+      int successCount = 0;
+      int errorCount = 0;
+      
+      for (final record in pendingRecords) {
+        try {
+          await ref.read(jobRecordRepositoryProvider).approveJobRecord(
+            recordId: record.id,
+            approverId: currentUser.uid,
+            approverNote: 'Bulk approval',
+          );
+          successCount++;
+        } catch (e) {
+          errorCount++;
+          print('Error approving record ${record.id}: $e');
+        }
+      }
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Exit selection mode
+      ref.read(jobRecordSelectionProvider.notifier).exitSelectionMode();
+
+      // Show result
+      if (mounted) {
+        if (errorCount == 0) {
+          await showSuccessDialog(
+            context: context,
+            title: 'Success',
+            message: '$successCount record${successCount > 1 ? 's' : ''} approved successfully.',
+          );
+        } else {
+          await showWarningDialog(
+            context: context,
+            title: 'Partial Success',
+            message: '$successCount record${successCount > 1 ? 's' : ''} approved. $errorCount failed.',
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      if (mounted) {
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to approve records: $e',
+        );
+      }
+    }
+  }
+
   void _printSelected(Set<String> selectedIds) async {
     if (selectedIds.isEmpty) return;
 
@@ -383,6 +549,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         startDate: _selectedDateRange?.start,
         endDate: _selectedDateRange?.end,
         creatorId: _selectedCreator,
+        status: _selectedStatus,
       ).future);
 
       // Filter only selected records
@@ -439,6 +606,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         startDate: _selectedDateRange?.start,
         endDate: _selectedDateRange?.end,
         creatorId: _selectedCreator,
+        status: _selectedStatus,
       )
     );
 

@@ -7,6 +7,7 @@ import 'package:timesheet_app_web/src/features/job_record/domain/repositories/jo
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 
 part 'job_record_providers.g.dart';
 
@@ -195,7 +196,7 @@ Stream<List<JobRecordModel>> jobRecordsDateRangeStream(
 @riverpod
 Stream<List<JobRecordModel>> jobRecordsSearchStream(
   JobRecordsSearchStreamRef ref,
-  {required String searchQuery, DateTime? startDate, DateTime? endDate, String? creatorId}
+  {required String searchQuery, DateTime? startDate, DateTime? endDate, String? creatorId, JobRecordStatus? status}
 ) async* {
   // Função para aplicar filtros
   List<JobRecordModel> applyFilters(List<JobRecordModel> allRecords) {
@@ -220,6 +221,11 @@ Stream<List<JobRecordModel>> jobRecordsSearchStream(
     // Filtro por criador
     if (creatorId != null && creatorId.isNotEmpty) {
       result = result.where((record) => record.userId == creatorId).toList();
+    }
+    
+    // Filtro por status
+    if (status != null) {
+      result = result.where((record) => record.status == status).toList();
     }
     
     // Filtro por texto/busca

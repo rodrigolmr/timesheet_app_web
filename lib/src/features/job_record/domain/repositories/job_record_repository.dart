@@ -13,4 +13,11 @@ abstract class JobRecordRepository implements BaseRepository<JobRecordModel> {
   
   /// Stream de registros por funcionário (ID do funcionário)
   Stream<List<JobRecordModel>> watchRecordsByEmployee(String employeeId);
+  
+  /// Aprova um job record
+  Future<void> approveJobRecord({
+    required String recordId,
+    required String approverId,
+    String? approverNote,
+  });
 }

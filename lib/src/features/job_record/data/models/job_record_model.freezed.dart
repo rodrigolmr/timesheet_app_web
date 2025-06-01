@@ -36,7 +36,12 @@ mixin _$JobRecordModel {
       throw _privateConstructorUsedError; // Array de funcionários
   List<JobEmployeeModel> get employees =>
       throw _privateConstructorUsedError; // Notas adicionais
-  String get notes => throw _privateConstructorUsedError; // Campos de controle
+  String get notes => throw _privateConstructorUsedError; // Campos de aprovação
+  JobRecordStatus get status => throw _privateConstructorUsedError;
+  String? get approverNote => throw _privateConstructorUsedError;
+  DateTime? get approvedAt => throw _privateConstructorUsedError;
+  String? get approverId =>
+      throw _privateConstructorUsedError; // Campos de controle
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
@@ -70,6 +75,10 @@ abstract class $JobRecordModelCopyWith<$Res> {
     String vehicle,
     List<JobEmployeeModel> employees,
     String notes,
+    JobRecordStatus status,
+    String? approverNote,
+    DateTime? approvedAt,
+    String? approverId,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -102,6 +111,10 @@ class _$JobRecordModelCopyWithImpl<$Res, $Val extends JobRecordModel>
     Object? vehicle = null,
     Object? employees = null,
     Object? notes = null,
+    Object? status = null,
+    Object? approverNote = freezed,
+    Object? approvedAt = freezed,
+    Object? approverId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -167,6 +180,26 @@ class _$JobRecordModelCopyWithImpl<$Res, $Val extends JobRecordModel>
                     ? _value.notes
                     : notes // ignore: cast_nullable_to_non_nullable
                         as String,
+            status:
+                null == status
+                    ? _value.status
+                    : status // ignore: cast_nullable_to_non_nullable
+                        as JobRecordStatus,
+            approverNote:
+                freezed == approverNote
+                    ? _value.approverNote
+                    : approverNote // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            approvedAt:
+                freezed == approvedAt
+                    ? _value.approvedAt
+                    : approvedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
+            approverId:
+                freezed == approverId
+                    ? _value.approverId
+                    : approverId // ignore: cast_nullable_to_non_nullable
+                        as String?,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
@@ -205,6 +238,10 @@ abstract class _$$JobRecordModelImplCopyWith<$Res>
     String vehicle,
     List<JobEmployeeModel> employees,
     String notes,
+    JobRecordStatus status,
+    String? approverNote,
+    DateTime? approvedAt,
+    String? approverId,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -236,6 +273,10 @@ class __$$JobRecordModelImplCopyWithImpl<$Res>
     Object? vehicle = null,
     Object? employees = null,
     Object? notes = null,
+    Object? status = null,
+    Object? approverNote = freezed,
+    Object? approvedAt = freezed,
+    Object? approverId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -301,6 +342,26 @@ class __$$JobRecordModelImplCopyWithImpl<$Res>
                 ? _value.notes
                 : notes // ignore: cast_nullable_to_non_nullable
                     as String,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as JobRecordStatus,
+        approverNote:
+            freezed == approverNote
+                ? _value.approverNote
+                : approverNote // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        approvedAt:
+            freezed == approvedAt
+                ? _value.approvedAt
+                : approvedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
+        approverId:
+            freezed == approverId
+                ? _value.approverId
+                : approverId // ignore: cast_nullable_to_non_nullable
+                    as String?,
         createdAt:
             null == createdAt
                 ? _value.createdAt
@@ -332,6 +393,10 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     required this.vehicle,
     required final List<JobEmployeeModel> employees,
     this.notes = '',
+    this.status = JobRecordStatus.pending,
+    this.approverNote,
+    this.approvedAt,
+    this.approverId,
     required this.createdAt,
     required this.updatedAt,
   }) : _employees = employees,
@@ -376,6 +441,16 @@ class _$JobRecordModelImpl extends _JobRecordModel {
   @override
   @JsonKey()
   final String notes;
+  // Campos de aprovação
+  @override
+  @JsonKey()
+  final JobRecordStatus status;
+  @override
+  final String? approverNote;
+  @override
+  final DateTime? approvedAt;
+  @override
+  final String? approverId;
   // Campos de controle
   @override
   final DateTime createdAt;
@@ -384,7 +459,7 @@ class _$JobRecordModelImpl extends _JobRecordModel {
 
   @override
   String toString() {
-    return 'JobRecordModel(id: $id, userId: $userId, jobName: $jobName, date: $date, territorialManager: $territorialManager, jobSize: $jobSize, material: $material, jobDescription: $jobDescription, foreman: $foreman, vehicle: $vehicle, employees: $employees, notes: $notes, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'JobRecordModel(id: $id, userId: $userId, jobName: $jobName, date: $date, territorialManager: $territorialManager, jobSize: $jobSize, material: $material, jobDescription: $jobDescription, foreman: $foreman, vehicle: $vehicle, employees: $employees, notes: $notes, status: $status, approverNote: $approverNote, approvedAt: $approvedAt, approverId: $approverId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -410,6 +485,13 @@ class _$JobRecordModelImpl extends _JobRecordModel {
               _employees,
             ) &&
             (identical(other.notes, notes) || other.notes == notes) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.approverNote, approverNote) ||
+                other.approverNote == approverNote) &&
+            (identical(other.approvedAt, approvedAt) ||
+                other.approvedAt == approvedAt) &&
+            (identical(other.approverId, approverId) ||
+                other.approverId == approverId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -432,6 +514,10 @@ class _$JobRecordModelImpl extends _JobRecordModel {
     vehicle,
     const DeepCollectionEquality().hash(_employees),
     notes,
+    status,
+    approverNote,
+    approvedAt,
+    approverId,
     createdAt,
     updatedAt,
   );
@@ -467,6 +553,10 @@ abstract class _JobRecordModel extends JobRecordModel {
     required final String vehicle,
     required final List<JobEmployeeModel> employees,
     final String notes,
+    final JobRecordStatus status,
+    final String? approverNote,
+    final DateTime? approvedAt,
+    final String? approverId,
     required final DateTime createdAt,
     required final DateTime updatedAt,
   }) = _$JobRecordModelImpl;
@@ -499,7 +589,15 @@ abstract class _JobRecordModel extends JobRecordModel {
   @override
   List<JobEmployeeModel> get employees; // Notas adicionais
   @override
-  String get notes; // Campos de controle
+  String get notes; // Campos de aprovação
+  @override
+  JobRecordStatus get status;
+  @override
+  String? get approverNote;
+  @override
+  DateTime? get approvedAt;
+  @override
+  String? get approverId; // Campos de controle
   @override
   DateTime get createdAt;
   @override

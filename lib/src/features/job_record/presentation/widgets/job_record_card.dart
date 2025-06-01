@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
@@ -9,6 +8,7 @@ import 'package:timesheet_app_web/src/features/job_record/data/models/job_record
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 
 class JobRecordCard extends ConsumerWidget {
   final JobRecordModel record;
@@ -25,8 +25,6 @@ class JobRecordCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final date = record.date;
-    final day = DateFormat('d').format(date);
-    final month = DateFormat('MMM').format(date);
     final colors = context.colors;
     final textStyles = context.textStyles;
     
@@ -53,32 +51,11 @@ class JobRecordCard extends ConsumerWidget {
       md: 45,
     );
     
-    // Ajusta largura da seção de data
-    final dateWidth = context.responsive<double>(
-      xs: 34, // Mais estreito para telas pequenas
-      sm: 38,
-      md: 40,
-    );
-    
     // Ajusta largura da seção do nome do criador
     final creatorWidth = context.responsive<double>(
       xs: 62, // Ligeiramente mais larga para acomodar duas linhas
       sm: 68,
       md: 76,
-    );
-    
-    // Tamanho do texto para o dia
-    final dayFontSize = context.responsive<double>(
-      xs: 18, // Menor para telas pequenas
-      sm: 20,
-      md: 22,
-    );
-    
-    // Tamanho do texto para o mês
-    final monthFontSize = context.responsive<double>(
-      xs: 11, // Menor para telas pequenas
-      sm: 12,
-      md: 13,
     );
     
     return Padding(
@@ -132,50 +109,24 @@ class JobRecordCard extends ConsumerWidget {
                       padding: EdgeInsets.only(left: showWeekdayIndicator ? 4 : 0),
                       child: Row(
                 children: [
-                  // Date section - mais compacto
+                  
+                  // Status icon on the left
                   Container(
-                    width: dateWidth,
+                    width: 32,
                     decoration: BoxDecoration(
-                      color: colors.primary.withOpacity(0.2), // Cor primária com opacidade 0.2
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(showWeekdayIndicator ? 0 : 3),
-                        bottomLeft: Radius.circular(showWeekdayIndicator ? 0 : 3),
+                      color: record.status == JobRecordStatus.approved 
+                          ? colors.success.withOpacity(0.15)
+                          : colors.warning.withOpacity(0.15),
+                    ),
+                    child: Center(
+                      child: Text(
+                        record.status.icon,
+                        style: TextStyle(
+                          fontSize: context.responsive<double>(xs: 14, sm: 16, md: 18),
+                        ),
                       ),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Day - ajustado para ser mais compacto
-                        SizedBox(
-                          height: cardHeight * 0.55,
-                          child: Center(
-                            child: Text(
-                              day,
-                              style: TextStyle(
-                                fontSize: dayFontSize,
-                                fontWeight: FontWeight.bold,
-                                color: colors.error,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Month - ajustado para ser mais compacto
-                        SizedBox(
-                          height: cardHeight * 0.35,
-                          child: Center(
-                            child: Text(
-                              month,
-                              style: TextStyle(
-                                fontSize: monthFontSize,
-                                fontWeight: FontWeight.bold,
-                                color: colors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      ),
-                    ),
+                  ),
                   
                   // Job name
                   Expanded(

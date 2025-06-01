@@ -11,6 +11,8 @@ import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/home/presentation/providers/home_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/providers/notification_providers.dart';
+import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -41,6 +43,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          _buildNotificationBanner(context, ref),
           _buildWelcomeSection(context, ref),
           SizedBox(height: context.dimensions.spacingXL),
           _buildFeatureCards(context, ref, columns: 2),
@@ -57,6 +60,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          _buildNotificationBanner(context, ref),
           _buildWelcomeSection(context, ref),
           SizedBox(height: context.dimensions.spacingXL),
           _buildFeatureCards(context, ref, columns: 3),
@@ -72,6 +76,7 @@ class HomeScreen extends ConsumerWidget {
         padding: EdgeInsets.all(context.dimensions.spacingXL),
         child: Column(
           children: [
+            _buildNotificationBanner(context, ref),
             _buildWelcomeSection(context, ref),
             SizedBox(height: context.dimensions.spacingXL * 1.5),
             _buildFeatureCards(context, ref, columns: 4),
@@ -167,6 +172,88 @@ class HomeScreen extends ConsumerWidget {
         debugPrint('Error loading navigation items: $error');
         return [];
       },
+    );
+  }
+
+  Widget _buildNotificationBanner(BuildContext context, WidgetRef ref) {
+    final pendingCount = ref.watch(pendingJobRecordsCountProvider);
+    
+    // Only show banner for managers/admins with pending approvals
+    if (pendingCount == 0) {
+      return const SizedBox.shrink();
+    }
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: context.dimensions.spacingL),
+      child: Material(
+        elevation: 2,
+        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        child: InkWell(
+          onTap: () {
+            // Navigate to job records with pending filter
+            context.go('/job-records');
+          },
+          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+          child: Container(
+            padding: EdgeInsets.all(context.dimensions.spacingM),
+            decoration: BoxDecoration(
+              color: context.colors.warning.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+              border: Border.all(
+                color: context.colors.warning.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.dimensions.spacingS),
+                  decoration: BoxDecoration(
+                    color: context.colors.warning.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(context.dimensions.borderRadiusS),
+                  ),
+                  child: Icon(
+                    Icons.pending_actions,
+                    color: context.colors.warning,
+                    size: context.responsive<double>(
+                      xs: 24,
+                      sm: 28,
+                      md: 32,
+                    ),
+                  ),
+                ),
+                SizedBox(width: context.dimensions.spacingM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pending Approvals',
+                        style: context.textStyles.subtitle.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: context.colors.warning,
+                        ),
+                      ),
+                      SizedBox(height: context.dimensions.spacingXS),
+                      Text(
+                        'You have $pendingCount job record${pendingCount > 1 ? 's' : ''} waiting for approval',
+                        style: context.textStyles.body.copyWith(
+                          color: context.colors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: context.colors.warning,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
