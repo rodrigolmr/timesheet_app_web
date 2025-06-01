@@ -69,6 +69,14 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       isActive: true,
     ),
     HomeNavigationItem(
+      title: 'Pigtail Tracker',
+      description: 'Track pigtail installations',
+      icon: Icons.electrical_services,
+      route: AppRoute.pigtails.path,
+      categoryName: 'electrical',
+      isActive: true,
+    ),
+    HomeNavigationItem(
       title: 'Reports',
       description: 'Generate and view reports',
       icon: Icons.bar_chart,

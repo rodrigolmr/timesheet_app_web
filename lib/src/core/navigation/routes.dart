@@ -27,6 +27,7 @@ import 'package:timesheet_app_web/src/features/user/presentation/screens/users_s
 import 'package:timesheet_app_web/src/features/company_card/presentation/screens/company_cards_screen.dart';
 import 'package:timesheet_app_web/src/features/database/presentation/screens/data_import_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/access_denied_screen.dart';
+import 'package:timesheet_app_web/src/features/pigtail/presentation/screens/pigtail_screen.dart';
 
 part 'routes.g.dart';
 
@@ -55,6 +56,7 @@ enum AppRoute {
   documentCrop('/document-scanner/crop'),
   documentFilter('/document-scanner/filter'),
   expenseInfo('/document-scanner/expense-info'),
+  pigtails('/pigtails'),
 ;
 
   const AppRoute(this.path);
@@ -266,6 +268,11 @@ GoRouter goRouter(GoRouterRef ref) {
             fileName: extra['fileName'] as String?,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoute.pigtails.path,
+        name: AppRoute.pigtails.name,
+        builder: (context, state) => const PigtailScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

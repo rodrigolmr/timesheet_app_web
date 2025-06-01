@@ -76,6 +76,10 @@ dependencies:
   
   # CSV handling
   csv: ^6.0.0
+  
+  # Google Places for address autocomplete
+  google_places_flutter: ^2.0.6
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

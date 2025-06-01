@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDttVjRa1m9WIKbDl97PNKgeTdbjvkToxU',
+    apiKey: 'AIzaSyDwJETLpwpYw79mOqoKbA27kJaEiI67XAA',
     appId: '1:283421680164:web:84051a48e1bd19850eeeb1',
     messagingSenderId: '283421680164',
     projectId: 'timesheet-app-web',
