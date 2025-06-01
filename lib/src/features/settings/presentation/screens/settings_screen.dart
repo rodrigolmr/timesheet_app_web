@@ -10,6 +10,7 @@ import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -49,13 +50,7 @@ class SettingsScreen extends ConsumerWidget {
         horizontal: context.dimensions.spacingM,
         vertical: context.dimensions.spacingL,
       ),
-      child: Column(
-        children: [
-          _buildUserInfoSection(context, ref, currentUser),
-          const SizedBox(height: 32.0), // spacingXL = 32
-          _buildFeatureCards(context, ref),
-        ],
-      ),
+      child: _buildFeatureCards(context, ref),
     );
   }
 
@@ -65,13 +60,7 @@ class SettingsScreen extends ConsumerWidget {
         horizontal: context.dimensions.spacingL,
         vertical: context.dimensions.spacingXL,
       ),
-      child: Column(
-        children: [
-          _buildUserInfoSection(context, ref, currentUser),
-          const SizedBox(height: 32.0), // spacingXL = 32
-          _buildFeatureCards(context, ref),
-        ],
-      ),
+      child: _buildFeatureCards(context, ref),
     );
   }
 
@@ -80,13 +69,7 @@ class SettingsScreen extends ConsumerWidget {
       maxWidthXl: 1200,
       child: SingleChildScrollView(
         padding: EdgeInsets.all(context.dimensions.spacingXL),
-        child: Column(
-          children: [
-            _buildUserInfoSection(context, ref, currentUser),
-            const SizedBox(height: 48.0), // spacingXL * 1.5 = 48
-            _buildFeatureCards(context, ref),
-          ],
-        ),
+        child: _buildFeatureCards(context, ref),
       ),
     );
   }
@@ -103,7 +86,20 @@ class SettingsScreen extends ConsumerWidget {
         // Cards ativos organizados na ordem solicitada
         final activeCards = <Widget>[];
         
-        // 1. Users (para managers e admins)
+        // 1. Profile (para todos)
+        activeCards.add(
+          NavigationCard(
+            title: 'Profile',
+            description: 'Your info',
+            icon: Icons.person_outline,
+            route: '/settings/profile',
+            color: context.categoryColorByName('worker'),
+            isActive: true,
+            onTap: () => _showProfileDialog(context, ref),
+          ),
+        );
+        
+        // 2. Users (para managers e admins)
         if (isManagerOrAdmin) {
           activeCards.add(
             NavigationCard(
@@ -117,7 +113,7 @@ class SettingsScreen extends ConsumerWidget {
           );
         }
         
-        // 2. Employees (para managers e admins)
+        // 3. Employees (para managers e admins)
         if (isManagerOrAdmin) {
           activeCards.add(
             NavigationCard(
@@ -131,7 +127,7 @@ class SettingsScreen extends ConsumerWidget {
           );
         }
         
-        // 3. Company Cards (para managers e admins)
+        // 4. Company Cards (para managers e admins)
         if (isManagerOrAdmin) {
           activeCards.add(
             NavigationCard(
@@ -145,7 +141,7 @@ class SettingsScreen extends ConsumerWidget {
           );
         }
         
-        // 4. Themes (para todos)
+        // 5. Themes (para todos)
         activeCards.add(
           NavigationCard(
             title: 'Themes',
@@ -157,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
         
-        // 5. Database (apenas para admin)
+        // 6. Database (apenas para admin)
         if (isAdmin) {
           activeCards.add(
             NavigationCard(
@@ -173,14 +169,6 @@ class SettingsScreen extends ConsumerWidget {
         
         // Cards inativos (soon) - disponíveis para todos
         final inactiveCards = <Widget>[
-          NavigationCard(
-            title: 'Profile',
-            description: 'Your info',
-            icon: Icons.person_outline,
-            route: '/settings/profile',
-            color: context.categoryColorByName('worker'),
-            isActive: false,
-          ),
           NavigationCard(
             title: 'Notifications',
             description: 'Preferences',
@@ -282,66 +270,60 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUserInfoSection(
-    BuildContext context,
-    WidgetRef ref,
-    dynamic currentUser,
-  ) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(context.dimensions.spacingL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your information',
-              style: context.textStyles.headline,
-            ),
-            const SizedBox(height: 16.0), // spacingM = 16
-            if (currentUser == null)
-              Text(
-                'No user logged in',
-                style: context.textStyles.body.copyWith(
-                  color: context.colors.textSecondary,
+  void _showProfileDialog(BuildContext context, WidgetRef ref) {
+    final currentUserProfileAsync = ref.read(currentUserProfileProvider);
+    
+    currentUserProfileAsync.when(
+      data: (userProfile) {
+        if (userProfile != null) {
+          showAppDetailsDialog(
+            context: context,
+            title: 'Profile Information',
+            icon: Icons.person,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildUserInfoRow(
+                  context,
+                  label: 'Name',
+                  value: '${userProfile.firstName} ${userProfile.lastName}',
+                  icon: Icons.person,
                 ),
-              )
-            else
-              Column(
-                children: [
-                  _buildUserInfoRow(
-                    context,
-                    label: 'Name',
-                    value: '${currentUser.firstName} ${currentUser.lastName}',
-                    icon: Icons.person,
-                  ),
-                  const SizedBox(height: 16.0), // spacingM = 16
-                  _buildUserInfoRow(
-                    context,
-                    label: 'Email',
-                    value: currentUser.email,
-                    icon: Icons.email,
-                  ),
-                  const SizedBox(height: 16.0), // spacingM = 16
-                  _buildUserInfoRow(
-                    context,
-                    label: 'Role',
-                    value: _formatRole(currentUser.role),
-                    icon: Icons.work_outline,
-                  ),
-                  const SizedBox(height: 16.0), // spacingM = 16
-                  _buildUserInfoRow(
-                    context,
-                    label: 'Status',
-                    value: currentUser.isActive ? 'Active' : 'Inactive',
-                    icon: Icons.circle,
-                    statusColor: currentUser.isActive ? context.colors.success : context.colors.error,
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
+                const SizedBox(height: 16.0), // spacingM = 16
+                _buildUserInfoRow(
+                  context,
+                  label: 'Email',
+                  value: userProfile.email,
+                  icon: Icons.email,
+                ),
+                const SizedBox(height: 16.0), // spacingM = 16
+                _buildUserInfoRow(
+                  context,
+                  label: 'Role',
+                  value: _formatRole(userProfile.role),
+                  icon: Icons.work_outline,
+                ),
+                const SizedBox(height: 16.0), // spacingM = 16
+                _buildUserInfoRow(
+                  context,
+                  label: 'Status',
+                  value: userProfile.isActive ? 'Active' : 'Inactive',
+                  icon: Icons.circle,
+                  statusColor: userProfile.isActive ? context.colors.success : context.colors.error,
+                ),
+              ],
+            ),
+          );
+        }
+      },
+      loading: () {},
+      error: (error, _) {
+        showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to load profile information',
+        );
+      },
     );
   }
 
