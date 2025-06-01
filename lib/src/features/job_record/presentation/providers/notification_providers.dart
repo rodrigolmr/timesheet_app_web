@@ -8,7 +8,7 @@ import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart'
 part 'notification_providers.g.dart';
 
 /// Provider that watches pending job records for notifications
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<JobRecordModel>> pendingJobRecords(PendingJobRecordsRef ref) async* {
   // Check if user can approve (only managers and admins)
   final userRole = await ref.watch(currentUserRoleProvider.future);
@@ -31,7 +31,7 @@ Stream<List<JobRecordModel>> pendingJobRecords(PendingJobRecordsRef ref) async* 
 }
 
 /// Provider that gives the count of pending job records
-@riverpod
+@Riverpod(keepAlive: true)
 int pendingJobRecordsCount(PendingJobRecordsCountRef ref) {
   final pendingRecordsAsync = ref.watch(pendingJobRecordsProvider);
   
@@ -43,7 +43,7 @@ int pendingJobRecordsCount(PendingJobRecordsCountRef ref) {
 }
 
 /// Provider for limited pending records to show in dropdown
-@riverpod
+@Riverpod(keepAlive: true)
 List<JobRecordModel> pendingJobRecordsPreview(PendingJobRecordsPreviewRef ref) {
   final pendingRecordsAsync = ref.watch(pendingJobRecordsProvider);
   
