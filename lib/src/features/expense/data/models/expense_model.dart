@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_status.dart';
 
 part 'expense_model.freezed.dart';
 part 'expense_model.g.dart';
 
 @freezed
-class ExpenseModel with _$ExpenseModel {
+class ExpenseModel with _$ExpenseModel implements CleanableModel {
   const ExpenseModel._();
   
   const factory ExpenseModel({
@@ -74,4 +75,10 @@ class ExpenseModel with _$ExpenseModel {
       'updated_at': Timestamp.fromDate(updatedAt),
     };
   }
+  
+  @override
+  List<String> get cleanableFields => [
+    'description',
+    'reviewer_note',
+  ];
 }

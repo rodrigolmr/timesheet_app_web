@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 
 part 'company_card_model.freezed.dart';
 part 'company_card_model.g.dart';
 
 @freezed
-class CompanyCardModel with _$CompanyCardModel {
+class CompanyCardModel with _$CompanyCardModel implements CleanableModel {
   const CompanyCardModel._();
   
   const factory CompanyCardModel({
@@ -45,4 +46,9 @@ class CompanyCardModel with _$CompanyCardModel {
       'updated_at': Timestamp.fromDate(updatedAt),
     };
   }
+  
+  @override
+  List<String> get cleanableFields => [
+    'holder_name',
+  ];
 }

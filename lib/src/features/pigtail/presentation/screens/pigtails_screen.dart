@@ -130,9 +130,9 @@ class _PigtailScreenState extends ConsumerState<PigtailScreen> {
 
   Widget _buildPigtailList(BuildContext context, List<PigtailModel> allPigtails) {
     final searchResults = ref.watch(pigtailSearchResultsProvider);
-    var pigtails = searchResults.isEmpty && _searchController.text.isEmpty && _selectedStatus == 'all' && _selectedType == null
-        ? allPigtails
-        : searchResults;
+    final hasActiveFilters = _searchController.text.isNotEmpty || _selectedStatus != 'all' || _selectedType != null;
+    
+    var pigtails = hasActiveFilters ? searchResults : allPigtails;
     
     // Sort pigtails: installed first (by date desc), then removed (by date desc)
     pigtails = List<PigtailModel>.from(pigtails)..sort((a, b) {

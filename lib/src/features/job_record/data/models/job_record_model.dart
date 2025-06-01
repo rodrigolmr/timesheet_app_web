@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 import 'job_employee_model.dart';
 
 part 'job_record_model.freezed.dart';
 part 'job_record_model.g.dart';
 
 @freezed
-class JobRecordModel with _$JobRecordModel {
+class JobRecordModel with _$JobRecordModel implements CleanableModel {
   const JobRecordModel._();
   
   const factory JobRecordModel({
@@ -77,4 +78,16 @@ class JobRecordModel with _$JobRecordModel {
       'updated_at': Timestamp.fromDate(updatedAt),
     };
   }
+  
+  @override
+  List<String> get cleanableFields => [
+    'job_name',
+    'territorial_manager',
+    'job_size',
+    'material',
+    'job_description',
+    'foreman',
+    'vehicle',
+    'notes',
+  ];
 }

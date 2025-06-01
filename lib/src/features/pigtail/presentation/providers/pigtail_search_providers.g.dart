@@ -6,7 +6,7 @@ part of 'pigtail_search_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$searchPigtailsHash() => r'c62c74cd933e45d5b172deed45ded4186939440f';
+String _$searchPigtailsHash() => r'1d09b94984b45b81821e63e859c8910e2986bf72';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -205,7 +205,7 @@ final pigtailSearchResultsProvider =
 // ignore: unused_element
 typedef PigtailSearchResultsRef = AutoDisposeProviderRef<List<PigtailModel>>;
 String _$availablePigtailTypesHash() =>
-    r'8d004cef59b17a19d4733429570d701ab55de8c6';
+    r'43333319fa8ef0c18bc558852b806bfedd217927';
 
 /// See also [availablePigtailTypes].
 @ProviderFor(availablePigtailTypes)
@@ -243,7 +243,7 @@ final pigtailSearchQueryProvider =
 
 typedef _$PigtailSearchQuery = AutoDisposeNotifier<String>;
 String _$pigtailSearchFiltersHash() =>
-    r'6c906ab83d9fbe24d10ebd28f19f788457a022eb';
+    r'ee77819797752d100a4b9f7c367ffa5705bb47ef';
 
 /// See also [PigtailSearchFilters].
 @ProviderFor(PigtailSearchFilters)

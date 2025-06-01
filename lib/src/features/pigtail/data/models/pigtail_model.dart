@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 
 part 'pigtail_model.freezed.dart';
 part 'pigtail_model.g.dart';
@@ -16,7 +17,7 @@ class PigtailItem with _$PigtailItem {
 }
 
 @freezed
-class PigtailModel with _$PigtailModel {
+class PigtailModel with _$PigtailModel implements CleanableModel {
   const PigtailModel._();
   
   const factory PigtailModel({
@@ -74,4 +75,13 @@ class PigtailModel with _$PigtailModel {
       'updated_at': Timestamp.fromDate(updatedAt),
     };
   }
+  
+  @override
+  List<String> get cleanableFields => [
+    'job_name',
+    'address',
+    'installed_by',
+    'removed_by',
+    'notes',
+  ];
 }

@@ -26,6 +26,7 @@ class RolePermissions {
       AppRoute.themeSettings,
       AppRoute.themeSelector,
       AppRoute.documentScanner,
+      AppRoute.pigtails,
     },
     UserRole.user: {
       // User has limited access

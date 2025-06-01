@@ -19,7 +19,7 @@ class PigtailSearchQuery extends _$PigtailSearchQuery {
 class PigtailSearchFilters extends _$PigtailSearchFilters {
   @override
   ({String? status, String? type}) build() {
-    return (status: null, type: null);
+    return (status: 'all', type: null);
   }
 
   void updateStatus(String? status) {
@@ -31,7 +31,7 @@ class PigtailSearchFilters extends _$PigtailSearchFilters {
   }
 
   void clearFilters() {
-    state = (status: null, type: null);
+    state = (status: 'all', type: null);
   }
 }
 
@@ -43,14 +43,14 @@ List<PigtailModel> searchPigtails(
   String? type,
 }) {
   final searchService = ref.watch(searchServiceProvider);
-  final pigtailsAsync = ref.watch(cachedPigtailsProvider);
+  final pigtailsAsync = ref.watch(pigtailsStreamProvider);
   
   return pigtailsAsync.when(
     data: (pigtails) {
       // Apply filters
       final filters = <bool Function(PigtailModel)>[];
       
-      if (status != null) {
+      if (status != null && status != 'all') {
         if (status == 'installed') {
           filters.add((pigtail) => !pigtail.isRemoved);
         } else if (status == 'removed') {
@@ -67,7 +67,7 @@ List<PigtailModel> searchPigtails(
       }
 
       // Search
-      return searchService.search(
+      final results = searchService.search(
         items: pigtails,
         query: query,
         searchFields: (pigtail) => [
@@ -82,6 +82,7 @@ List<PigtailModel> searchPigtails(
           return b.installedDate.compareTo(a.installedDate);
         },
       );
+      return results;
     },
     loading: () => [],
     error: (_, __) => [],
@@ -92,7 +93,6 @@ List<PigtailModel> searchPigtails(
 List<PigtailModel> pigtailSearchResults(PigtailSearchResultsRef ref) {
   final query = ref.watch(pigtailSearchQueryProvider);
   final filters = ref.watch(pigtailSearchFiltersProvider);
-  
   return ref.watch(searchPigtailsProvider(
     query: query,
     status: filters.status,
@@ -103,7 +103,7 @@ List<PigtailModel> pigtailSearchResults(PigtailSearchResultsRef ref) {
 // Provider to get unique pigtail types for filter dropdown
 @riverpod
 List<String> availablePigtailTypes(AvailablePigtailTypesRef ref) {
-  final pigtailsAsync = ref.watch(cachedPigtailsProvider);
+  final pigtailsAsync = ref.watch(pigtailsStreamProvider);
   
   return pigtailsAsync.when(
     data: (pigtails) {

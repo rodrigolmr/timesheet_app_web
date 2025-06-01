@@ -1,10 +1,11 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 
 part 'job_employee_model.freezed.dart';
 part 'job_employee_model.g.dart';
 
 @freezed
-class JobEmployeeModel with _$JobEmployeeModel {
+class JobEmployeeModel with _$JobEmployeeModel implements CleanableModel {
   const JobEmployeeModel._();
   
   const factory JobEmployeeModel({
@@ -49,4 +50,9 @@ class JobEmployeeModel with _$JobEmployeeModel {
     'travel_hours': travelHours,
     'meal': meal,
   };
+  
+  @override
+  List<String> get cleanableFields => [
+    'employee_name',
+  ];
 }

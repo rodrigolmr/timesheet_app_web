@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
 
 part 'employee_model.freezed.dart';
 part 'employee_model.g.dart';
 
 @freezed
-class EmployeeModel with _$EmployeeModel {
+class EmployeeModel with _$EmployeeModel implements CleanableModel {
   const EmployeeModel._();
   
   String get name => '$firstName $lastName';
@@ -47,4 +48,10 @@ class EmployeeModel with _$EmployeeModel {
       'updated_at': Timestamp.fromDate(updatedAt),
     };
   }
+  
+  @override
+  List<String> get cleanableFields => [
+    'first_name',
+    'last_name',
+  ];
 }

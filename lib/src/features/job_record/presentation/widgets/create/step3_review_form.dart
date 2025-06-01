@@ -506,12 +506,14 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
       xl: 24,
     );
     
-    return SizedBox(
-      height: value.contains('\n') 
-          ? null  // Se tiver múltiplas linhas, altura se ajusta
-          : lineHeight, // Se for uma linha só, usa altura padrão
+    // Adiciona padding vertical quando tem múltiplas linhas
+    final verticalPadding = value.contains('\n') ? 4.0 : 0.0;
+    
+    return Container(
+      constraints: BoxConstraints(minHeight: lineHeight),
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: context.responsive<double>(
@@ -521,17 +523,14 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
               lg: 80,
               xl: 90,
             ),
-            child: Padding(
-              padding: EdgeInsets.only(top: 2),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -567,12 +566,14 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
       xl: 24,
     );
     
-    return SizedBox(
-      height: value.contains('\n') 
-          ? null  // Se tiver múltiplas linhas, altura se ajusta
-          : lineHeight, // Se for uma linha só, usa altura padrão
+    // Adiciona padding vertical quando tem múltiplas linhas
+    final verticalPadding = value.contains('\n') ? 4.0 : 0.0;
+    
+    return Container(
+      constraints: BoxConstraints(minHeight: lineHeight),
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
             width: context.responsive<double>(
@@ -582,17 +583,14 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
               lg: 80,
               xl: 90,
             ),
-            child: Padding(
-              padding: EdgeInsets.only(top: 2),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(

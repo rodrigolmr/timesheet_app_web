@@ -1,3 +1,12 @@
+/// Interface for models that support field cleaning
+abstract class CleanableModel {
+  /// Returns a list of field names that should be cleaned before saving
+  List<String> get cleanableFields;
+  
+  /// Converts the model to JSON
+  Map<String, dynamic> toJson();
+}
+
 /// Interface genérica para repositórios de acesso a dados
 abstract class BaseRepository<T> {
   /// Obtém um documento por ID

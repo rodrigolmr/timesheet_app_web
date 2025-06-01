@@ -17,9 +17,10 @@ Este documento unifica todas as diretrizes essenciais para o desenvolvimento do 
 11. [Componentes de UI](#componentes-de-ui)
 12. [Fluxo de Autenticação](#fluxo-de-autenticação)
 13. [Sistema de Permissões e Roles](#sistema-de-permissões-e-roles)
-14. [Exemplos Práticos](#exemplos-práticos)
-15. [Decisões Arquiteturais](#decisões-arquiteturais)
-16. [Troubleshooting](#troubleshooting)
+14. [Features Implementadas](#features-implementadas)
+15. [Exemplos Práticos](#exemplos-práticos)
+16. [Decisões Arquiteturais](#decisões-arquiteturais)
+17. [Troubleshooting](#troubleshooting)
 
 ## Visão Geral do Projeto
 
@@ -27,7 +28,9 @@ Este documento unifica todas as diretrizes essenciais para o desenvolvimento do 
 O Timesheet App é uma aplicação web desenvolvida em Flutter para gerenciamento de:
 - Horas trabalhadas por funcionários em diferentes projetos
 - Despesas corporativas com cartões da empresa
+- Instalações elétricas (pigtails)
 - Aprovação de registros de trabalho e despesas
+- Backup e restauração de dados
 
 ### Idiomas
 - **Comunicação com desenvolvedor**: Português (pt-BR)
@@ -35,31 +38,38 @@ O Timesheet App é uma aplicação web desenvolvida em Flutter para gerenciament
 - **Código e comentários**: Inglês
 
 ### Tecnologias
-- **Frontend**: Flutter Web
+- **Frontend**: Flutter Web (SDK 3.7.2+)
 - **Backend**: Firebase (Auth, Firestore, Storage)
-- **Estado**: Riverpod com geração de código
+- **Estado**: Riverpod 2.5.1 com geração de código
 - **Modelos**: Freezed para imutabilidade
-- **Roteamento**: GoRouter
+- **Roteamento**: GoRouter 13.2.0
 - **Persistência**: Offline-first com cache do Firestore
+- **PDF**: Geração de timesheets e visualização de recibos
+- **Imagens**: Processamento e conversão HEIC
 
 ## Configuração e Comandos
 
 ### Dependências Principais
 ```yaml
 dependencies:
-  flutter_riverpod: ^2.4.0
-  firebase_core: ^2.17.0
-  firebase_auth: ^4.10.1
-  cloud_firestore: ^4.9.3
-  go_router: ^13.0.0
+  flutter_riverpod: ^2.5.1
+  firebase_core: ^3.3.0
+  firebase_auth: ^5.1.4
+  cloud_firestore: ^5.2.1
+  firebase_storage: ^12.1.3
+  go_router: ^13.2.0
   freezed_annotation: ^2.4.1
-  json_annotation: ^4.8.1
+  json_annotation: ^4.9.0
+  pdf: ^3.11.0
+  image: ^4.2.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
-  riverpod_generator: ^2.3.0
-  freezed: ^2.4.1
-  json_serializable: ^6.7.1
-  build_runner: ^2.4.6
+  riverpod_generator: ^2.4.0
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  build_runner: ^2.4.11
+  go_router_builder: ^2.5.1
 ```
 
 ### Comandos Essenciais
@@ -78,6 +88,9 @@ flutter clean && dart run build_runner clean
 
 # Build para produção
 flutter build web --release
+
+# Deploy no Firebase Hosting
+firebase deploy --only hosting
 ```
 
 ## Arquitetura do Projeto
@@ -89,34 +102,39 @@ lib/
 └── src/
     ├── core/                    # Funcionalidades centrais
     │   ├── config/             # Firebase e configurações
-    │   ├── constants/          # Constantes globais
-    │   ├── enums/              # Enumeradores
     │   ├── errors/             # Classes de erro customizadas
     │   ├── interfaces/         # Interfaces base
     │   ├── navigation/         # Rotas e navegação
     │   ├── providers/          # Providers globais
     │   ├── repositories/       # Repositório base Firebase
     │   ├── responsive/         # Sistema responsivo
-    │   ├── services/           # Serviços globais (pesquisa)
+    │   ├── services/           # Serviços globais
     │   ├── theme/              # Sistema de temas
     │   ├── utils/              # Utilitários
     │   └── widgets/            # Widgets globais
     │       ├── app_header.dart # AppBar padrão
     │       ├── buttons/        # Botões customizados
+    │       ├── dialogs/        # Diálogos padronizados
     │       ├── input/          # Campos de entrada
     │       ├── logo/           # Logos
     │       └── navigation/     # Componentes de navegação
     └── features/               # Funcionalidades por domínio
         ├── auth/               # Autenticação
+        ├── company_card/       # Cartões corporativos
+        ├── database/           # Backup/Restore
+        ├── document_scanner/   # Scanner de documentos
         ├── employee/           # Funcionários
         ├── expense/            # Despesas
-        ├── company_card/       # Cartões corporativos
+        ├── home/               # Tela inicial
         ├── job_record/         # Registros de trabalho
+        ├── pigtail/            # Instalações elétricas
+        ├── settings/           # Configurações
         └── user/               # Usuários
             ├── data/
             │   ├── models/     # Modelos Freezed
             │   └── repositories/ # Implementações
             ├── domain/
+            │   ├── enums/      # Enumeradores
             │   └── repositories/ # Interfaces
             └── presentation/
                 ├── providers/  # Estado Riverpod
@@ -127,8 +145,16 @@ lib/
 ### Padrões Clean Architecture
 
 1. **Data Layer**: Implementações concretas, modelos, acesso ao Firebase
-2. **Domain Layer**: Interfaces, regras de negócio, entidades
+2. **Domain Layer**: Interfaces, regras de negócio, entidades, enums
 3. **Presentation Layer**: UI, state management, widgets
+
+### Padrões de Nomenclatura
+
+- **Modelos**: `EntityModel` (ex: `UserModel`, `ExpenseModel`)
+- **Repositórios**: `EntityRepository` interface, `FirestoreEntityRepository` implementação
+- **Providers**: `entityProvider`, `entityStreamProvider`, `entityStateProvider`
+- **Screens**: `EntitiesScreen` (plural), `EntityDetailsScreen` (singular)
+- **Widgets**: Descritivos (ex: `EmployeeCard`, `ExpenseFilters`)
 
 ## Sistema de Temas - PRÁTICAS OBRIGATÓRIAS
 
@@ -208,7 +234,7 @@ context.horizontalPadding        // Padding horizontal
 3. **Rosa (feminine)**: Alternativa com tons rosa
 4. **Verde (green)**: Tema com tons naturais
 
-### Controle de Tema por Usuário
+### Controle de Tema
 
 ```dart
 // Mudar tema
@@ -219,6 +245,8 @@ ref.toggleLightDark();
 
 // Verificar se usuário pode mudar tema
 final canChange = await ref.read(canUserChangeThemeProvider.future);
+
+// Tema persiste por usuário no Firestore
 ```
 
 ## Sistema Responsivo
@@ -336,7 +364,8 @@ ResponsiveGrid(
   amount: number          // Valor
   date: timestamp         // Data da transação
   description: string
-  image_url?: string      // URL do recibo
+  receipt_url?: string    // URL do recibo (imagem/PDF)
+  status: string          // "pending" | "approved" | "rejected"
   created_at: timestamp
   updated_at: timestamp
 }
@@ -364,6 +393,23 @@ ResponsiveGrid(
     travel_hours: number
     meal: number
   }>
+  created_at: timestamp
+  updated_at: timestamp
+}
+```
+
+#### pigtails
+```typescript
+{
+  id: string
+  job_name: string        // Nome do trabalho
+  address: string         // Endereço completo
+  type: string           // Tipo de pigtail
+  quantity: number       // Quantidade
+  installed_date: timestamp  // Data de instalação
+  removed_date?: timestamp   // Data de remoção (opcional)
+  status: string         // "installed" | "removed"
+  notes?: string         // Observações
   created_at: timestamp
   updated_at: timestamp
 }
@@ -729,8 +775,22 @@ enum AppRoute {
   home('/'),
   employees('/employees'),
   employeeDetails('/employees/:id'),
+  users('/users'),
+  userDetails('/users/:id'),
+  companyCards('/company-cards'),
+  jobRecords('/job-records'),
+  jobRecordDetails('/job-records/:id'),
+  jobRecordCreate('/job-records/create'),
+  expenses('/expenses'),
+  expenseDetails('/expenses/:id'),
   expenseCreate('/expenses/create'),
-  // ... outras rotas
+  pigtails('/pigtails'),
+  pigtailDetails('/pigtails/:id'),
+  settings('/settings'),
+  themeSettings('/settings/theme'),
+  database('/database'),
+  dataImport('/database/import'),
+  accessDenied('/access-denied'),
   ;
 
   const AppRoute(this.path);
@@ -1235,6 +1295,27 @@ AppDatePickerField(
   value: selectedDate,
   onChanged: (date) => setState(() => selectedDate = date),
 )
+
+// Date range picker
+AppDateRangePickerField(
+  label: 'Period',
+  value: dateRange,
+  onChanged: (range) => setState(() => dateRange = range),
+)
+
+// Address field com autocomplete
+AppAddressField(
+  label: 'Address',
+  controller: addressController,
+  onSelected: (place) => setState(() => selectedPlace = place),
+)
+
+// Multiline text
+AppMultilineTextField(
+  label: 'Description',
+  controller: descriptionController,
+  maxLines: 5,
+)
 ```
 
 ### Header Padrão
@@ -1331,9 +1412,340 @@ redirect: (context, state) async {
     return '/';
   }
   
+  // Verificação de permissões
+  if (isAuthenticated) {
+    final hasPermission = await ref.read(
+      canAccessRouteProvider(currentRoute).future
+    );
+    
+    if (!hasPermission) {
+      return AppRoute.accessDenied.path;
+    }
+  }
+  
   return null;
 },
 ```
+
+## Sistema de Permissões e Roles
+
+### Visão Geral
+O sistema implementa um controle de acesso baseado em roles (RBAC) com três níveis de permissão:
+- **admin**: Acesso total ao sistema
+- **manager**: Acesso a recursos operacionais e gerenciais
+- **user**: Acesso limitado aos próprios recursos
+
+### Estrutura de Permissões
+
+#### 1. Enum UserRole
+```dart
+enum UserRole {
+  admin('admin'),
+  manager('manager'),
+  user('user');
+
+  final String value;
+  const UserRole(this.value);
+
+  static UserRole fromString(String role) {
+    return UserRole.values.firstWhere(
+      (e) => e.value == role,
+      orElse: () => UserRole.user,
+    );
+  }
+}
+```
+
+#### 2. Permissões de Rotas
+
+| Role | Páginas Permitidas |
+|------|-------------------|
+| **admin** | Todas as páginas |
+| **manager** | Todas exceto: Database |
+| **user** | Home, Job Records (próprios), Expenses (próprias), Settings |
+
+#### 3. Permissões de Ações
+
+##### Job Records
+- **Criar**: Todos os roles
+- **Visualizar**: 
+  - User: apenas próprios registros
+  - Manager/Admin: todos os registros
+- **Editar**:
+  - User: apenas próprios registros
+  - Manager/Admin: todos os registros
+- **Deletar**: Apenas Manager e Admin
+
+##### Expenses
+- **Criar**: Todos os roles
+- **Visualizar**:
+  - User: apenas próprias despesas
+  - Manager/Admin: todas as despesas
+- **Editar**:
+  - User: apenas próprias despesas
+  - Manager/Admin: todas as despesas
+- **Deletar**: Apenas Manager e Admin
+- **Aprovar/Rejeitar**: Apenas Manager e Admin
+
+##### Pigtails
+- **Criar**: Manager e Admin
+- **Visualizar**: Todos os roles
+- **Editar**: Manager e Admin
+- **Deletar**: Manager e Admin
+
+##### Outros Recursos
+- **Employees**: Visualização e edição apenas para Manager/Admin
+- **Company Cards**: Gerenciamento apenas para Manager/Admin
+- **Users**: Gerenciamento apenas para Manager/Admin
+- **Database**: Acesso apenas para Admin
+
+### Implementação
+
+#### 1. Verificação de Permissões em Rotas
+```dart
+// No GoRouter
+redirect: (context, state) async {
+  // ... autenticação ...
+  
+  // Verificar permissões da rota
+  final hasPermission = await ref.read(
+    canAccessRouteProvider(currentRoute).future
+  );
+  
+  if (!hasPermission) {
+    return AppRoute.accessDenied.path;
+  }
+  
+  return null;
+}
+```
+
+#### 2. Providers de Permissão
+```dart
+// Verificar role do usuário
+final role = await ref.watch(currentUserRoleProvider.future);
+
+// Verificar permissões específicas
+final canViewAll = await ref.watch(canViewAllJobRecordsProvider.future);
+final canEdit = await ref.watch(
+  canEditJobRecordProvider(recordCreatorId).future
+);
+final canDelete = await ref.watch(canDeleteJobRecordProvider.future);
+```
+
+#### 3. Filtros em Queries
+```dart
+// Em providers de Job Records
+@riverpod
+Stream<List<JobRecordModel>> jobRecordsStream(JobRecordsStreamRef ref) {
+  final repository = ref.watch(jobRecordRepositoryProvider);
+  final userProfile = await ref.watch(currentUserProfileProvider.future);
+  
+  if (userProfile == null) return Stream.value([]);
+  
+  // Aplicar filtro baseado no role
+  if (userProfile.userRole == UserRole.user) {
+    return repository.watchByUserId(userProfile.id);
+  }
+  
+  // Manager e Admin veem todos
+  return repository.watchAll();
+}
+```
+
+#### 4. Componente PermissionGuard
+```dart
+// Proteger elementos da UI
+PermissionGuard(
+  requiredRole: UserRole.manager,
+  child: ElevatedButton(
+    onPressed: () => _deleteRecord(),
+    child: Text('Delete'),
+  ),
+  fallback: SizedBox.shrink(), // Opcional
+)
+
+// Verificação assíncrona
+PermissionGuardAsync(
+  permissionCheck: (ref) => ref.read(canDeleteJobRecordProvider.future),
+  child: IconButton(
+    icon: Icon(Icons.delete),
+    onPressed: () => _deleteRecord(),
+  ),
+)
+```
+
+#### 5. Ocultação de Navegação
+```dart
+// Provider filtrado para home
+@riverpod
+Future<List<HomeNavigationItem>> filteredHomeNavigationItems(
+  FilteredHomeNavigationItemsRef ref
+) async {
+  final allItems = ref.watch(homeNavigationItemsProvider);
+  final allowedRoutes = await ref.watch(allowedRoutesProvider.future);
+  
+  return allItems.where((item) {
+    final route = AppRoute.values.firstWhereOrNull(
+      (r) => r.path == item.route
+    );
+    return route != null && allowedRoutes.contains(route);
+  }).toList();
+}
+```
+
+### Boas Práticas
+
+1. **Sempre verifique permissões no backend**: Nunca confie apenas na UI
+2. **Use providers reativos**: Permissões podem mudar durante a sessão
+3. **Fallback gracioso**: Sempre forneça alternativas quando acesso é negado
+4. **Mensagens claras**: Informe o usuário sobre limitações de acesso
+5. **Auditoria**: Registre tentativas de acesso não autorizado
+
+### Exemplo Completo: Tela com Permissões
+```dart
+class JobRecordsScreen extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Stream filtrado baseado em permissões
+    final recordsAsync = ref.watch(jobRecordsStreamProvider);
+    final canDelete = ref.watch(canDeleteJobRecordProvider);
+    
+    return Scaffold(
+      appBar: AppHeader(
+        title: 'Job Records',
+        // Botão de criar visível para todos
+        actionIcon: Icons.add,
+        onActionPressed: () => _createRecord(context),
+      ),
+      body: recordsAsync.when(
+        data: (records) => ListView.builder(
+          itemCount: records.length,
+          itemBuilder: (context, index) {
+            final record = records[index];
+            return ListTile(
+              title: Text(record.jobName),
+              subtitle: Text(record.date.toString()),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Editar - verificação individual
+                  PermissionGuardAsync(
+                    permissionCheck: (ref) => ref.read(
+                      canEditJobRecordProvider(record.userId).future
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.edit),
+                      onPressed: () => _editRecord(context, record),
+                    ),
+                  ),
+                  // Deletar - apenas manager/admin
+                  if (canDelete.value ?? false)
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => _deleteRecord(ref, record),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+        loading: () => CircularProgressIndicator(),
+        error: (e, s) => Text('Error: $e'),
+      ),
+    );
+  }
+}
+```
+
+## Features Implementadas
+
+### 1. Autenticação (Auth)
+- Login com email/senha via Firebase Auth
+- Sistema de roles: admin, manager, user
+- Controle de permissões por role
+- Tela de acesso negado
+- Logout automático em caso de erro
+
+### 2. Home Dashboard
+- Dashboard principal com navegação por cards
+- Filtragem de itens baseada em permissões do usuário
+- Layout responsivo adaptativo
+- Cards com ícones e cores por categoria
+
+### 3. Gerenciamento de Funcionários (Employee)
+- CRUD completo de funcionários
+- Listagem com pesquisa em tempo real
+- Filtros por status (ativo/inativo)
+- Apenas manager/admin podem gerenciar
+- Ordenação alfabética
+
+### 4. Gerenciamento de Usuários (User)
+- Gerenciamento de usuários do sistema
+- Associação com Firebase Auth
+- Controle de roles e permissões
+- Preferências de tema por usuário
+- Forçar tema específico para usuário
+
+### 5. Cartões Corporativos (Company Cards)
+- Cadastro de cartões corporativos
+- Últimos 4 dígitos e nome do titular
+- Status ativo/inativo
+- Pesquisa e filtros
+- Associação com despesas
+
+### 6. Registros de Trabalho (Job Records)
+- Sistema completo de registro de trabalhos/timesheets
+- Formulário multi-step com Stepper:
+  - Step 1: Informações do trabalho
+  - Step 2: Adicionar funcionários e horas
+  - Step 3: Revisão e confirmação
+- Registro de múltiplos funcionários por trabalho
+- Cálculo automático de horas regulares e viagem
+- Geração de PDF de timesheets
+- Filtros por data, funcionário, gerente
+- Exportação para CSV
+
+### 7. Despesas (Expenses)
+- Registro de despesas com cartões corporativos
+- Upload de recibos (imagem/PDF)
+- Visualização de PDFs em modal
+- Status: pending, approved, rejected
+- Aprovação/rejeição por managers
+- Filtros por status, data, cartão
+- Cálculo de totais
+
+### 8. Instalações Elétricas (Pigtails)
+- Rastreamento de instalações elétricas "pigtail"
+- Registro de tipos e quantidades
+- Status: installed/removed
+- Histórico de datas de instalação/remoção
+- Endereços com autocomplete via Google Places
+- Filtros por status e período
+- Notas opcionais
+
+### 9. Scanner de Documentos
+- Captura de documentos via câmera web
+- Crop e ajuste de imagem
+- Filtros de imagem (brightness, contrast)
+- Conversão HEIC para formatos web
+- Integração com upload de despesas
+
+### 10. Configurações (Settings)
+- Seleção entre 4 temas (light, dark, feminine, green)
+- Configurações de tema por usuário
+- Theme Settings avançado
+- Informações da conta do usuário
+- Logout
+
+### 11. Gerenciamento de Banco de Dados
+- Backup completo do banco em JSON
+- Restore de backup
+- Import/export de coleções individuais
+- Import de dados CSV
+- Visualização de estatísticas por coleção
+- Acesso restrito apenas para admin
+- Preview de documentos antes de importar
 
 ## Exemplos Práticos
 
@@ -1641,12 +2053,14 @@ O sistema usa submissão direta ao Firestore, sem drafts intermediários:
 - Formulários multi-step com Flutter Stepper
 - Estado temporário mantido apenas na memória durante a criação
 - Submissão única ao completar todos os passos
+- Validação em cada etapa antes de prosseguir
 
 ### Sistema de Busca
 Implementação local para funcionar offline:
 - Cache de dados com Firestore persistence
 - Busca e filtros executados em memória
 - Sem dependência de conexão internet
+- Algoritmo fuzzy search para tolerância a erros
 
 ### Componentes de UI
 Duas abordagens disponíveis:
@@ -1657,229 +2071,19 @@ Escolha baseada no contexto:
 - Use componentes customizados para interfaces padrão
 - Use Flutter widgets para casos específicos ou layouts complexos
 
-## Sistema de Permissões e Roles
+### Sistema de Permissões
+Implementação em múltiplas camadas:
+1. **Frontend**: Oculta elementos não permitidos
+2. **Navegação**: Redireciona para tela de acesso negado
+3. **Providers**: Filtra dados baseado em permissões
+4. **Firestore Rules**: Validação final no backend
 
-### Visão Geral
-O sistema implementa um controle de acesso baseado em roles (RBAC) com três níveis de permissão:
-- **admin**: Acesso total ao sistema
-- **manager**: Acesso a recursos operacionais e gerenciais
-- **user**: Acesso limitado aos próprios recursos
-
-### Estrutura de Permissões
-
-#### 1. Enum UserRole
-```dart
-enum UserRole {
-  admin('admin'),
-  manager('manager'),
-  user('user');
-
-  final String value;
-  const UserRole(this.value);
-
-  static UserRole fromString(String role) {
-    return UserRole.values.firstWhere(
-      (e) => e.value == role,
-      orElse: () => UserRole.user,
-    );
-  }
-}
-```
-
-#### 2. Permissões de Rotas
-
-| Role | Páginas Permitidas |
-|------|-------------------|
-| **admin** | Todas as páginas |
-| **manager** | Todas exceto: Database |
-| **user** | Home, Job Records (próprios), Expenses (próprias), Settings |
-
-#### 3. Permissões de Ações
-
-##### Job Records
-- **Criar**: Todos os roles
-- **Visualizar**: 
-  - User: apenas próprios registros
-  - Manager/Admin: todos os registros
-- **Editar**:
-  - User: apenas próprios registros
-  - Manager/Admin: todos os registros
-- **Deletar**: Apenas Manager e Admin
-
-##### Expenses
-- **Criar**: Todos os roles
-- **Visualizar**:
-  - User: apenas próprias despesas
-  - Manager/Admin: todas as despesas
-- **Editar**:
-  - User: apenas próprias despesas
-  - Manager/Admin: todas as despesas
-- **Deletar**: Apenas Manager e Admin
-
-##### Outros Recursos
-- **Employees**: Visualização e edição apenas para Manager/Admin
-- **Company Cards**: Gerenciamento apenas para Manager/Admin
-- **Users**: Gerenciamento apenas para Manager/Admin
-- **Database**: Acesso apenas para Admin
-
-### Implementação
-
-#### 1. Verificação de Permissões em Rotas
-```dart
-// No GoRouter
-redirect: (context, state) async {
-  // ... autenticação ...
-  
-  // Verificar permissões da rota
-  final hasPermission = await ref.read(
-    canAccessRouteProvider(currentRoute).future
-  );
-  
-  if (!hasPermission) {
-    return AppRoute.accessDenied.path;
-  }
-  
-  return null;
-}
-```
-
-#### 2. Providers de Permissão
-```dart
-// Verificar role do usuário
-final role = await ref.watch(currentUserRoleProvider.future);
-
-// Verificar permissões específicas
-final canViewAll = await ref.watch(canViewAllJobRecordsProvider.future);
-final canEdit = await ref.watch(
-  canEditJobRecordProvider(recordCreatorId).future
-);
-final canDelete = await ref.watch(canDeleteJobRecordProvider.future);
-```
-
-#### 3. Filtros em Queries
-```dart
-// Em providers de Job Records
-@riverpod
-Stream<List<JobRecordModel>> jobRecordsStream(JobRecordsStreamRef ref) {
-  final repository = ref.watch(jobRecordRepositoryProvider);
-  final userProfile = await ref.watch(currentUserProfileProvider.future);
-  
-  if (userProfile == null) return Stream.value([]);
-  
-  // Aplicar filtro baseado no role
-  if (userProfile.userRole == UserRole.user) {
-    return repository.watchByUserId(userProfile.id);
-  }
-  
-  // Manager e Admin veem todos
-  return repository.watchAll();
-}
-```
-
-#### 4. Componente PermissionGuard
-```dart
-// Proteger elementos da UI
-PermissionGuard(
-  requiredRole: UserRole.manager,
-  child: ElevatedButton(
-    onPressed: () => _deleteRecord(),
-    child: Text('Delete'),
-  ),
-  fallback: SizedBox.shrink(), // Opcional
-)
-
-// Verificação assíncrona
-PermissionGuardAsync(
-  permissionCheck: (ref) => ref.read(canDeleteJobRecordProvider.future),
-  child: IconButton(
-    icon: Icon(Icons.delete),
-    onPressed: () => _deleteRecord(),
-  ),
-)
-```
-
-#### 5. Ocultação de Navegação
-```dart
-// Provider filtrado para home
-@riverpod
-Future<List<HomeNavigationItem>> filteredHomeNavigationItems(
-  FilteredHomeNavigationItemsRef ref
-) async {
-  final allItems = ref.watch(homeNavigationItemsProvider);
-  final allowedRoutes = await ref.watch(allowedRoutesProvider.future);
-  
-  return allItems.where((item) {
-    final route = AppRoute.values.firstWhereOrNull(
-      (r) => r.path == item.route
-    );
-    return route != null && allowedRoutes.contains(route);
-  }).toList();
-}
-```
-
-### Boas Práticas
-
-1. **Sempre verifique permissões no backend**: Nunca confie apenas na UI
-2. **Use providers reativos**: Permissões podem mudar durante a sessão
-3. **Fallback gracioso**: Sempre forneça alternativas quando acesso é negado
-4. **Mensagens claras**: Informe o usuário sobre limitações de acesso
-5. **Auditoria**: Registre tentativas de acesso não autorizado
-
-### Exemplo Completo: Tela com Permissões
-```dart
-class JobRecordsScreen extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Stream filtrado baseado em permissões
-    final recordsAsync = ref.watch(jobRecordsStreamProvider);
-    final canDelete = ref.watch(canDeleteJobRecordProvider);
-    
-    return Scaffold(
-      appBar: AppHeader(
-        title: 'Job Records',
-        // Botão de criar visível para todos
-        actionIcon: Icons.add,
-        onActionPressed: () => _createRecord(context),
-      ),
-      body: recordsAsync.when(
-        data: (records) => ListView.builder(
-          itemCount: records.length,
-          itemBuilder: (context, index) {
-            final record = records[index];
-            return ListTile(
-              title: Text(record.jobName),
-              subtitle: Text(record.date.toString()),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Editar - verificação individual
-                  PermissionGuardAsync(
-                    permissionCheck: (ref) => ref.read(
-                      canEditJobRecordProvider(record.userId).future
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () => _editRecord(context, record),
-                    ),
-                  ),
-                  // Deletar - apenas manager/admin
-                  if (canDelete.value ?? false)
-                    IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () => _deleteRecord(ref, record),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-        loading: () => CircularProgressIndicator(),
-        error: (e, s) => Text('Error: $e'),
-      ),
-    );
-  }
-}
-```
+### Gerenciamento de Estado
+Riverpod com padrões específicos:
+- Providers gerados para type safety
+- AsyncValue para estados assíncronos
+- KeepAlive para dados em cache
+- Família de providers para parâmetros dinâmicos
 
 ## Troubleshooting
 
@@ -1907,6 +2111,20 @@ dart run build_runner build --delete-conflicting-outputs
 ### Erro: Layout quebrado em mobile
 **Problema**: UI não se adapta a telas pequenas
 **Solução**: Use o sistema responsivo e teste em todos os breakpoints (320px até 1200px)
+
+### Erro: Upload de imagem falha
+**Problema**: Erro ao fazer upload para Firebase Storage
+**Solução**: 
+- Verifique permissões do Storage Rules
+- Confirme limite de tamanho (máx 5MB)
+- Valide formato da imagem
+
+### Erro: PDF não é gerado
+**Problema**: Timesheet PDF não é criado
+**Solução**:
+- Verifique se todos os dados necessários estão presentes
+- Confirme que as fontes estão carregadas
+- Teste em modo debug para ver erros detalhados
 
 ---
 

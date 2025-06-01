@@ -37,10 +37,14 @@ class PigtailFilters extends ConsumerStatefulWidget {
 class _PigtailFiltersState extends ConsumerState<PigtailFilters> {
   @override
   Widget build(BuildContext context) {
+    final isSmallScreen = context.isMobile || context.isTablet;
+    
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: context.responsive<double>(xs: 12, sm: 16, md: 20),
-        vertical: context.responsive<double>(xs: 4, sm: 6, md: 8),
+        vertical: widget.filtersExpanded && isSmallScreen 
+            ? context.responsive<double>(xs: 10, sm: 12, md: 14)
+            : context.responsive<double>(xs: 6, sm: 8, md: 10),
       ),
       decoration: BoxDecoration(
         color: context.colors.primary.withOpacity(0.15),
@@ -67,31 +71,58 @@ class _PigtailFiltersState extends ConsumerState<PigtailFilters> {
 
   Widget _buildExpandedFilters() {
     final availableTypes = ref.watch(availablePigtailTypesProvider);
+    final isSmallScreen = context.isMobile || context.isTablet;
     
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  _buildSearchField(),
+    if (isSmallScreen) {
+      // Two-row layout for small screens
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // First row: Search and Status
+          Row(
+            children: [
+              _buildSearchField(),
+              const SizedBox(width: 8),
+              _buildStatusFilter(),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Second row: Type and Action buttons
+          Row(
+            children: [
+              if (availableTypes.isNotEmpty) ...[
+                _buildTypeFilter(availableTypes),
+                const SizedBox(width: 8),
+              ],
+              const Spacer(),
+              _buildActionButtons(),
+            ],
+          ),
+        ],
+      );
+    } else {
+      // Single-row layout for large screens
+      return Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                _buildSearchField(),
+                const SizedBox(width: 8),
+                _buildStatusFilter(),
+                if (availableTypes.isNotEmpty) ...[
                   const SizedBox(width: 8),
-                  _buildStatusFilter(),
-                  if (availableTypes.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    _buildTypeFilter(availableTypes),
-                  ],
+                  _buildTypeFilter(availableTypes),
                 ],
-              ),
+              ],
             ),
-            const SizedBox(width: 8),
-            _buildActionButtons(),
-          ],
-        ),
-      ],
-    );
+          ),
+          const SizedBox(width: 8),
+          _buildActionButtons(),
+        ],
+      );
+    }
   }
 
   Widget _buildMinimizedFilters() {
@@ -217,8 +248,15 @@ class _PigtailFiltersState extends ConsumerState<PigtailFilters> {
   }
 
   Widget _buildStatusFilter() {
+    final width = context.responsive<double>(
+      xs: 100,
+      sm: 110,
+      md: 120,
+      lg: 130,
+    );
+    
     return Container(
-      width: 120,
+      width: width,
       height: 40,
       decoration: BoxDecoration(
         border: Border.all(color: context.colors.outline.withOpacity(0.3)),
@@ -303,8 +341,15 @@ class _PigtailFiltersState extends ConsumerState<PigtailFilters> {
   }
 
   Widget _buildTypeFilter(List<String> availableTypes) {
+    final width = context.responsive<double>(
+      xs: 100,
+      sm: 110,
+      md: 120,
+      lg: 130,
+    );
+    
     return Container(
-      width: 120,
+      width: width,
       height: 40,
       decoration: BoxDecoration(
         border: Border.all(color: context.colors.outline.withOpacity(0.3)),

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
+import 'package:timesheet_app_web/src/core/utils/text_formatters.dart';
 
 /// Implementação base para repositórios Firestore
 abstract class FirestoreRepository<T> implements BaseRepository<T> {
@@ -44,13 +45,27 @@ abstract class FirestoreRepository<T> implements BaseRepository<T> {
 
   @override
   Future<String> create(T entity) async {
-    final docRef = await collection.add(toFirestore(entity));
+    var data = toFirestore(entity);
+    
+    // Apply field cleaning if entity implements CleanableModel
+    if (entity is CleanableModel) {
+      data = TextCleaners.cleanJsonFields(data, entity.cleanableFields);
+    }
+    
+    final docRef = await collection.add(data);
     return docRef.id;
   }
 
   @override
   Future<void> update(String id, T entity) async {
-    await collection.doc(id).update(toFirestore(entity));
+    var data = toFirestore(entity);
+    
+    // Apply field cleaning if entity implements CleanableModel
+    if (entity is CleanableModel) {
+      data = TextCleaners.cleanJsonFields(data, entity.cleanableFields);
+    }
+    
+    await collection.doc(id).update(data);
   }
 
   @override

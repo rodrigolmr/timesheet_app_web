@@ -1,5 +1,40 @@
 import 'package:flutter/services.dart';
 
+/// Utility class for cleaning text fields
+class TextCleaners {
+  /// Cleans a text field by:
+  /// - Trimming whitespace from start and end
+  /// - Removing trailing empty lines (but keeping empty lines in the middle)
+  static String cleanTextField(String? text) {
+    if (text == null || text.isEmpty) return '';
+    
+    // First trim to remove leading/trailing whitespace
+    String cleaned = text.trim();
+    
+    // Remove trailing newlines only (keep newlines in the middle)
+    // This regex removes one or more newlines at the end of the string
+    cleaned = cleaned.replaceAll(RegExp(r'\n+$'), '');
+    
+    return cleaned;
+  }
+  
+  /// Cleans all string fields in a JSON map based on the provided field list
+  static Map<String, dynamic> cleanJsonFields(
+    Map<String, dynamic> json, 
+    List<String> cleanableFields,
+  ) {
+    final cleaned = Map<String, dynamic>.from(json);
+    
+    for (final field in cleanableFields) {
+      if (cleaned.containsKey(field) && cleaned[field] is String) {
+        cleaned[field] = cleanTextField(cleaned[field] as String);
+      }
+    }
+    
+    return cleaned;
+  }
+}
+
 /// TextInputFormatter que capitaliza a primeira letra de cada palavra
 class WordCapitalizationFormatter extends TextInputFormatter {
   @override

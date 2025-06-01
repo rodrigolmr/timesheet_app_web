@@ -18,6 +18,7 @@ enum UserSortOption {
   nameDesc,
   dateCreatedDesc,
   dateCreatedAsc,
+  roleAndName,
 }
 
 /// Provider para o estado da consulta de pesquisa
@@ -41,7 +42,7 @@ class UserSearchFilters extends _$UserSearchFilters {
     return (
       role: null,
       isActive: null,
-      sortOption: UserSortOption.nameAsc,
+      sortOption: UserSortOption.roleAndName,
     );
   }
 
@@ -73,7 +74,7 @@ class UserSearchFilters extends _$UserSearchFilters {
     state = (
       role: null,
       isActive: null,
-      sortOption: UserSortOption.nameAsc,
+      sortOption: UserSortOption.roleAndName,
     );
   }
 }
@@ -106,7 +107,7 @@ List<UserModel> searchUsers(
       // Definir a função de ordenação
       int Function(UserModel, UserModel)? sortBy;
       
-      switch (sortOption ?? UserSortOption.nameAsc) {
+      switch (sortOption ?? UserSortOption.roleAndName) {
         case UserSortOption.nameAsc:
           sortBy = (a, b) => searchService.sortByString(a, b, (user) => '${user.firstName} ${user.lastName}');
         case UserSortOption.nameDesc:
@@ -115,6 +116,25 @@ List<UserModel> searchUsers(
           sortBy = (a, b) => searchService.sortByDate(a, b, (user) => user.createdAt);
         case UserSortOption.dateCreatedAsc:
           sortBy = (a, b) => searchService.sortByDate(a, b, (user) => user.createdAt, descending: false);
+        case UserSortOption.roleAndName:
+          sortBy = (a, b) {
+            // Role order: admin=1, manager=2, user=3
+            final roleOrder = {'admin': 1, 'manager': 2, 'user': 3};
+            
+            // Get role order values
+            final roleA = roleOrder[a.role.toLowerCase()] ?? 999;
+            final roleB = roleOrder[b.role.toLowerCase()] ?? 999;
+            
+            // If roles are different, sort by role
+            if (roleA != roleB) {
+              return roleA.compareTo(roleB);
+            }
+            
+            // If roles are the same, sort alphabetically by name
+            final nameA = '${a.firstName} ${a.lastName}'.toLowerCase();
+            final nameB = '${b.firstName} ${b.lastName}'.toLowerCase();
+            return nameA.compareTo(nameB);
+          };
       }
       
       // Usar o serviço de pesquisa

@@ -24,7 +24,7 @@ final cachedUsersProvider = StreamProvider<List<UserModel>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CachedUsersRef = StreamProviderRef<List<UserModel>>;
-String _$searchUsersHash() => r'a5ac19a7fa8a08ce08952cb9b34696a2904994f0';
+String _$searchUsersHash() => r'44ae3aa016d522d787b1c9a3baf232a39a635a93';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -276,7 +276,7 @@ final userSearchQueryProvider =
     );
 
 typedef _$UserSearchQuery = AutoDisposeNotifier<String>;
-String _$userSearchFiltersHash() => r'68235f48c87220821332d33c6472cae7b169322c';
+String _$userSearchFiltersHash() => r'3945dd2492d0054740d5435c20bda67af01ee360';
 
 /// Provider para o estado dos filtros de pesquisa de usuários
 ///
