@@ -5,7 +5,7 @@ import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/app_header.dart';
-import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
+import 'package:timesheet_app_web/src/core/widgets/widgets.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/pigtail/data/models/pigtail_model.dart';
 import 'package:timesheet_app_web/src/features/pigtail/presentation/providers/pigtail_providers.dart';
@@ -421,48 +421,16 @@ class _PigtailScreenState extends ConsumerState<PigtailScreen> {
   }
 
   void _showCreateDialog(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isMobile = context.isMobile;
-    
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        insetPadding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : 40,
-          vertical: isMobile ? 24 : 40,
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: isMobile ? screenWidth - 32 : 550,
-            maxHeight: isMobile ? screenHeight - 48 : screenHeight * 0.9,
-          ),
-          child: _CreatePigtailDialog(ref: ref),
-        ),
-      ),
+      builder: (_) => _CreatePigtailDialog(ref: ref),
     );
   }
 
   void _showEditDialog(BuildContext context, PigtailModel pigtail) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isMobile = context.isMobile;
-    
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        insetPadding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 16 : 40,
-          vertical: isMobile ? 24 : 40,
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: isMobile ? screenWidth - 32 : 550,
-            maxHeight: isMobile ? screenHeight - 48 : screenHeight * 0.9,
-          ),
-          child: _EditPigtailDialog(pigtail: pigtail, ref: ref),
-        ),
-      ),
+      builder: (_) => _EditPigtailDialog(pigtail: pigtail, ref: ref),
     );
   }
 
@@ -582,16 +550,16 @@ class _PigtailScreenState extends ConsumerState<PigtailScreen> {
   }
 }
 
-class _CreatePigtailDialog extends StatefulWidget {
+class _CreatePigtailDialog extends ConsumerStatefulWidget {
   final WidgetRef ref;
 
   const _CreatePigtailDialog({required this.ref});
 
   @override
-  State<_CreatePigtailDialog> createState() => _CreatePigtailDialogState();
+  ConsumerState<_CreatePigtailDialog> createState() => _CreatePigtailDialogState();
 }
 
-class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
+class _CreatePigtailDialogState extends ConsumerState<_CreatePigtailDialog> {
   final _formKey = GlobalKey<FormState>();
   final _jobNameController = TextEditingController();
   final _addressController = TextEditingController();
@@ -619,40 +587,24 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.all(
-          isMobile ? context.dimensions.spacingM : context.dimensions.spacingL
+    return AppFormDialog(
+      title: 'Add Pigtail Installation',
+      icon: Icons.electrical_services,
+      mode: DialogMode.create,
+      actions: [
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.create,
+          onCancel: () => Navigator.of(context).pop(),
+          onConfirm: _handleSubmit,
         ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.electrical_services,
-                    color: context.colors.primary,
-                    size: 28,
-                  ),
-                  SizedBox(width: context.dimensions.spacingM),
-                  Expanded(
-                    child: Text(
-                      'Add Pigtail Installation',
-                      style: context.textStyles.title,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.dimensions.spacingM),
+      ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
                 AppTextField(
                   controller: _jobNameController,
                   label: 'Job Name',
@@ -784,36 +736,7 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
                       ),
                     );
                   }).toList(),
-              SizedBox(height: context.dimensions.spacingM),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  SizedBox(width: context.dimensions.spacingS),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.primary,
-                        foregroundColor: context.colors.onPrimary,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Add'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -860,7 +783,7 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final currentUser = await widget.ref.read(currentUserProfileProvider.future);
+      final currentUser = await ref.read(currentUserProfileProvider.future);
       if (currentUser == null) throw Exception('User not found');
 
       final pigtail = PigtailModel(
@@ -876,7 +799,7 @@ class _CreatePigtailDialogState extends State<_CreatePigtailDialog> {
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(pigtailStateProvider.notifier).create(pigtail);
+      await ref.read(pigtailStateProvider.notifier).create(pigtail);
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -1082,7 +1005,7 @@ class _AddPigtailTypeDialogState extends State<_AddPigtailTypeDialog> {
 
 
 // Edit Dialog
-class _EditPigtailDialog extends StatefulWidget {
+class _EditPigtailDialog extends ConsumerStatefulWidget {
   final PigtailModel pigtail;
   final WidgetRef ref;
 
@@ -1092,10 +1015,10 @@ class _EditPigtailDialog extends StatefulWidget {
   });
 
   @override
-  State<_EditPigtailDialog> createState() => _EditPigtailDialogState();
+  ConsumerState<_EditPigtailDialog> createState() => _EditPigtailDialogState();
 }
 
-class _EditPigtailDialogState extends State<_EditPigtailDialog> {
+class _EditPigtailDialogState extends ConsumerState<_EditPigtailDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _jobNameController;
   late final TextEditingController _addressController;
@@ -1130,40 +1053,24 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.all(
-          isMobile ? context.dimensions.spacingM : context.dimensions.spacingL
+    return AppFormDialog(
+      title: 'Edit Pigtail Installation',
+      icon: Icons.electrical_services,
+      mode: DialogMode.edit,
+      actions: [
+        AppFormDialogActions(
+          isLoading: _isLoading,
+          mode: DialogMode.edit,
+          onCancel: () => Navigator.of(context).pop(),
+          onConfirm: _handleSubmit,
         ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.electrical_services,
-                    color: context.colors.primary,
-                    size: 28,
-                  ),
-                  SizedBox(width: context.dimensions.spacingM),
-                  Expanded(
-                    child: Text(
-                      'Edit Pigtail Installation',
-                      style: context.textStyles.title,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              SizedBox(height: context.dimensions.spacingM),
+      ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
                 AppTextField(
                   controller: _jobNameController,
                   label: "Job Name",
@@ -1308,36 +1215,7 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
                       ),
                     );
                   }).toList(),
-              SizedBox(height: context.dimensions.spacingM),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  SizedBox(width: context.dimensions.spacingS),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.primary,
-                        foregroundColor: context.colors.onPrimary,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Save'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -1394,7 +1272,7 @@ class _EditPigtailDialogState extends State<_EditPigtailDialog> {
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(pigtailStateProvider.notifier).update(
+      await ref.read(pigtailStateProvider.notifier).update(
         widget.pigtail.id,
         updatedPigtail,
       );
@@ -1437,10 +1315,6 @@ class _PigtailDetailsDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isMobile = context.isMobile;
-    
     // Watch for changes to this specific pigtail
     final pigtailStream = ref.watch(pigtailByIdProvider(pigtail.id));
     
@@ -1448,33 +1322,55 @@ class _PigtailDetailsDialog extends ConsumerWidget {
       data: (updatedPigtail) {
         final currentPigtail = updatedPigtail ?? pigtail;
         
-        return Dialog(
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 16 : 40,
-            vertical: isMobile ? 24 : 40,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isMobile ? screenWidth - 32 : 550,
-              maxHeight: isMobile ? screenHeight - 48 : screenHeight * 0.9,
-            ),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.all(
-                  isMobile ? context.dimensions.spacingM : context.dimensions.spacingL
-                ),
-                child: _buildContent(context, currentPigtail),
-              ),
-            ),
-          ),
+        return AppDetailsDialog(
+          title: currentPigtail.jobName,
+          icon: Icons.electrical_services,
+          statusBadge: _buildStatusBadge(context, currentPigtail),
+          content: _buildContent(context, currentPigtail),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Dialog(
-        child: Padding(
-          padding: EdgeInsets.all(context.dimensions.spacingL),
-          child: Text('Error: $error'),
-        ),
+      error: (error, stack) => AppDetailsDialog(
+        title: 'Error',
+        icon: Icons.error_outline,
+        content: Text('Error: $error'),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(BuildContext context, PigtailModel pigtail) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.dimensions.spacingM,
+        vertical: context.dimensions.spacingS,
+      ),
+      decoration: BoxDecoration(
+        color: pigtail.isRemoved
+            ? context.colors.error.withOpacity(0.1)
+            : context.colors.success.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            pigtail.isRemoved ? Icons.event_available : Icons.electrical_services,
+            size: 16,
+            color: pigtail.isRemoved
+                ? context.colors.error
+                : context.colors.success,
+          ),
+          SizedBox(width: context.dimensions.spacingS),
+          Text(
+            pigtail.isRemoved ? "Removed" : "Installed",
+            style: context.textStyles.body.copyWith(
+              color: pigtail.isRemoved
+                  ? context.colors.error
+                  : context.colors.success,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1525,95 +1421,6 @@ class _PigtailDetailsDialog extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!context.isMobile) ...[
-          Row(
-            children: [
-              Icon(
-                Icons.electrical_services,
-                color: pigtail.isRemoved 
-                    ? context.colors.textSecondary 
-                    : context.colors.primary,
-                size: 28,
-              ),
-              SizedBox(width: context.dimensions.spacingM),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      pigtail.jobName,
-                      style: context.textStyles.title,
-                    ),
-                    SizedBox(height: context.dimensions.spacingXS),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: context.dimensions.spacingS,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pigtail.isRemoved
-                            ? context.colors.error.withOpacity(0.1)
-                            : context.colors.success.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        pigtail.isRemoved ? "Removed" : "Installed",
-                        style: context.textStyles.caption.copyWith(
-                          color: pigtail.isRemoved
-                              ? context.colors.error
-                              : context.colors.success,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          SizedBox(height: context.dimensions.spacingL),
-        ] else ...[
-          // Mobile: status badge at the top
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.dimensions.spacingM,
-              vertical: context.dimensions.spacingS,
-            ),
-            decoration: BoxDecoration(
-              color: pigtail.isRemoved
-                  ? context.colors.error.withOpacity(0.1)
-                  : context.colors.success.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  pigtail.isRemoved ? Icons.event_available : Icons.electrical_services,
-                  size: 16,
-                  color: pigtail.isRemoved
-                      ? context.colors.error
-                      : context.colors.success,
-                ),
-                SizedBox(width: context.dimensions.spacingS),
-                Text(
-                  pigtail.isRemoved ? "Removed" : "Installed",
-                  style: context.textStyles.body.copyWith(
-                    color: pigtail.isRemoved
-                        ? context.colors.error
-                        : context.colors.success,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: context.dimensions.spacingL),
-        ],
         _buildDetailRow(
           context,
           Icons.work_outline,
@@ -1801,27 +1608,11 @@ class _PigtailDetailsDialog extends ConsumerWidget {
                         label: const Text("Edit"),
                         onPressed: () {
                           Navigator.of(context).pop();
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          final screenHeight = MediaQuery.of(context).size.height;
-                          final isMobile = context.isMobile;
-                          
                           showDialog(
                             context: context,
-                            builder: (_) => Dialog(
-                              insetPadding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 16 : 40,
-                                vertical: isMobile ? 24 : 40,
-                              ),
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: isMobile ? screenWidth - 32 : 550,
-                                  maxHeight: isMobile ? screenHeight - 48 : screenHeight * 0.9,
-                                ),
-                                child: _EditPigtailDialog(
-                                  pigtail: pigtail,
-                                  ref: ref,
-                                ),
-                              ),
+                            builder: (_) => _EditPigtailDialog(
+                              pigtail: pigtail,
+                              ref: ref,
                             ),
                           );
                         },
