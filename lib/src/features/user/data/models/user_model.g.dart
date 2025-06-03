@@ -17,6 +17,7 @@ _$UserModelImpl _$$UserModelImplFromJson(Map<String, dynamic> json) =>
       isActive: json['isActive'] as bool,
       themePreference: json['themePreference'] as String?,
       forcedTheme: json['forcedTheme'] as bool?,
+      employeeId: json['employeeId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -32,6 +33,7 @@ Map<String, dynamic> _$$UserModelImplToJson(_$UserModelImpl instance) =>
       'isActive': instance.isActive,
       'themePreference': instance.themePreference,
       'forcedTheme': instance.forcedTheme,
+      'employeeId': instance.employeeId,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };

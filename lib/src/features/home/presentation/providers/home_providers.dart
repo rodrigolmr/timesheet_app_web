@@ -53,6 +53,14 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       isActive: true,
     ),
     HomeNavigationItem(
+      title: 'Hours Management',
+      description: 'Track your work hours',
+      icon: Icons.access_time,
+      route: AppRoute.hoursManagement.path,
+      categoryName: 'clock',
+      isActive: true,
+    ),
+    HomeNavigationItem(
       title: 'Reports',
       description: 'Generate and view reports',
       icon: Icons.bar_chart,

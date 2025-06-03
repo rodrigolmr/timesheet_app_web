@@ -24,6 +24,7 @@ class UserModel with _$UserModel implements CleanableModel {
     required bool isActive,
     String? themePreference,
     bool? forcedTheme,
+    String? employeeId,
     
     // Campos de controle (sistema)
     required DateTime createdAt,
@@ -44,6 +45,7 @@ class UserModel with _$UserModel implements CleanableModel {
       isActive: data['is_active'] as bool,
       themePreference: data['theme_preference'] as String?,
       forcedTheme: data['forced_theme'] as bool?,
+      employeeId: data['employee_id'] as String?,
       createdAt: (data['created_at'] as Timestamp).toDate(),
       updatedAt: (data['updated_at'] as Timestamp).toDate(),
     );
@@ -59,6 +61,7 @@ class UserModel with _$UserModel implements CleanableModel {
       'is_active': isActive,
       'theme_preference': themePreference,
       'forced_theme': forcedTheme,
+      'employee_id': employeeId,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

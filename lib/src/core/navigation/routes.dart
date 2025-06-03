@@ -28,6 +28,7 @@ import 'package:timesheet_app_web/src/features/company_card/presentation/screens
 import 'package:timesheet_app_web/src/features/database/presentation/screens/data_import_screen.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/screens/access_denied_screen.dart';
 import 'package:timesheet_app_web/src/features/pigtail/presentation/screens/pigtails_screen.dart';
+import 'package:timesheet_app_web/src/features/hours_management/presentation/screens/hours_management_screen.dart';
 
 part 'routes.g.dart';
 
@@ -57,6 +58,7 @@ enum AppRoute {
   documentFilter('/document-scanner/filter'),
   expenseInfo('/document-scanner/expense-info'),
   pigtails('/pigtails'),
+  hoursManagement('/hours-management'),
 ;
 
   const AppRoute(this.path);
@@ -273,6 +275,11 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.pigtails.path,
         name: AppRoute.pigtails.name,
         builder: (context, state) => const PigtailScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.hoursManagement.path,
+        name: AppRoute.hoursManagement.name,
+        builder: (context, state) => const HoursManagementScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

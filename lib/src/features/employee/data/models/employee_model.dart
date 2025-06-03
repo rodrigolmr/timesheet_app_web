@@ -19,6 +19,8 @@ class EmployeeModel with _$EmployeeModel implements CleanableModel {
     required String firstName,
     required String lastName,
     required bool isActive,
+    double? weeklyHoursGoal,
+    double? monthlyHoursGoal,
     
     // Campos de controle (sistema)
     required DateTime createdAt,
@@ -34,6 +36,8 @@ class EmployeeModel with _$EmployeeModel implements CleanableModel {
       firstName: data['first_name'] as String,
       lastName: data['last_name'] as String,
       isActive: data['is_active'] as bool,
+      weeklyHoursGoal: data['weekly_hours_goal'] as double?,
+      monthlyHoursGoal: data['monthly_hours_goal'] as double?,
       createdAt: (data['created_at'] as Timestamp).toDate(),
       updatedAt: (data['updated_at'] as Timestamp).toDate(),
     );
@@ -44,6 +48,8 @@ class EmployeeModel with _$EmployeeModel implements CleanableModel {
       'first_name': firstName,
       'last_name': lastName,
       'is_active': isActive,
+      'weekly_hours_goal': weeklyHoursGoal,
+      'monthly_hours_goal': monthlyHoursGoal,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

@@ -12,6 +12,8 @@ _$EmployeeModelImpl _$$EmployeeModelImplFromJson(Map<String, dynamic> json) =>
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       isActive: json['isActive'] as bool,
+      weeklyHoursGoal: (json['weeklyHoursGoal'] as num?)?.toDouble(),
+      monthlyHoursGoal: (json['monthlyHoursGoal'] as num?)?.toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -22,6 +24,8 @@ Map<String, dynamic> _$$EmployeeModelImplToJson(_$EmployeeModelImpl instance) =>
       'firstName': instance.firstName,
       'lastName': instance.lastName,
       'isActive': instance.isActive,
+      'weeklyHoursGoal': instance.weeklyHoursGoal,
+      'monthlyHoursGoal': instance.monthlyHoursGoal,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };

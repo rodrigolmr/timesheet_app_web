@@ -31,7 +31,8 @@ mixin _$UserModel {
   String get role => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
   String? get themePreference => throw _privateConstructorUsedError;
-  bool? get forcedTheme =>
+  bool? get forcedTheme => throw _privateConstructorUsedError;
+  String? get employeeId =>
       throw _privateConstructorUsedError; // Campos de controle (sistema)
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
@@ -61,6 +62,7 @@ abstract class $UserModelCopyWith<$Res> {
     bool isActive,
     String? themePreference,
     bool? forcedTheme,
+    String? employeeId,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -90,6 +92,7 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
     Object? isActive = null,
     Object? themePreference = freezed,
     Object? forcedTheme = freezed,
+    Object? employeeId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -140,6 +143,11 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
                     ? _value.forcedTheme
                     : forcedTheme // ignore: cast_nullable_to_non_nullable
                         as bool?,
+            employeeId:
+                freezed == employeeId
+                    ? _value.employeeId
+                    : employeeId // ignore: cast_nullable_to_non_nullable
+                        as String?,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
@@ -175,6 +183,7 @@ abstract class _$$UserModelImplCopyWith<$Res>
     bool isActive,
     String? themePreference,
     bool? forcedTheme,
+    String? employeeId,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -203,6 +212,7 @@ class __$$UserModelImplCopyWithImpl<$Res>
     Object? isActive = null,
     Object? themePreference = freezed,
     Object? forcedTheme = freezed,
+    Object? employeeId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -253,6 +263,11 @@ class __$$UserModelImplCopyWithImpl<$Res>
                 ? _value.forcedTheme
                 : forcedTheme // ignore: cast_nullable_to_non_nullable
                     as bool?,
+        employeeId:
+            freezed == employeeId
+                ? _value.employeeId
+                : employeeId // ignore: cast_nullable_to_non_nullable
+                    as String?,
         createdAt:
             null == createdAt
                 ? _value.createdAt
@@ -281,6 +296,7 @@ class _$UserModelImpl extends _UserModel {
     required this.isActive,
     this.themePreference,
     this.forcedTheme,
+    this.employeeId,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -308,6 +324,8 @@ class _$UserModelImpl extends _UserModel {
   final String? themePreference;
   @override
   final bool? forcedTheme;
+  @override
+  final String? employeeId;
   // Campos de controle (sistema)
   @override
   final DateTime createdAt;
@@ -316,7 +334,7 @@ class _$UserModelImpl extends _UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, authUid: $authUid, email: $email, firstName: $firstName, lastName: $lastName, role: $role, isActive: $isActive, themePreference: $themePreference, forcedTheme: $forcedTheme, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'UserModel(id: $id, authUid: $authUid, email: $email, firstName: $firstName, lastName: $lastName, role: $role, isActive: $isActive, themePreference: $themePreference, forcedTheme: $forcedTheme, employeeId: $employeeId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -338,6 +356,8 @@ class _$UserModelImpl extends _UserModel {
                 other.themePreference == themePreference) &&
             (identical(other.forcedTheme, forcedTheme) ||
                 other.forcedTheme == forcedTheme) &&
+            (identical(other.employeeId, employeeId) ||
+                other.employeeId == employeeId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -357,6 +377,7 @@ class _$UserModelImpl extends _UserModel {
     isActive,
     themePreference,
     forcedTheme,
+    employeeId,
     createdAt,
     updatedAt,
   );
@@ -386,6 +407,7 @@ abstract class _UserModel extends UserModel {
     required final bool isActive,
     final String? themePreference,
     final bool? forcedTheme,
+    final String? employeeId,
     required final DateTime createdAt,
     required final DateTime updatedAt,
   }) = _$UserModelImpl;
@@ -412,7 +434,9 @@ abstract class _UserModel extends UserModel {
   @override
   String? get themePreference;
   @override
-  bool? get forcedTheme; // Campos de controle (sistema)
+  bool? get forcedTheme;
+  @override
+  String? get employeeId; // Campos de controle (sistema)
   @override
   DateTime get createdAt;
   @override
