@@ -30,21 +30,41 @@ class _NotificationBadgeState extends ConsumerState<NotificationBadge> {
     final offset = renderBox.localToGlobal(Offset.zero);
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: _closeDropdown,
-        child: Stack(
-          children: [
-            Positioned(
-              left: offset.dx - 250 + size.width, // Align to right edge
-              top: offset.dy + size.height + 8,
-              child: NotificationDropdown(
-                onClose: _closeDropdown,
+      builder: (context) {
+        // Get screen dimensions
+        final screenWidth = MediaQuery.of(context).size.width;
+        const dropdownWidth = 300.0;
+        const padding = 16.0;
+        
+        // Calculate the ideal left position (align with right edge of button)
+        double idealLeft = offset.dx + size.width - dropdownWidth;
+        
+        // Ensure dropdown doesn't go off left edge
+        if (idealLeft < padding) {
+          idealLeft = padding;
+        }
+        
+        // Ensure dropdown doesn't go off right edge
+        if (idealLeft + dropdownWidth > screenWidth - padding) {
+          idealLeft = screenWidth - dropdownWidth - padding;
+        }
+        
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _closeDropdown,
+          child: Stack(
+            children: [
+              Positioned(
+                left: idealLeft,
+                top: offset.dy + size.height + 8,
+                child: NotificationDropdown(
+                  onClose: _closeDropdown,
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
 
     Overlay.of(context).insert(_overlayEntry!);
