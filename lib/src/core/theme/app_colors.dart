@@ -92,6 +92,7 @@ class AppColors {
   Color get onSurfaceVariant => textSecondary;
   Color get surfaceVariant => surfaceAccent;
   Color get outline => textSecondary.withOpacity(0.5);
+  Color get divider => textSecondary.withOpacity(0.2);
 
   /// Cria o tema light padrão com a identidade visual do aplicativo
   /// Usando a paleta Azul Corporativo (Palette4CorporateAmber)

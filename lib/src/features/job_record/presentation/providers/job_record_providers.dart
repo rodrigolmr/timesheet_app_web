@@ -424,3 +424,20 @@ class JobRecordState extends _$JobRecordState {
     }
   }
 }
+
+// Provider for selected job record (for desktop split view)
+@Riverpod(keepAlive: true)
+class SelectedJobRecord extends _$SelectedJobRecord {
+  @override
+  String? build() {
+    return null;
+  }
+
+  void selectRecord(String? recordId) {
+    state = recordId;
+  }
+
+  void clearSelection() {
+    state = null;
+  }
+}

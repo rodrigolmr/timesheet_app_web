@@ -24,8 +24,8 @@ class JobRecordPrintService {
             'start': e.startTime,
             'finish': e.finishTime,
             'hours': e.hours.toString(),
-            'travel': e.travelHours.toString(),
-            'meal': e.meal.toString(),
+            'travel': e.travelHours == 0 ? '' : e.travelHours.toString(),
+            'meal': e.meal == 0 ? '' : e.meal.toString(),
           };
         }).toList();
 

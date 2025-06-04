@@ -15,7 +15,6 @@ class RolePermissions {
       AppRoute.jobRecords,
       AppRoute.jobRecordCreate,
       AppRoute.jobRecordEdit,
-      AppRoute.jobRecordDetails,
       AppRoute.timesheetList,
       AppRoute.expenses,
       AppRoute.expenseDetails,
@@ -37,7 +36,6 @@ class RolePermissions {
       AppRoute.jobRecords,
       AppRoute.jobRecordCreate,
       AppRoute.jobRecordEdit,
-      AppRoute.jobRecordDetails,
       AppRoute.timesheetList,
       AppRoute.expenses,
       AppRoute.expenseDetails,
@@ -159,5 +157,10 @@ class RolePermissions {
   static bool canViewJobRecordApprovalActions(UserRole role) {
     // Only Admin and Manager can see approval buttons
     return role == UserRole.admin || role == UserRole.manager;
+  }
+
+  static bool canAccessHoursManagement(UserRole role) {
+    // All users can access hours management
+    return true;
   }
 }

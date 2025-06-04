@@ -16,7 +16,6 @@ import 'package:timesheet_app_web/src/features/settings/presentation/screens/set
 import 'package:timesheet_app_web/src/features/database/presentation/screens/database_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_create_screen.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_records_screen.dart';
-import 'package:timesheet_app_web/src/features/job_record/presentation/screens/job_record_details_screen.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/screens/expenses_screen.dart';
 import 'package:timesheet_app_web/src/features/expense/presentation/screens/expense_details_screen.dart';
 import 'package:timesheet_app_web/src/features/document_scanner/presentation/screens/document_scanner_screen.dart';
@@ -50,7 +49,6 @@ enum AppRoute {
   jobRecordEdit('/job-records/edit/:id'),
   jobRecords('/job-records'),
   timesheetList('/timesheets'),
-  jobRecordDetails('/job-records/:id'),
   expenses('/expenses'),
   expenseDetails('/expenses/:id'),
   documentScanner('/document-scanner'),
@@ -210,14 +208,6 @@ GoRouter goRouter(GoRouterRef ref) {
         path: AppRoute.timesheetList.path,
         name: AppRoute.timesheetList.name,
         builder: (context, state) => const JobRecordsScreen(),
-      ),
-      GoRoute(
-        path: AppRoute.jobRecordDetails.path,
-        name: AppRoute.jobRecordDetails.name,
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return JobRecordDetailsScreen(recordId: id);
-        },
       ),
       GoRoute(
         path: AppRoute.expenses.path,

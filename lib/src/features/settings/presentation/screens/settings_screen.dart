@@ -11,6 +11,7 @@ import 'package:timesheet_app_web/src/features/user/presentation/providers/user_
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
 import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
+import 'package:timesheet_app_web/src/features/settings/presentation/widgets/about_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -153,7 +154,20 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
         
-        // 6. Database (apenas para admin)
+        // 6. About (para todos)
+        activeCards.add(
+          NavigationCard(
+            title: 'About',
+            description: 'App info',
+            icon: Icons.help_outline,
+            route: '/settings/about',
+            color: context.colors.primary,
+            isActive: true,
+            onTap: () => _showAboutDialog(context),
+          ),
+        );
+        
+        // 7. Database (apenas para admin)
         if (isAdmin) {
           activeCards.add(
             NavigationCard(
@@ -183,14 +197,6 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.security,
             route: '/settings/security',
             color: context.colors.warning,
-            isActive: false,
-          ),
-          NavigationCard(
-            title: 'About',
-            description: 'App info',
-            icon: Icons.help_outline,
-            route: '/settings/about',
-            color: context.colors.primary,
             isActive: false,
           ),
         ];
@@ -368,5 +374,12 @@ class SettingsScreen extends ConsumerWidget {
       if (word.isEmpty) return word;
       return word[0].toUpperCase() + word.substring(1);
     }).join(' ');
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const AboutAppDialog(),
+    );
   }
 }

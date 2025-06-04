@@ -6,6 +6,7 @@ import 'package:timesheet_app_web/src/core/navigation/routes.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/notification_badge.dart';
+import 'package:timesheet_app_web/src/features/settings/presentation/widgets/about_dialog.dart';
 
 /// Cabeçalho padrão utilizado em todas as telas do aplicativo
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
@@ -136,6 +137,12 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                       case 'home':
                         context.go(AppRoute.home.path);
                         break;
+                      case 'about':
+                        showDialog(
+                          context: context,
+                          builder: (context) => const AboutAppDialog(),
+                        );
+                        break;
                       case 'logout':
                         _confirmLogout(context, ref);
                         break;
@@ -149,6 +156,17 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                           Icon(Icons.home, size: 20, color: colors.primary),
                           SizedBox(width: dimensions.spacingS),
                           Text('Home', style: textStyles.body),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem<String>(
+                      value: 'about',
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 20, color: colors.primary),
+                          SizedBox(width: dimensions.spacingS),
+                          Text('About', style: textStyles.body),
                         ],
                       ),
                     ),
@@ -343,6 +361,12 @@ class _AppHeaderWithTabs extends AppHeader {
                       case 'home':
                         context.go(AppRoute.home.path);
                         break;
+                      case 'about':
+                        showDialog(
+                          context: context,
+                          builder: (context) => const AboutAppDialog(),
+                        );
+                        break;
                       case 'logout':
                         _confirmLogout(context, ref);
                         break;
@@ -356,6 +380,17 @@ class _AppHeaderWithTabs extends AppHeader {
                           Icon(Icons.home, size: 20, color: colors.primary),
                           SizedBox(width: dimensions.spacingS),
                           Text('Home', style: textStyles.body),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem<String>(
+                      value: 'about',
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 20, color: colors.primary),
+                          SizedBox(width: dimensions.spacingS),
+                          Text('About', style: textStyles.body),
                         ],
                       ),
                     ),

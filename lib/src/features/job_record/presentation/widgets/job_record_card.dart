@@ -71,7 +71,7 @@ class JobRecordCard extends ConsumerWidget {
                 if (onTap != null) {
                   onTap!();
                 } else {
-                  context.push('/job-records/${record.id}');
+                  // Default behavior - do nothing as navigation is handled by parent
                 }
               }
             },

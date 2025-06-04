@@ -12,6 +12,8 @@ import 'package:timesheet_app_web/src/features/job_record/presentation/providers
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_card.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_filters.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_details_widget.dart';
+import 'package:timesheet_app_web/src/features/job_record/presentation/widgets/job_record_details_dialog.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/services/job_record_print_service.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
@@ -61,12 +63,27 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: _buildBody(),
-      floatingActionButton: _buildFloatingActionButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Use split view for screens wider than 900px instead of 1200px
+    final useSplitView = screenWidth >= 900;
+    
+    if (useSplitView) {
+      // Desktop/tablet layout with split view
+      return Scaffold(
+        appBar: _buildAppBar(),
+        body: _buildDesktopBody(),
+        floatingActionButton: _buildFloatingActionButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      );
+    } else {
+      // Mobile layout
+      return Scaffold(
+        appBar: _buildAppBar(),
+        body: _buildMobileBody(),
+        floatingActionButton: _buildFloatingActionButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      );
+    }
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -94,12 +111,6 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         ),
         actions: [
           if (selectionState.hasSelection) ...[
-            if (canDelete)
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => _showDeleteConfirmDialog(selectionState.selectedIds),
-                tooltip: 'Delete selected',
-              ),
             if (canPrint)
               IconButton(
                 icon: const Icon(Icons.print),
@@ -126,18 +137,30 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
                   value: 'select_none',
                   child: Text('Select None'),
                 ),
-                if (canApprove && selectionState.hasSelection) ...[
+                if (selectionState.hasSelection) ...[
                   const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'approve_selected',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 20, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Approve Selected'),
-                      ],
+                  if (canDelete)
+                    const PopupMenuItem(
+                      value: 'delete_selected',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete Selected'),
+                        ],
+                      ),
                     ),
-                  ),
+                  if (canApprove)
+                    const PopupMenuItem(
+                      value: 'approve_selected',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 20, color: Colors.green),
+                          SizedBox(width: 8),
+                          Text('Approve Selected'),
+                        ],
+                      ),
+                    ),
                 ],
               ];
             },
@@ -190,14 +213,129 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildMobileBody() {
     return Column(
       children: [
         _buildFilters(),
         Expanded(
-          child: _buildRecordsList(),
+          child: _buildRecordsList(isMobile: true),
         ),
       ],
+    );
+  }
+
+  Widget _buildDesktopBody() {
+    final selectedRecordId = ref.watch(selectedJobRecordProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Calculate list width based on screen size
+    final listWidth = screenWidth < 1000 
+        ? 320.0 // Fixed smaller width for screens 900-999px
+        : context.responsive<double>(
+            xs: 320,
+            sm: 340,
+            md: 360,
+            lg: 380,
+            xl: 400,
+          );
+    
+    // For very large screens, constrain the total width
+    final maxTotalWidth = 1600.0;
+    final shouldConstrainWidth = screenWidth > maxTotalWidth;
+    
+    Widget content = Row(
+      children: [
+        // Left side - List of records
+        SizedBox(
+          width: listWidth,
+          child: Column(
+            children: [
+              _buildFilters(),
+              Expanded(
+                child: _buildRecordsList(isMobile: false),
+              ),
+            ],
+          ),
+        ),
+        // Divider
+        Container(
+          width: 1,
+          color: context.colors.divider,
+        ),
+        // Right side - Details with constrained width
+        Expanded(
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: shouldConstrainWidth 
+                  ? maxTotalWidth - listWidth - 1 // Subtract list width and divider
+                  : double.infinity,
+            ),
+            child: selectedRecordId != null
+                ? _buildDesktopDetails(selectedRecordId)
+                : _buildEmptyDetailsState(),
+          ),
+        ),
+      ],
+    );
+    
+    // Center the entire layout on very large screens
+    if (shouldConstrainWidth) {
+      return Center(
+        child: SizedBox(
+          width: maxTotalWidth,
+          child: content,
+        ),
+      );
+    }
+    
+    return content;
+  }
+
+  Widget _buildDesktopDetails(String recordId) {
+    final recordAsync = ref.watch(jobRecordProvider(recordId));
+    
+    return recordAsync.when(
+      data: (record) {
+        if (record == null) {
+          return _buildEmptyDetailsState();
+        }
+        return JobRecordDetailsWidget(
+          record: record,
+          showActions: true,
+          isFullScreen: false,
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          'Error loading record: $error',
+          style: context.textStyles.body.copyWith(
+            color: context.colors.error,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyDetailsState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.assignment_outlined,
+            size: 80,
+            color: context.colors.textSecondary.withOpacity(0.3),
+          ),
+          SizedBox(height: context.dimensions.spacingL),
+          Text(
+            'Select a job record to view details',
+            style: context.textStyles.subtitle.copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -289,6 +427,10 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         
       case 'approve_selected':
         _approveSelectedRecords(selectionState.selectedIds);
+        break;
+        
+      case 'delete_selected':
+        _showDeleteConfirmDialog(selectionState.selectedIds);
         break;
     }
   }
@@ -599,7 +741,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
 
 
 
-  Widget _buildRecordsList() {
+  Widget _buildRecordsList({required bool isMobile}) {
     final recordsAsync = ref.watch(
       jobRecordsSearchStreamProvider(
         searchQuery: _searchQuery,
@@ -619,7 +761,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
         // Group records by week using the utils
         final weekGroups = groupRecordsByWeek(records);
 
-        return _buildWeekGroupsList(weekGroups);
+        return _buildWeekGroupsList(weekGroups, isMobile: isMobile);
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => _buildErrorState(error),
@@ -662,7 +804,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     return message;
   }
 
-  Widget _buildWeekGroupsList(List<WeekGroup> weekGroups) {
+  Widget _buildWeekGroupsList(List<WeekGroup> weekGroups, {required bool isMobile}) {
     return ResponsiveContainer(
       child: ListView.builder(
         padding: EdgeInsets.symmetric(
@@ -680,7 +822,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
               _buildMinimalHeader(weekGroup),
               
               // Build records grouped by day
-              ..._buildDayGroups(weekGroup),
+              ..._buildDayGroups(weekGroup, isMobile: isMobile),
               
               // Spacer between weeks
               SizedBox(height: context.responsive<double>(xs: 8, sm: 10, md: 12)),
@@ -691,7 +833,7 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
     );
   }
 
-  List<Widget> _buildDayGroups(WeekGroup weekGroup) {
+  List<Widget> _buildDayGroups(WeekGroup weekGroup, {required bool isMobile}) {
     // Check if user is manager or admin
     final canViewAllAsync = ref.watch(canViewAllJobRecordsProvider);
     final canViewAll = canViewAllAsync.valueOrNull ?? false;
@@ -700,7 +842,10 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       // For regular users, just return the records without day grouping
       return weekGroup.records.map((record) => Padding(
         padding: const EdgeInsets.only(bottom: 2.0),
-        child: JobRecordCard(record: record),
+        child: JobRecordCard(
+          record: record,
+          onTap: () => _handleRecordTap(record, isMobile),
+        ),
       )).toList();
     }
     
@@ -739,7 +884,10 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       dayWidgets.addAll(
         dayRecords.map((record) => Padding(
           padding: const EdgeInsets.only(bottom: 2.0),
-          child: JobRecordCard(record: record),
+          child: JobRecordCard(
+            record: record,
+            onTap: () => _handleRecordTap(record, isMobile),
+          ),
         )),
       );
     }
@@ -958,5 +1106,23 @@ class _JobRecordsScreenState extends ConsumerState<JobRecordsScreen> {
       context: context,
       builder: (context) => const TimeSheetDateRangeDialog(),
     );
+  }
+
+  void _handleRecordTap(JobRecordModel record, bool isMobile) {
+    final selectionState = ref.read(jobRecordSelectionProvider);
+    
+    if (selectionState.isSelectionMode) {
+      // In selection mode, toggle selection
+      ref.read(jobRecordSelectionProvider.notifier).toggleSelection(record.id);
+    } else if (isMobile) {
+      // On mobile, show dialog
+      showDialog(
+        context: context,
+        builder: (context) => JobRecordDetailsDialog(record: record),
+      );
+    } else {
+      // On desktop, select the record for split view
+      ref.read(selectedJobRecordProvider.notifier).selectRecord(record.id);
+    }
   }
 }
