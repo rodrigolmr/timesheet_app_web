@@ -53,7 +53,7 @@ List<HomeNavigationItem> homeNavigationItems(HomeNavigationItemsRef ref) {
       isActive: true,
     ),
     HomeNavigationItem(
-      title: 'Hours Management',
+      title: 'Hours',
       description: 'Track your work hours',
       icon: Icons.access_time,
       route: AppRoute.hoursManagement.path,

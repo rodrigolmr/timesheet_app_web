@@ -4,12 +4,15 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/theme_extensions.dart';
 import '../../../../core/widgets/app_header.dart';
 import '../../../../core/widgets/input/app_date_range_picker_field.dart';
+import '../../../../core/widgets/input/app_dropdown_field.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/utils/week_utils.dart';
 import '../providers/hours_management_providers.dart';
 import '../../data/models/user_hours_model.dart';
 import '../../../user/presentation/providers/user_providers.dart';
 import '../../../user/data/models/user_model.dart';
+import '../../../employee/presentation/providers/employee_providers.dart';
+import '../../../employee/data/models/employee_model.dart';
 
 class HoursManagementScreen extends ConsumerWidget {
   const HoursManagementScreen({super.key});
@@ -18,26 +21,46 @@ class HoursManagementScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserAsync = ref.watch(currentUserProfileProvider);
     final dateRange = ref.watch(dateRangeSelectionProvider);
-    final dailyHoursAsync = ref.watch(userDailyHoursProvider);
-    final hoursSummaryAsync = ref.watch(userHoursSummaryProvider);
+    final canViewOthersAsync = ref.watch(canViewOtherEmployeesProvider);
+    final selectedEmployeeId = ref.watch(selectedEmployeeProvider);
+    final dailyHoursAsync = ref.watch(viewingEmployeeHoursProvider);
+    final hoursSummaryAsync = ref.watch(viewingEmployeeHoursSummaryProvider);
+
+    String subtitle = 'Track and analyze work hours';
+    if (currentUserAsync.valueOrNull != null) {
+      final user = currentUserAsync.valueOrNull!;
+      subtitle = '${user.firstName} ${user.lastName}';
+      
+      if (canViewOthersAsync.valueOrNull == true && selectedEmployeeId != null) {
+        final selectedEmployeeAsync = ref.watch(employeeProvider(selectedEmployeeId));
+        if (selectedEmployeeAsync.valueOrNull != null) {
+          final employee = selectedEmployeeAsync.valueOrNull!;
+          subtitle = '${employee.firstName} ${employee.lastName}';
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: context.colors.background,
       appBar: AppHeader(
         title: 'Hours Management',
-        subtitle: currentUserAsync.valueOrNull != null 
-            ? '${currentUserAsync.valueOrNull!.firstName} ${currentUserAsync.valueOrNull!.lastName}'
-            : 'Track and analyze work hours',
+        subtitle: subtitle,
         showBackButton: true,
       ),
       body: currentUserAsync.when(
         data: (user) {
-          if (user == null || user.employeeId == null) {
+          // Admin e Manager podem ver horas mesmo sem employeeId
+          if (user == null) {
+            return _buildNoEmployeeState(context);
+          }
+          
+          // Se não é admin/manager e não tem employeeId, mostra estado vazio
+          if (user.employeeId == null && !user.isAdmin && !user.isManager) {
             return _buildNoEmployeeState(context);
           }
           return ResponsiveLayout(
-            mobile: _buildMobileLayout(context, ref, dateRange, dailyHoursAsync, hoursSummaryAsync),
-            desktop: _buildDesktopLayout(context, ref, dateRange, dailyHoursAsync, hoursSummaryAsync),
+            mobile: _buildMobileLayout(context, ref, dateRange, dailyHoursAsync, hoursSummaryAsync, canViewOthersAsync),
+            desktop: _buildDesktopLayout(context, ref, dateRange, dailyHoursAsync, hoursSummaryAsync, canViewOthersAsync),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -59,12 +82,17 @@ class HoursManagementScreen extends ConsumerWidget {
     ({DateTime? startDate, DateTime? endDate}) dateRange,
     AsyncValue<List<UserHoursModel>> dailyHoursAsync,
     AsyncValue<Map<String, double>> hoursSummaryAsync,
+    AsyncValue<bool> canViewOthersAsync,
   ) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(context.dimensions.spacingM),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (canViewOthersAsync.valueOrNull == true) ...[
+            _buildEmployeeSelector(context, ref),
+            SizedBox(height: context.dimensions.spacingL),
+          ],
           _buildDateSelector(context, ref, dateRange),
           SizedBox(height: context.dimensions.spacingL),
           _buildSummaryCard(context, hoursSummaryAsync),
@@ -81,6 +109,7 @@ class HoursManagementScreen extends ConsumerWidget {
     ({DateTime? startDate, DateTime? endDate}) dateRange,
     AsyncValue<List<UserHoursModel>> dailyHoursAsync,
     AsyncValue<Map<String, double>> hoursSummaryAsync,
+    AsyncValue<bool> canViewOthersAsync,
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,6 +122,10 @@ class HoursManagementScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (canViewOthersAsync.valueOrNull == true) ...[
+                  _buildEmployeeSelector(context, ref),
+                  SizedBox(height: context.dimensions.spacingL),
+                ],
                 _buildDateSelector(context, ref, dateRange),
                 SizedBox(height: context.dimensions.spacingL),
                 _buildSummaryCard(context, hoursSummaryAsync),
@@ -582,5 +615,74 @@ class HoursManagementScreen extends ConsumerWidget {
     
     ref.read(dateRangeSelectionProvider.notifier)
         .updateDateRange(lastFridayDate, lastThursdayDate);
+  }
+
+  Widget _buildEmployeeSelector(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final currentUserAsync = ref.watch(currentUserProfileProvider);
+    final selectedEmployeeId = ref.watch(selectedEmployeeProvider);
+    final employeesAsync = ref.watch(activeEmployeesProvider);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+        side: BorderSide(
+          color: context.colors.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(context.dimensions.spacingM),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Select Employee',
+              style: context.textStyles.subtitle.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            employeesAsync.when(
+              data: (employees) {
+                final allEmployees = [
+                  null, // Representa "My Hours"
+                  ...employees,
+                ];
+
+                return AppDropdownField<EmployeeModel?>(
+                  label: 'Employee',
+                  hintText: 'Select an employee',
+                  value: selectedEmployeeId != null 
+                      ? employees.firstWhere((e) => e.id == selectedEmployeeId, orElse: () => employees.first)
+                      : null,
+                  items: allEmployees,
+                  itemLabelBuilder: (employee) {
+                    if (employee == null) {
+                      return currentUserAsync.valueOrNull != null
+                          ? 'My Hours (${currentUserAsync.valueOrNull!.firstName} ${currentUserAsync.valueOrNull!.lastName})'
+                          : 'My Hours';
+                    }
+                    return '${employee.firstName} ${employee.lastName}';
+                  },
+                  onChanged: (employee) {
+                    ref.read(selectedEmployeeProvider.notifier).selectEmployee(employee?.id);
+                  },
+                );
+              },
+              loading: () => const LinearProgressIndicator(),
+              error: (error, _) => Text(
+                'Error loading employees: $error',
+                style: context.textStyles.body.copyWith(
+                  color: context.colors.error,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

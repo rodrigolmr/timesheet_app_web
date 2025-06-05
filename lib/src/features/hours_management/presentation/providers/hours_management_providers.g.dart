@@ -346,6 +346,67 @@ class _EmployeeHoursSummaryProviderElement
   String get employeeId => (origin as EmployeeHoursSummaryProvider).employeeId;
 }
 
+String _$canViewOtherEmployeesHash() =>
+    r'795226c310f59106081a28d884e4a08d37c6424c';
+
+/// See also [canViewOtherEmployees].
+@ProviderFor(canViewOtherEmployees)
+final canViewOtherEmployeesProvider = AutoDisposeFutureProvider<bool>.internal(
+  canViewOtherEmployees,
+  name: r'canViewOtherEmployeesProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$canViewOtherEmployeesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CanViewOtherEmployeesRef = AutoDisposeFutureProviderRef<bool>;
+String _$viewingEmployeeHoursHash() =>
+    r'c71613f430ec00ae2c3146ae8a7b0122d1d303ff';
+
+/// See also [viewingEmployeeHours].
+@ProviderFor(viewingEmployeeHours)
+final viewingEmployeeHoursProvider =
+    AutoDisposeFutureProvider<List<UserHoursModel>>.internal(
+      viewingEmployeeHours,
+      name: r'viewingEmployeeHoursProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$viewingEmployeeHoursHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ViewingEmployeeHoursRef =
+    AutoDisposeFutureProviderRef<List<UserHoursModel>>;
+String _$viewingEmployeeHoursSummaryHash() =>
+    r'd43e1ec52c7638a37afa26831d4bd8491e0f486e';
+
+/// See also [viewingEmployeeHoursSummary].
+@ProviderFor(viewingEmployeeHoursSummary)
+final viewingEmployeeHoursSummaryProvider =
+    AutoDisposeFutureProvider<Map<String, double>>.internal(
+      viewingEmployeeHoursSummary,
+      name: r'viewingEmployeeHoursSummaryProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$viewingEmployeeHoursSummaryHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ViewingEmployeeHoursSummaryRef =
+    AutoDisposeFutureProviderRef<Map<String, double>>;
 String _$dateRangeSelectionHash() =>
     r'e938bb8e2388b7eb276e1e5a73865414ee910233';
 
@@ -367,5 +428,22 @@ final dateRangeSelectionProvider = AutoDisposeNotifierProvider<
 
 typedef _$DateRangeSelection =
     AutoDisposeNotifier<({DateTime? startDate, DateTime? endDate})>;
+String _$selectedEmployeeHash() => r'995c33de06ad18c3cff40f7acde6ecf1d3f872da';
+
+/// See also [SelectedEmployee].
+@ProviderFor(SelectedEmployee)
+final selectedEmployeeProvider =
+    AutoDisposeNotifierProvider<SelectedEmployee, String?>.internal(
+      SelectedEmployee.new,
+      name: r'selectedEmployeeProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$selectedEmployeeHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$SelectedEmployee = AutoDisposeNotifier<String?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
