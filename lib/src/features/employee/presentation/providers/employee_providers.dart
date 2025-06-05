@@ -111,3 +111,18 @@ class EmployeeState extends _$EmployeeState {
     }
   }
 }
+
+/// Provider para obter funcionários sem usuário associado
+@riverpod
+Future<List<EmployeeModel>> employeesWithoutUser(EmployeesWithoutUserRef ref) async {
+  final employees = await ref.watch(employeesProvider.future);
+  return employees.where((employee) => employee.userId == null).toList();
+}
+
+/// Provider para observar funcionários sem usuário associado em tempo real
+@riverpod
+Stream<List<EmployeeModel>> employeesWithoutUserStream(EmployeesWithoutUserStreamRef ref) {
+  return ref.watch(employeeRepositoryProvider).watchAll().map((employees) {
+    return employees.where((employee) => employee.userId == null).toList();
+  });
+}

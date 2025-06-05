@@ -22,6 +22,9 @@ class EmployeeModel with _$EmployeeModel implements CleanableModel {
     double? weeklyHoursGoal,
     double? monthlyHoursGoal,
     
+    // Associação com User (opcional)
+    String? userId,
+    
     // Campos de controle (sistema)
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -38,6 +41,7 @@ class EmployeeModel with _$EmployeeModel implements CleanableModel {
       isActive: data['is_active'] as bool,
       weeklyHoursGoal: data['weekly_hours_goal'] as double?,
       monthlyHoursGoal: data['monthly_hours_goal'] as double?,
+      userId: data['user_id'] as String?,
       createdAt: (data['created_at'] as Timestamp).toDate(),
       updatedAt: (data['updated_at'] as Timestamp).toDate(),
     );
@@ -50,6 +54,7 @@ class EmployeeModel with _$EmployeeModel implements CleanableModel {
       'is_active': isActive,
       'weekly_hours_goal': weeklyHoursGoal,
       'monthly_hours_goal': monthlyHoursGoal,
+      'user_id': userId,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
     };

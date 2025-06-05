@@ -6,7 +6,7 @@ part of 'user_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userRepositoryHash() => r'e3eb41e2cc78bb42f35518b72aca6fffdb122b6d';
+String _$userRepositoryHash() => r'85579c534d2b9d97a1f1fc06e6b3ccca549111d3';
 
 /// Provider que fornece o repositório de usuários
 ///
@@ -984,5 +984,50 @@ class _UpdateCurrentUserThemeProviderElement
       (origin as UpdateCurrentUserThemeProvider).themePreference;
 }
 
+String _$usersWithoutEmployeeHash() =>
+    r'98655cc83dec80c01314282c6911f0feceb6412d';
+
+/// Provider para obter usuários sem employee associado
+///
+/// Copied from [usersWithoutEmployee].
+@ProviderFor(usersWithoutEmployee)
+final usersWithoutEmployeeProvider =
+    AutoDisposeFutureProvider<List<UserModel>>.internal(
+      usersWithoutEmployee,
+      name: r'usersWithoutEmployeeProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$usersWithoutEmployeeHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef UsersWithoutEmployeeRef = AutoDisposeFutureProviderRef<List<UserModel>>;
+String _$usersWithoutEmployeeStreamHash() =>
+    r'c80fa9c34317d09ddda9595b14a5720c4f322484';
+
+/// Provider para observar usuários sem employee associado em tempo real
+///
+/// Copied from [usersWithoutEmployeeStream].
+@ProviderFor(usersWithoutEmployeeStream)
+final usersWithoutEmployeeStreamProvider =
+    AutoDisposeStreamProvider<List<UserModel>>.internal(
+      usersWithoutEmployeeStream,
+      name: r'usersWithoutEmployeeStreamProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$usersWithoutEmployeeStreamHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef UsersWithoutEmployeeStreamRef =
+    AutoDisposeStreamProviderRef<List<UserModel>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

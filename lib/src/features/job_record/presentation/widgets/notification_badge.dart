@@ -76,14 +76,17 @@ class _NotificationBadgeState extends ConsumerState<NotificationBadge> {
   void _closeDropdown() {
     _overlayEntry?.remove();
     _overlayEntry = null;
-    setState(() {
-      _isDropdownOpen = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isDropdownOpen = false;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _closeDropdown();
+    _overlayEntry?.remove();
+    _overlayEntry = null;
     super.dispose();
   }
 

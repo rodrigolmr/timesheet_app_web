@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:collection/collection.dart';
 import 'package:timesheet_app_web/src/core/responsive/responsive.dart';
 import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/widgets.dart';
@@ -10,6 +11,8 @@ import 'package:timesheet_app_web/src/features/user/presentation/providers/user_
 import 'package:timesheet_app_web/src/core/responsive/responsive_grid.dart';
 import 'package:timesheet_app_web/src/features/user/presentation/widgets/user_filters.dart';
 import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
+import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
+import 'package:timesheet_app_web/src/features/employee/data/models/employee_model.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -208,9 +211,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         color: context.colors.textSecondary,
                         fontSize: context.responsive<double>(xs: 11, sm: 12, md: 13),
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 2),
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(
@@ -234,7 +241,6 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
                         Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: context.responsive<double>(xs: 6, sm: 7, md: 8),
@@ -355,20 +361,29 @@ class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   String _selectedRole = 'user';
   bool _isActive = true;
   bool _isLoading = false;
+  bool _showValidationErrors = false;
+  
+  // New fields for employee association
+  String _employeeAssociation = 'new'; // 'new', 'existing', 'none'
+  String? _selectedEmployeeId;
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final employeesWithoutUserAsync = ref.watch(employeesWithoutUserStreamProvider);
+    
     return AppFormDialog(
       title: 'Add User',
       icon: Icons.person_add,
@@ -385,36 +400,150 @@ class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Employee Association Radio Buttons
+            Container(
+              padding: EdgeInsets.all(context.dimensions.spacingS),
+              decoration: BoxDecoration(
+                border: Border.all(color: context.colors.outline),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Employee Association',
+                    style: context.textStyles.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  RadioListTile<String>(
+                    value: 'new',
+                    groupValue: _employeeAssociation,
+                    onChanged: (value) => setState(() {
+                      _employeeAssociation = value!;
+                      _selectedEmployeeId = null;
+                    }),
+                    title: const Text('Create new employee'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  RadioListTile<String>(
+                    value: 'existing',
+                    groupValue: _employeeAssociation,
+                    onChanged: (value) => setState(() {
+                      _employeeAssociation = value!;
+                    }),
+                    title: const Text('Link to existing employee'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  RadioListTile<String>(
+                    value: 'none',
+                    groupValue: _employeeAssociation,
+                    onChanged: (value) => setState(() {
+                      _employeeAssociation = value!;
+                      _selectedEmployeeId = null;
+                    }),
+                    title: const Text('No employee association'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            
+            // Employee Dropdown (only visible when "existing" is selected)
+            if (_employeeAssociation == 'existing')
+              employeesWithoutUserAsync.when(
+                data: (employees) {
+                  print('Employees without user: ${employees.length}');
+                  return Column(
+                  children: [
+                    if (employees.isEmpty)
+                      Container(
+                        padding: EdgeInsets.all(context.dimensions.spacingM),
+                        decoration: BoxDecoration(
+                          color: context.colors.warning.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: context.colors.warning),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: context.colors.warning),
+                            SizedBox(width: context.dimensions.spacingS),
+                            Expanded(
+                              child: Text(
+                                'No employees available. All employees already have user accounts.',
+                                style: context.textStyles.body,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (employees.isNotEmpty)
+                      AppDropdownField<EmployeeModel>(
+                        label: 'Select Employee',
+                        hintText: 'Choose an employee',
+                        items: employees,
+                        value: employees.firstWhereOrNull((e) => e.id == _selectedEmployeeId),
+                        itemLabelBuilder: (employee) => '${employee.firstName} ${employee.lastName}',
+                        onChanged: (employee) {
+                          setState(() {
+                            _selectedEmployeeId = employee?.id;
+                            // Auto-fill name fields when employee is selected
+                            if (employee != null) {
+                              _firstNameController.text = employee.firstName;
+                              _lastNameController.text = employee.lastName;
+                            }
+                          });
+                        },
+                        hasError: _employeeAssociation == 'existing' && _selectedEmployeeId == null && _showValidationErrors,
+                        errorText: 'Please select an employee',
+                      ),
+                    SizedBox(height: context.dimensions.spacingM),
+                  ],
+                );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Text(
+                  'Error loading employees',
+                  style: TextStyle(color: context.colors.error),
+                ),
+              ),
+            
             AppTextField(
               controller: _firstNameController,
               label: 'First Name',
               hintText: 'Enter first name',
+              enabled: _employeeAssociation != 'existing',
             ),
             SizedBox(height: context.dimensions.spacingM),
             AppTextField(
               controller: _lastNameController,
               label: 'Last Name',
               hintText: 'Enter last name',
+              enabled: _employeeAssociation != 'existing',
             ),
             SizedBox(height: context.dimensions.spacingM),
-            AppTextField(
+            AppTextField.email(
               controller: _emailController,
               label: 'Email',
               hintText: 'Enter email',
-              keyboardType: TextInputType.emailAddress,
             ),
             SizedBox(height: context.dimensions.spacingM),
-            DropdownButtonFormField<String>(
+            AppPasswordField(
+              controller: _passwordController,
+              label: 'Password',
+              hintText: 'Enter password',
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            AppDropdownField<String>(
+              label: 'Role',
+              hintText: 'Select user role',
+              items: const ['admin', 'manager', 'user'],
               value: _selectedRole,
-              decoration: const InputDecoration(
-                labelText: 'Role',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                DropdownMenuItem(value: 'manager', child: Text('Manager')),
-                DropdownMenuItem(value: 'user', child: Text('User')),
-              ],
+              itemLabelBuilder: (role) => role[0].toUpperCase() + role.substring(1),
               onChanged: (value) => setState(() => _selectedRole = value!),
             ),
             SizedBox(height: context.dimensions.spacingM),
@@ -432,13 +561,29 @@ class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
   }
 
   Future<void> _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
     if (_firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty) {
+        _emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
       await showWarningDialog(
         context: context,
         title: 'Missing Information',
         message: 'Please fill in all required fields.',
+      );
+      return;
+    }
+    
+    // Validate employee selection when linking to existing employee
+    if (_employeeAssociation == 'existing' && _selectedEmployeeId == null) {
+      setState(() => _showValidationErrors = true);
+      await showWarningDialog(
+        context: context,
+        title: 'Missing Information',
+        message: 'Please select an employee to link.',
       );
       return;
     }
@@ -458,7 +603,25 @@ class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(userRepositoryProvider).create(user);
+      final userRepository = widget.ref.read(userRepositoryProvider);
+      final password = _passwordController.text.trim();
+      
+      // Call different methods based on employee association
+      switch (_employeeAssociation) {
+        case 'new':
+          await userRepository.createUserWithNewEmployee(user, password);
+          break;
+        case 'existing':
+          await userRepository.createUserWithExistingEmployee(
+            user, 
+            password, 
+            _selectedEmployeeId!,
+          );
+          break;
+        case 'none':
+          await userRepository.createUserWithAuth(user, password);
+          break;
+      }
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -484,7 +647,7 @@ class _CreateUserDialogState extends ConsumerState<_CreateUserDialog> {
   }
 }
 
-class _EditUserDialog extends StatefulWidget {
+class _EditUserDialog extends ConsumerStatefulWidget {
   final UserModel user;
   final WidgetRef ref;
 
@@ -494,10 +657,10 @@ class _EditUserDialog extends StatefulWidget {
   });
 
   @override
-  State<_EditUserDialog> createState() => _EditUserDialogState();
+  ConsumerState<_EditUserDialog> createState() => _EditUserDialogState();
 }
 
-class _EditUserDialogState extends State<_EditUserDialog> {
+class _EditUserDialogState extends ConsumerState<_EditUserDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
@@ -505,6 +668,8 @@ class _EditUserDialogState extends State<_EditUserDialog> {
   late String _selectedRole;
   late bool _isActive;
   bool _isLoading = false;
+  String? _selectedEmployeeId;
+  bool _showEmployeeSelection = false;
 
   @override
   void initState() {
@@ -514,6 +679,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     _emailController = TextEditingController(text: widget.user.email);
     _selectedRole = widget.user.role.toLowerCase();
     _isActive = widget.user.isActive;
+    _selectedEmployeeId = widget.user.employeeId;
   }
 
   @override
@@ -547,24 +713,18 @@ class _EditUserDialogState extends State<_EditUserDialog> {
               hintText: 'Enter last name',
             ),
             SizedBox(height: context.dimensions.spacingM),
-            AppTextField(
+            AppTextField.email(
               controller: _emailController,
               label: 'Email',
               hintText: 'Enter email',
-              keyboardType: TextInputType.emailAddress,
             ),
             SizedBox(height: context.dimensions.spacingM),
-            DropdownButtonFormField<String>(
+            AppDropdownField<String>(
+              label: 'Role',
+              hintText: 'Select user role',
+              items: const ['admin', 'manager', 'user'],
               value: _selectedRole,
-              decoration: const InputDecoration(
-                labelText: 'Role',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                DropdownMenuItem(value: 'manager', child: Text('Manager')),
-                DropdownMenuItem(value: 'user', child: Text('User')),
-              ],
+              itemLabelBuilder: (role) => role[0].toUpperCase() + role.substring(1),
               onChanged: (value) => setState(() => _selectedRole = value!),
             ),
             SizedBox(height: context.dimensions.spacingM),
@@ -574,6 +734,173 @@ class _EditUserDialogState extends State<_EditUserDialog> {
               title: const Text('Active'),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
+            ),
+            SizedBox(height: context.dimensions.spacingM),
+            
+            // Employee Association Section
+            Container(
+              padding: EdgeInsets.all(context.dimensions.spacingS),
+              decoration: BoxDecoration(
+                border: Border.all(color: context.colors.outline),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Employee Association',
+                    style: context.textStyles.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: context.dimensions.spacingS),
+                  
+                  // Show current employee if exists
+                  if (_selectedEmployeeId != null) ...[
+                    FutureBuilder<EmployeeModel?>(
+                      future: ref.read(employeeProvider(_selectedEmployeeId!).future),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        
+                        final employee = snapshot.data;
+                        if (employee == null) {
+                          return Text(
+                            'Associated employee not found',
+                            style: TextStyle(color: context.colors.error),
+                          );
+                        }
+                        
+                        return Container(
+                          padding: EdgeInsets.all(context.dimensions.spacingS),
+                          decoration: BoxDecoration(
+                            color: context.colors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                color: context.colors.primary,
+                                size: 20,
+                              ),
+                              SizedBox(width: context.dimensions.spacingS),
+                              Expanded(
+                                child: Text(
+                                  '${employee.firstName} ${employee.lastName}',
+                                  style: context.textStyles.body.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.close,
+                                  color: context.colors.error,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedEmployeeId = null;
+                                  });
+                                },
+                                tooltip: 'Remove association',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    // Show option to associate with employee
+                    if (!_showEmployeeSelection) ...[
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _showEmployeeSelection = true;
+                            });
+                          },
+                          icon: const Icon(Icons.link),
+                          label: const Text('Associate with Employee'),
+                        ),
+                      ),
+                    ] else ...[
+                      // Employee selection dropdown
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final employeesWithoutUserAsync = ref.watch(employeesWithoutUserStreamProvider);
+                          
+                          return employeesWithoutUserAsync.when(
+                            data: (employees) {
+                              if (employees.isEmpty) {
+                                return Container(
+                                  padding: EdgeInsets.all(context.dimensions.spacingM),
+                                  decoration: BoxDecoration(
+                                    color: context.colors.warning.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: context.colors.warning),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.info_outline, color: context.colors.warning),
+                                      SizedBox(width: context.dimensions.spacingS),
+                                      Expanded(
+                                        child: Text(
+                                          'No employees available. All employees already have user accounts.',
+                                          style: context.textStyles.body,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                              
+                              return Column(
+                                children: [
+                                  AppDropdownField<EmployeeModel>(
+                                    label: 'Select Employee',
+                                    hintText: 'Choose an employee to associate',
+                                    items: employees,
+                                    value: employees.firstWhereOrNull((e) => e.id == _selectedEmployeeId),
+                                    itemLabelBuilder: (employee) => '${employee.firstName} ${employee.lastName}',
+                                    onChanged: (employee) {
+                                      setState(() {
+                                        _selectedEmployeeId = employee?.id;
+                                        _showEmployeeSelection = false;
+                                      });
+                                    },
+                                  ),
+                                  SizedBox(height: context.dimensions.spacingS),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showEmployeeSelection = false;
+                                      });
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                ],
+                              );
+                            },
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (error, _) => Text(
+                              'Error loading employees',
+                              style: TextStyle(color: context.colors.error),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -603,16 +930,45 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     setState(() => _isLoading = true);
 
     try {
+      final userRepository = widget.ref.read(userRepositoryProvider);
+      
+      // Check if we need to handle employee association changes
+      final hasEmployeeChanged = widget.user.employeeId != _selectedEmployeeId;
+      
+      if (hasEmployeeChanged) {
+        final employeeRepository = ref.read(employeeRepositoryProvider);
+        
+        // If user had an employee and now doesn't
+        if (widget.user.employeeId != null && _selectedEmployeeId == null) {
+          // Remove association from old employee
+          await employeeRepository.dissociateFromUser(widget.user.employeeId!);
+        }
+        // If user had an employee and is getting a different one
+        else if (widget.user.employeeId != null && _selectedEmployeeId != null && widget.user.employeeId != _selectedEmployeeId) {
+          // Remove association from old employee
+          await employeeRepository.dissociateFromUser(widget.user.employeeId!);
+          // Associate with new employee
+          await userRepository.associateUserWithEmployee(widget.user.id, _selectedEmployeeId!);
+        }
+        // If user didn't have an employee and is getting one
+        else if (widget.user.employeeId == null && _selectedEmployeeId != null) {
+          // Associate with new employee
+          await userRepository.associateUserWithEmployee(widget.user.id, _selectedEmployeeId!);
+        }
+      }
+      
+      // Update user data (including employeeId)
       final updatedUser = widget.user.copyWith(
         email: _emailController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         role: _selectedRole,
         isActive: _isActive,
+        employeeId: _selectedEmployeeId,
         updatedAt: DateTime.now(),
       );
 
-      await widget.ref.read(userRepositoryProvider).update(
+      await userRepository.update(
         widget.user.id,
         updatedUser,
       );

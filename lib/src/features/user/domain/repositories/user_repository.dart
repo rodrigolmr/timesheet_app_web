@@ -16,4 +16,16 @@ abstract class UserRepository implements BaseRepository<UserModel> {
   
   /// Atualiza a preferência de tema de um usuário
   Future<void> updateUserTheme(String id, String themePreference, {bool? forcedTheme});
+  
+  /// Cria um usuário com autenticação (sem employee)
+  Future<String> createUserWithAuth(UserModel user, String password);
+  
+  /// Cria um usuário e um novo employee associado
+  Future<String> createUserWithNewEmployee(UserModel user, String password);
+  
+  /// Cria um usuário e associa a um employee existente
+  Future<String> createUserWithExistingEmployee(UserModel user, String password, String employeeId);
+  
+  /// Associa um usuário existente a um employee existente
+  Future<void> associateUserWithEmployee(String userId, String employeeId);
 }

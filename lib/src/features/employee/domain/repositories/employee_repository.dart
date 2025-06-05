@@ -10,4 +10,10 @@ abstract class EmployeeRepository implements BaseRepository<EmployeeModel> {
   
   /// Ativa ou desativa um funcionário
   Future<void> toggleEmployeeActive(String id, bool isActive);
+  
+  /// Associa um employee a um user
+  Future<void> associateWithUser(String employeeId, String userId);
+  
+  /// Remove a associação de um employee com um user
+  Future<void> dissociateFromUser(String employeeId);
 }

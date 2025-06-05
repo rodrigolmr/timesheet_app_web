@@ -29,6 +29,8 @@ mixin _$EmployeeModel {
   bool get isActive => throw _privateConstructorUsedError;
   double? get weeklyHoursGoal => throw _privateConstructorUsedError;
   double? get monthlyHoursGoal =>
+      throw _privateConstructorUsedError; // Associação com User (opcional)
+  String? get userId =>
       throw _privateConstructorUsedError; // Campos de controle (sistema)
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
@@ -57,6 +59,7 @@ abstract class $EmployeeModelCopyWith<$Res> {
     bool isActive,
     double? weeklyHoursGoal,
     double? monthlyHoursGoal,
+    String? userId,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -83,6 +86,7 @@ class _$EmployeeModelCopyWithImpl<$Res, $Val extends EmployeeModel>
     Object? isActive = null,
     Object? weeklyHoursGoal = freezed,
     Object? monthlyHoursGoal = freezed,
+    Object? userId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -118,6 +122,11 @@ class _$EmployeeModelCopyWithImpl<$Res, $Val extends EmployeeModel>
                     ? _value.monthlyHoursGoal
                     : monthlyHoursGoal // ignore: cast_nullable_to_non_nullable
                         as double?,
+            userId:
+                freezed == userId
+                    ? _value.userId
+                    : userId // ignore: cast_nullable_to_non_nullable
+                        as String?,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
@@ -150,6 +159,7 @@ abstract class _$$EmployeeModelImplCopyWith<$Res>
     bool isActive,
     double? weeklyHoursGoal,
     double? monthlyHoursGoal,
+    String? userId,
     DateTime createdAt,
     DateTime updatedAt,
   });
@@ -175,6 +185,7 @@ class __$$EmployeeModelImplCopyWithImpl<$Res>
     Object? isActive = null,
     Object? weeklyHoursGoal = freezed,
     Object? monthlyHoursGoal = freezed,
+    Object? userId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -210,6 +221,11 @@ class __$$EmployeeModelImplCopyWithImpl<$Res>
                 ? _value.monthlyHoursGoal
                 : monthlyHoursGoal // ignore: cast_nullable_to_non_nullable
                     as double?,
+        userId:
+            freezed == userId
+                ? _value.userId
+                : userId // ignore: cast_nullable_to_non_nullable
+                    as String?,
         createdAt:
             null == createdAt
                 ? _value.createdAt
@@ -235,6 +251,7 @@ class _$EmployeeModelImpl extends _EmployeeModel {
     required this.isActive,
     this.weeklyHoursGoal,
     this.monthlyHoursGoal,
+    this.userId,
     required this.createdAt,
     required this.updatedAt,
   }) : super._();
@@ -256,6 +273,9 @@ class _$EmployeeModelImpl extends _EmployeeModel {
   final double? weeklyHoursGoal;
   @override
   final double? monthlyHoursGoal;
+  // Associação com User (opcional)
+  @override
+  final String? userId;
   // Campos de controle (sistema)
   @override
   final DateTime createdAt;
@@ -264,7 +284,7 @@ class _$EmployeeModelImpl extends _EmployeeModel {
 
   @override
   String toString() {
-    return 'EmployeeModel(id: $id, firstName: $firstName, lastName: $lastName, isActive: $isActive, weeklyHoursGoal: $weeklyHoursGoal, monthlyHoursGoal: $monthlyHoursGoal, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'EmployeeModel(id: $id, firstName: $firstName, lastName: $lastName, isActive: $isActive, weeklyHoursGoal: $weeklyHoursGoal, monthlyHoursGoal: $monthlyHoursGoal, userId: $userId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -283,6 +303,7 @@ class _$EmployeeModelImpl extends _EmployeeModel {
                 other.weeklyHoursGoal == weeklyHoursGoal) &&
             (identical(other.monthlyHoursGoal, monthlyHoursGoal) ||
                 other.monthlyHoursGoal == monthlyHoursGoal) &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -299,6 +320,7 @@ class _$EmployeeModelImpl extends _EmployeeModel {
     isActive,
     weeklyHoursGoal,
     monthlyHoursGoal,
+    userId,
     createdAt,
     updatedAt,
   );
@@ -325,6 +347,7 @@ abstract class _EmployeeModel extends EmployeeModel {
     required final bool isActive,
     final double? weeklyHoursGoal,
     final double? monthlyHoursGoal,
+    final String? userId,
     required final DateTime createdAt,
     required final DateTime updatedAt,
   }) = _$EmployeeModelImpl;
@@ -345,7 +368,9 @@ abstract class _EmployeeModel extends EmployeeModel {
   @override
   double? get weeklyHoursGoal;
   @override
-  double? get monthlyHoursGoal; // Campos de controle (sistema)
+  double? get monthlyHoursGoal; // Associação com User (opcional)
+  @override
+  String? get userId; // Campos de controle (sistema)
   @override
   DateTime get createdAt;
   @override

@@ -25,7 +25,8 @@
       "Bash(gsutil cors:*)",
       "Bash(./generate_icons.sh:*)",
       "Bash(flutter:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(diff:*)"
     ],
     "deny": []
   },

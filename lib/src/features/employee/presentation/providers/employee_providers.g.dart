@@ -398,6 +398,52 @@ final activeEmployeesStreamProvider =
 // ignore: unused_element
 typedef ActiveEmployeesStreamRef =
     AutoDisposeStreamProviderRef<List<EmployeeModel>>;
+String _$employeesWithoutUserHash() =>
+    r'd4cb5941d057fbf1555bfcf188b642b23273a25e';
+
+/// Provider para obter funcionários sem usuário associado
+///
+/// Copied from [employeesWithoutUser].
+@ProviderFor(employeesWithoutUser)
+final employeesWithoutUserProvider =
+    AutoDisposeFutureProvider<List<EmployeeModel>>.internal(
+      employeesWithoutUser,
+      name: r'employeesWithoutUserProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$employeesWithoutUserHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef EmployeesWithoutUserRef =
+    AutoDisposeFutureProviderRef<List<EmployeeModel>>;
+String _$employeesWithoutUserStreamHash() =>
+    r'e9d4ddccec6cc268d55c01ee03df6458a26ec41e';
+
+/// Provider para observar funcionários sem usuário associado em tempo real
+///
+/// Copied from [employeesWithoutUserStream].
+@ProviderFor(employeesWithoutUserStream)
+final employeesWithoutUserStreamProvider =
+    AutoDisposeStreamProvider<List<EmployeeModel>>.internal(
+      employeesWithoutUserStream,
+      name: r'employeesWithoutUserStreamProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$employeesWithoutUserStreamHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef EmployeesWithoutUserStreamRef =
+    AutoDisposeStreamProviderRef<List<EmployeeModel>>;
 String _$employeeStateHash() => r'fc994c758aa003f08b2d022052d09522b9914c34';
 
 abstract class _$EmployeeState

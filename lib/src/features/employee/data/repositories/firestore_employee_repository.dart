@@ -39,4 +39,20 @@ class FirestoreEmployeeRepository extends FirestoreRepository<EmployeeModel>
   Future<void> toggleEmployeeActive(String id, bool isActive) async {
     await collection.doc(id).update({'is_active': isActive});
   }
+  
+  @override
+  Future<void> associateWithUser(String employeeId, String userId) async {
+    await collection.doc(employeeId).update({
+      'user_id': userId,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+  }
+  
+  @override
+  Future<void> dissociateFromUser(String employeeId) async {
+    await collection.doc(employeeId).update({
+      'user_id': FieldValue.delete(),
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+  }
 }

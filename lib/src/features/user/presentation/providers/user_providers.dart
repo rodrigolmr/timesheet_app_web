@@ -5,6 +5,7 @@ import 'package:timesheet_app_web/src/features/auth/presentation/providers/auth_
 import 'package:timesheet_app_web/src/features/user/data/models/user_model.dart';
 import 'package:timesheet_app_web/src/features/user/data/repositories/firestore_user_repository.dart';
 import 'package:timesheet_app_web/src/features/user/domain/repositories/user_repository.dart';
+import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
 
 part 'user_providers.g.dart';
 
@@ -13,6 +14,7 @@ part 'user_providers.g.dart';
 UserRepository userRepository(UserRepositoryRef ref) {
   return FirestoreUserRepository(
     firestore: ref.watch(firestoreProvider),
+    employeeRepository: ref.watch(employeeRepositoryProvider),
   );
 }
 
@@ -144,4 +146,19 @@ Future<void> updateCurrentUserTheme(
       themePreference,
     );
   }
+}
+
+/// Provider para obter usuários sem employee associado
+@riverpod
+Future<List<UserModel>> usersWithoutEmployee(UsersWithoutEmployeeRef ref) async {
+  final users = await ref.watch(usersProvider.future);
+  return users.where((user) => user.employeeId == null).toList();
+}
+
+/// Provider para observar usuários sem employee associado em tempo real
+@riverpod
+Stream<List<UserModel>> usersWithoutEmployeeStream(UsersWithoutEmployeeStreamRef ref) {
+  return ref.watch(userRepositoryProvider).watchAll().map((users) {
+    return users.where((user) => user.employeeId == null).toList();
+  });
 }
