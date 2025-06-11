@@ -23,19 +23,74 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
   DocumentFilter _selectedFilter = DocumentFilter.enhanced;
   Uint8List? _processedImage;
   bool _isProcessing = false;
+  bool _isInitializing = true; // Add flag for initial loading
   
-  // Cache for processed images
+  // Cache for processed images with memory limit
   final Map<DocumentFilter, Uint8List> _filterCache = {};
+  int maxCacheSize = 3; // Maximum number of cached filters, varies by platform
+  final List<DocumentFilter> _cacheOrder = []; // Track order for LRU eviction
 
   @override
   void initState() {
     super.initState();
     // Cache original image
-    _filterCache[DocumentFilter.original] = widget.imageData;
+    _addToCache(DocumentFilter.original, widget.imageData);
     // Show original image initially
     _processedImage = widget.imageData;
     // Process enhanced filter immediately since it's the default
     _processEnhancedFilter();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _determineCacheSize();
+  }
+  
+  void _determineCacheSize() {
+    // Determine cache size based on platform
+    if (kIsWeb) {
+      // Web browsers have different memory constraints
+      // PWA on mobile vs desktop
+      final screenSize = MediaQuery.of(context).size;
+      final isMobile = screenSize.width < 600;
+      maxCacheSize = isMobile ? 2 : 3;
+    } else if (Theme.of(context).platform == TargetPlatform.iOS || 
+               Theme.of(context).platform == TargetPlatform.android) {
+      // Mobile devices have less memory
+      maxCacheSize = 2;
+    } else {
+      // Desktop has more memory available
+      maxCacheSize = 4;
+    }
+    debugPrint('Set cache size to $maxCacheSize for platform');
+  }
+  
+  void _addToCache(DocumentFilter filter, Uint8List data) {
+    // Remove from order if already exists
+    _cacheOrder.remove(filter);
+    
+    // Add to end (most recently used)
+    _cacheOrder.add(filter);
+    _filterCache[filter] = data;
+    
+    // Check if we need to evict
+    if (_cacheOrder.length > maxCacheSize) {
+      // Remove least recently used
+      final toRemove = _cacheOrder.removeAt(0);
+      _filterCache.remove(toRemove);
+      debugPrint('Evicted filter from cache: $toRemove');
+    }
+  }
+  
+  Uint8List? _getFromCache(DocumentFilter filter) {
+    if (_filterCache.containsKey(filter)) {
+      // Move to end (most recently used)
+      _cacheOrder.remove(filter);
+      _cacheOrder.add(filter);
+      return _filterCache[filter];
+    }
+    return null;
   }
   
   Future<void> _processEnhancedFilter() async {
@@ -47,16 +102,22 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
       
       if (mounted) {
         // Cache the enhanced version
-        _filterCache[DocumentFilter.enhanced] = processed;
+        _addToCache(DocumentFilter.enhanced, processed);
         
         // Update the display with enhanced version
         setState(() {
           _processedImage = processed;
+          _isInitializing = false;
         });
       }
     } catch (e) {
       // If processing fails, stay with original
       debugPrint('Failed to apply enhanced filter: $e');
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
     }
   }
   
@@ -75,9 +136,10 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
     });
 
     // Check if we have this filter cached
-    if (_filterCache.containsKey(filter)) {
+    final cachedImage = _getFromCache(filter);
+    if (cachedImage != null) {
       setState(() {
-        _processedImage = _filterCache[filter];
+        _processedImage = cachedImage;
       });
       return;
     }
@@ -98,7 +160,7 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
 
       if (mounted) {
         // Cache the processed image
-        _filterCache[filter] = processed;
+        _addToCache(filter, processed);
         
         setState(() {
           _processedImage = processed;
@@ -117,22 +179,75 @@ class _DocumentFilterScreenState extends ConsumerState<DocumentFilterScreen> {
     }
   }
 
-  void _saveDocument() {
+  void _saveDocument() async {
     if (_processedImage == null) return;
     
-    context.push(
-      '/document-scanner/expense-info',
-      extra: {
-        'imageData': _processedImage!,
-        'isPdf': false,
-      },
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: Container(
+          color: Colors.black.withOpacity(0.7),
+          child: const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: StaticLoadingIndicator(
+                  message: 'Preparing document',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+    
+    // Small delay to ensure loading is visible
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    if (mounted) {
+      // Navigate to expense info screen
+      context.push(
+        '/document-scanner/expense-info',
+        extra: {
+          'imageData': _processedImage!,
+          'isPdf': false,
+        },
+      );
+      
+      // Close loading dialog after navigation
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
+
+    // Show loading screen while initializing
+    if (_isInitializing) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Container(
+          color: Colors.black,
+          child: const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: StaticLoadingIndicator(
+                  message: 'Processing image',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,

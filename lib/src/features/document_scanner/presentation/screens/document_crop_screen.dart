@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:go_router/go_router.dart';
 import '../../services/image_processing_service.dart' as img_service;
 import 'document_filter_screen.dart';
@@ -23,7 +24,10 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
   // Corner positions (normalized 0.0 to 1.0)
   late List<Offset> _corners;
   int? _selectedCornerIndex;
+  int? _selectedEdgeIndex;
   bool _showMagnifier = false;
+  Offset? _dragStartPosition;
+  List<Offset>? _dragStartCorners;
   
   // Image dimensions
   Size? _imageSize;
@@ -55,6 +59,57 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
           normalizedY.clamp(0.0, 1.0),
         );
       }
+    });
+  }
+  
+  void _updateEdge(int edgeIndex, Offset position) {
+    setState(() {
+      if (_displaySize == null || _imageOffset == null || _dragStartCorners == null || _dragStartPosition == null) return;
+      
+      // Get the two corners of this edge from drag start positions
+      final corner1Index = edgeIndex;
+      final corner2Index = (edgeIndex + 1) % 4;
+      
+      final startCorner1 = _dragStartCorners![corner1Index];
+      final startCorner2 = _dragStartCorners![corner2Index];
+      
+      // Convert positions to normalized coordinates
+      final normalizedMouseX = (position.dx - _imageOffset!.dx) / _displaySize!.width;
+      final normalizedMouseY = (position.dy - _imageOffset!.dy) / _displaySize!.height;
+      final normalizedStartX = (_dragStartPosition!.dx - _imageOffset!.dx) / _displaySize!.width;
+      final normalizedStartY = (_dragStartPosition!.dy - _imageOffset!.dy) / _displaySize!.height;
+      
+      // Calculate edge vector and perpendicular from start positions
+      final edgeVector = startCorner2 - startCorner1;
+      final edgeLength = edgeVector.distance;
+      
+      if (edgeLength == 0) return;
+      
+      // Normalize edge vector
+      final edgeNormal = Offset(edgeVector.dx / edgeLength, edgeVector.dy / edgeLength);
+      // Calculate perpendicular vector (90 degrees)
+      final perpVector = Offset(-edgeNormal.dy, edgeNormal.dx);
+      
+      // Calculate delta movement from drag start
+      final deltaX = normalizedMouseX - normalizedStartX;
+      final deltaY = normalizedMouseY - normalizedStartY;
+      final delta = Offset(deltaX, deltaY);
+      
+      // Project delta onto perpendicular to get movement distance
+      final projectionLength = delta.dx * perpVector.dx + delta.dy * perpVector.dy;
+      
+      // Calculate movement vector
+      final movement = perpVector * projectionLength;
+      
+      // Update both corners from their start positions
+      _corners[corner1Index] = Offset(
+        (startCorner1.dx + movement.dx).clamp(0.0, 1.0),
+        (startCorner1.dy + movement.dy).clamp(0.0, 1.0),
+      );
+      _corners[corner2Index] = Offset(
+        (startCorner2.dx + movement.dx).clamp(0.0, 1.0),
+        (startCorner2.dy + movement.dy).clamp(0.0, 1.0),
+      );
     });
   }
 
@@ -104,10 +159,8 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
         // Close loading dialog
         Navigator.of(context).pop();
         
-        // Small delay before navigation for smooth transition
-        await Future.delayed(const Duration(milliseconds: 100));
-        
-        // Navigate to filter screen using GoRouter
+        // Navigate to filter screen using GoRouter immediately
+        // The filter screen will show its own loading
         context.push(
           '/document-scanner/filter',
           extra: {'imageData': croppedImage},
@@ -186,7 +239,9 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
                             ),
                           ),
                         ),
-                        // Corner handles
+                        // Edge handles (rendered below corner handles)
+                        ..._buildEdgeHandles(),
+                        // Corner handles (rendered on top)
                         ..._buildCornerHandles(),
                       ],
                     );
@@ -259,6 +314,7 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
           onPanStart: (details) {
             setState(() {
               _selectedCornerIndex = index;
+              _selectedEdgeIndex = null;
               _showMagnifier = true;
             });
           },
@@ -308,6 +364,84 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
         ),
       );
     });
+  }
+
+  List<Widget> _buildEdgeHandles() {
+    final handles = <Widget>[];
+    
+    for (int i = 0; i < 4; i++) {
+      final start = _corners[i];
+      final end = _corners[(i + 1) % 4];
+      final startScreen = _normalizedToScreen(start);
+      final endScreen = _normalizedToScreen(end);
+      
+      // Calculate midpoint and angle
+      final midPoint = Offset(
+        (startScreen.dx + endScreen.dx) / 2,
+        (startScreen.dy + endScreen.dy) / 2,
+      );
+      
+      final dx = endScreen.dx - startScreen.dx;
+      final dy = endScreen.dy - startScreen.dy;
+      final length = math.sqrt(dx * dx + dy * dy);
+      final angle = math.atan2(dy, dx);
+      
+      handles.add(
+        Positioned(
+          left: midPoint.dx - length / 2,
+          top: midPoint.dy - 15, // Adjusted for larger touch area
+          child: Transform.rotate(
+            angle: angle,
+            alignment: Alignment.center,
+            child: GestureDetector(
+              onPanStart: (details) {
+                setState(() {
+                  _selectedEdgeIndex = i;
+                  _selectedCornerIndex = null;
+                  _dragStartPosition = details.globalPosition;
+                  _dragStartCorners = List<Offset>.from(_corners);
+                });
+              },
+              onPanUpdate: (details) {
+                _updateEdge(i, details.globalPosition);
+              },
+              onPanEnd: (details) {
+                setState(() {
+                  _selectedEdgeIndex = null;
+                  _dragStartPosition = null;
+                  _dragStartCorners = null;
+                });
+              },
+              child: Container(
+                width: length,
+                height: 30, // Increased touch area
+                color: Colors.transparent, // Make it invisible but touchable
+                child: Center(
+                  child: Container(
+                    width: length - 40, // Leave space for corners
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _selectedEdgeIndex == i
+                          ? Colors.blue
+                          : Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return handles;
   }
 
   Future<Size> _getImageSize() async {
@@ -415,39 +549,38 @@ class _DocumentCropScreenState extends ConsumerState<DocumentCropScreen> {
                     ),
                   ),
                 ),
-                  // Crosshair overlay - horizontal line
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 2,
+                // Crosshair overlay
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 2,
+                    color: Colors.red,
+                  ),
+                ),
+                Center(
+                  child: Container(
+                    width: 2,
+                    height: 40,
+                    color: Colors.red,
+                  ),
+                ),
+                // Center dot
+                Center(
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
                       color: Colors.red,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  // Crosshair overlay - vertical line
-                  Center(
-                    child: Container(
-                      width: 2,
-                      height: 40,
-                      color: Colors.red,
-                    ),
-                  ),
-                  // Center dot
-                  Center(
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
 
