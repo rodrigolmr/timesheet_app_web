@@ -1251,7 +1251,7 @@ final expenseCreatorsProvider =
 // ignore: unused_element
 typedef ExpenseCreatorsRef =
     FutureProviderRef<List<({String id, String name})>>;
-String _$expenseSelectionHash() => r'ff2291520c25b350bbdcc918dc79974a05442f7b';
+String _$expenseSelectionHash() => r'4effd0e5ea98741cfded600871f217ff75ac9b0b';
 
 /// Provider notifier para gerenciar seleção múltipla
 ///

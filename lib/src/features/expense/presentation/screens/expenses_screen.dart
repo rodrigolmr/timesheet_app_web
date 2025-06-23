@@ -1,3 +1,4 @@
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -96,6 +97,18 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _handleSelectionAction(value),
             itemBuilder: (context) => [
+              if (selectionState.hasSelection) ...[
+                PopupMenuItem(
+                  value: 'generate_pdf',
+                  child: ListTile(
+                    leading: const Icon(Icons.picture_as_pdf),
+                    title: const Text('Generate PDF'),
+                    subtitle: Text('${selectionState.selectionCount} selected'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuDivider(),
+              ],
               const PopupMenuItem(
                 value: 'select_all',
                 child: Text('Select All'),
@@ -607,6 +620,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       case 'select_none':
         ref.read(expenseSelectionProvider.notifier).selectNone();
         break;
+      case 'generate_pdf':
+        _generatePdfForSelected();
+        break;
     }
   }
 
@@ -720,6 +736,51 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           context: context,
           title: 'Error',
           message: 'Failed to delete expenses: $e',
+        );
+      }
+    }
+  }
+
+  void _generatePdfForSelected() async {
+    final selectionState = ref.read(expenseSelectionProvider);
+    
+    // Show progress dialog
+    showAppProgressDialog(
+      context: context,
+      title: 'Generating PDF',
+      message: 'Processing ${selectionState.selectionCount} expenses...',
+    );
+    
+    try {
+      // Generate PDF
+      final pdfBytes = await ref.read(expenseSelectionProvider.notifier).generatePdfForSelected(ref);
+      
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Open PDF in new window
+      final blob = html.Blob([pdfBytes], 'application/pdf');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.window.open(url, '_blank');
+      
+      // Show success message
+      if (mounted) {
+        await showSuccessDialog(
+          context: context,
+          title: 'PDF Generated',
+          message: 'Your expense report has been opened in a new window.',
+        );
+      }
+    } catch (e) {
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error
+      if (mounted) {
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to generate PDF: $e',
         );
       }
     }

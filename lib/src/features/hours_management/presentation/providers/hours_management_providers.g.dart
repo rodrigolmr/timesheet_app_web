@@ -347,7 +347,7 @@ class _EmployeeHoursSummaryProviderElement
 }
 
 String _$canViewOtherEmployeesHash() =>
-    r'795226c310f59106081a28d884e4a08d37c6424c';
+    r'96733edabb78a9889c9a81c797fffbfc8c718f48';
 
 /// See also [canViewOtherEmployees].
 @ProviderFor(canViewOtherEmployees)

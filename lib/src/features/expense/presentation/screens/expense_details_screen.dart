@@ -15,6 +15,8 @@ import '../widgets/pdf_viewer_dialog.dart';
 import 'package:timesheet_app_web/src/core/widgets/fullscreen_viewer_base.dart';
 import 'dart:html' as html;
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
+import 'package:timesheet_app_web/src/features/expense/presentation/providers/expense_pdf_provider.dart';
+import 'package:timesheet_app_web/src/core/widgets/dialogs/dialogs.dart';
 
 class ExpenseDetailsScreen extends ConsumerWidget {
   final String expenseId;
@@ -231,32 +233,6 @@ class _ExpenseDetailsContentState extends ConsumerState<_ExpenseDetailsContent> 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Status card
-              Card(
-                color: _getStatusColor(context, widget.expense.status),
-                child: Padding(
-                  padding: context.dimensions.padding,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _getStatusIcon(widget.expense.status),
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.expense.status.name.toUpperCase(),
-                        style: context.textStyles.subtitle.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: context.dimensions.spacingL),
-
               // Details card
               Card(
                 child: Padding(
@@ -500,6 +476,42 @@ class _ExpenseDetailsContentState extends ConsumerState<_ExpenseDetailsContent> 
               ),
               SizedBox(height: context.dimensions.spacingL),
 
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _downloadOriginal(context),
+                      icon: const Icon(Icons.download),
+                      label: Text(
+                        widget.expense.imageUrl.toLowerCase().contains('.pdf') 
+                          ? 'Download PDF' 
+                          : 'Download Image',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          vertical: context.dimensions.spacingM,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: context.dimensions.spacingM),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _generatePdf(context, ref),
+                      icon: const Icon(Icons.picture_as_pdf),
+                      label: const Text('Generate PDF'),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          vertical: context.dimensions.spacingM,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: context.dimensions.spacingL),
+
               // Metadata
               Card(
                 color: context.colors.surface.withOpacity(0.5),
@@ -591,27 +603,6 @@ class _ExpenseDetailsContentState extends ConsumerState<_ExpenseDetailsContent> 
     );
   }
 
-  Color _getStatusColor(BuildContext context, ExpenseStatus status) {
-    switch (status) {
-      case ExpenseStatus.pending:
-        return Colors.orange;
-      case ExpenseStatus.approved:
-        return context.colors.success;
-      case ExpenseStatus.rejected:
-        return context.colors.error;
-    }
-  }
-
-  IconData _getStatusIcon(ExpenseStatus status) {
-    switch (status) {
-      case ExpenseStatus.pending:
-        return Icons.schedule;
-      case ExpenseStatus.approved:
-        return Icons.check_circle;
-      case ExpenseStatus.rejected:
-        return Icons.cancel;
-    }
-  }
 
   void _viewFullImage(BuildContext context) {
     debugPrint('Opening full screen image: ${widget.expense.imageUrl}');
@@ -668,5 +659,75 @@ class _ExpenseDetailsContentState extends ConsumerState<_ExpenseDetailsContent> 
   void _viewPdf(BuildContext context, String pdfUrl) {
     // Open PDF in new tab
     html.window.open(pdfUrl, '_blank');
+  }
+
+  void _downloadOriginal(BuildContext context) {
+    final url = widget.expense.imageUrl;
+    final fileName = widget.expense.imageUrl.toLowerCase().contains('.pdf')
+        ? 'expense_${widget.expense.id}.pdf'
+        : 'expense_${widget.expense.id}.jpg';
+    
+    // Create download link
+    final anchor = html.document.createElement('a') as html.AnchorElement
+      ..href = url
+      ..download = fileName
+      ..style.display = 'none';
+    
+    html.document.body!.children.add(anchor);
+    anchor.click();
+    html.document.body!.children.remove(anchor);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Download started'),
+        backgroundColor: context.colors.success,
+      ),
+    );
+  }
+
+  void _generatePdf(BuildContext context, WidgetRef ref) async {
+    // Show progress dialog
+    showAppProgressDialog(
+      context: context,
+      title: 'Generating PDF',
+      message: 'Creating expense report...',
+    );
+    
+    try {
+      // Generate PDF for single expense
+      final pdfBytes = await ref.read(
+        expenseBulkPdfGeneratorProvider([widget.expense.id]).future
+      );
+      
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Open PDF in new window
+      final blob = html.Blob([pdfBytes], 'application/pdf');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.window.open(url, '_blank');
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF generated successfully'),
+            backgroundColor: context.colors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close progress dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error
+      if (mounted) {
+        await showErrorDialog(
+          context: context,
+          title: 'Error',
+          message: 'Failed to generate PDF: $e',
+        );
+      }
+    }
   }
 }

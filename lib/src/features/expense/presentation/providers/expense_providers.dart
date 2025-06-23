@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:timesheet_app_web/src/core/providers/firebase_providers.dart';
 import 'package:timesheet_app_web/src/features/expense/data/models/expense_model.dart';
@@ -7,6 +8,8 @@ import 'package:timesheet_app_web/src/features/expense/domain/enums/expense_stat
 import 'package:timesheet_app_web/src/features/user/presentation/providers/user_providers.dart';
 import 'package:timesheet_app_web/src/features/auth/presentation/providers/permission_providers.dart';
 import 'package:timesheet_app_web/src/features/user/domain/enums/user_role.dart';
+import 'package:timesheet_app_web/src/features/expense/presentation/providers/expense_pdf_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 part 'expense_providers.g.dart';
 
@@ -97,6 +100,29 @@ class ExpenseSelection extends _$ExpenseSelection {
       // Sai do modo seleção se não há mais nada selecionado
       isSelectionMode: newSelectedIds.isNotEmpty || state.isSelectionMode,
     );
+  }
+
+  /// Gera PDF para expenses selecionados
+  Future<Uint8List> generatePdfForSelected(WidgetRef ref) async {
+    final selectedIds = state.selectedIds.toList();
+    if (selectedIds.isEmpty) {
+      throw Exception('No expenses selected');
+    }
+    
+    try {
+      // Generate PDF using the provider
+      final pdfBytes = await ref.read(
+        expenseBulkPdfGeneratorProvider(selectedIds).future
+      );
+      
+      // Exit selection mode after successful generation
+      exitSelectionMode();
+      
+      return pdfBytes;
+    } catch (e) {
+      // Re-throw the error to be handled by the UI
+      rethrow;
+    }
   }
 }
 
