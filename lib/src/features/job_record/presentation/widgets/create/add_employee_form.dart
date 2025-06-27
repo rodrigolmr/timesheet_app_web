@@ -9,7 +9,7 @@ import 'package:timesheet_app_web/src/features/employee/data/models/employee_mod
 import 'package:timesheet_app_web/src/features/employee/presentation/providers/employee_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_employee_model.dart';
 
-// Custom TextInputFormatter for time format (HH:MM)
+// Custom TextInputFormatter for 12-hour time format (HH:MM)
 class TimeTextInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -19,7 +19,7 @@ class TimeTextInputFormatter extends TextInputFormatter {
     final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     final buffer = StringBuffer();
     
-    // Handle intelligent formatting
+    // Handle intelligent formatting for 12-hour format
     if (newText.length == 3) {
       // For 3 digits like "700", interpret as "7:00"
       final firstDigit = int.parse(newText[0]);
@@ -29,8 +29,23 @@ class TimeTextInputFormatter extends TextInputFormatter {
         buffer.write(newText[0]);
         buffer.write(':');
         buffer.write(newText.substring(1, 3));
+      } else if (firstDigit == 1) {
+        // Check if it's 10, 11, or 12
+        final twoDigitHour = int.parse(newText.substring(0, 2));
+        if (twoDigitHour >= 10 && twoDigitHour <= 12) {
+          // Format as 10:X, 11:X, or 12:X
+          buffer.write(newText.substring(0, 2));
+          buffer.write(':');
+          buffer.write('0');
+          buffer.write(newText[2]);
+        } else {
+          // Format as 1:XX
+          buffer.write(newText[0]);
+          buffer.write(':');
+          buffer.write(newText.substring(1, 3));
+        }
       } else {
-        // Otherwise handle normally (e.g., 130 -> 1:30)
+        // Otherwise handle normally
         buffer.write(newText[0]);
         buffer.write(':');
         buffer.write(newText.substring(1, 3));
@@ -109,12 +124,50 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
   // Validation states
   bool _employeeHasError = false;
   bool _hoursHasError = false;
+  bool _startTimeHasError = false;
+  bool _finishTimeHasError = false;
+  
+  // Focus nodes for time fields
+  final _startTimeFocusNode = FocusNode();
+  final _finishTimeFocusNode = FocusNode();
   
   @override
   void initState() {
     super.initState();
     if (widget.employeeToEdit != null) {
       _initializeEditForm();
+    }
+    
+    // Add listeners for auto-complete
+    _startTimeFocusNode.addListener(_onStartTimeFocusChange);
+    _finishTimeFocusNode.addListener(_onFinishTimeFocusChange);
+  }
+  
+  void _onStartTimeFocusChange() {
+    if (!_startTimeFocusNode.hasFocus) {
+      _autoCompleteTime(_startTimeController);
+    }
+  }
+  
+  void _onFinishTimeFocusChange() {
+    if (!_finishTimeFocusNode.hasFocus) {
+      _autoCompleteTime(_finishTimeController);
+    }
+  }
+  
+  void _autoCompleteTime(TextEditingController controller) {
+    final text = controller.text.trim();
+    if (text.isEmpty) return;
+    
+    // Remove any non-digit characters
+    final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Auto-complete single or double digit entries
+    if (digitsOnly.length == 1 || digitsOnly.length == 2) {
+      final hour = int.tryParse(digitsOnly);
+      if (hour != null && hour >= 1 && hour <= 12) {
+        controller.text = '$hour:00';
+      }
     }
   }
   
@@ -159,17 +212,25 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
     _hoursController.dispose();
     _travelHoursController.dispose();
     _mealController.dispose();
+    _startTimeFocusNode.dispose();
+    _finishTimeFocusNode.dispose();
     super.dispose();
   }
   
   void _handleSubmit() {
+    // Validate all fields
+    final startTimeValid = _validateTime(_startTimeController.text) == null;
+    final finishTimeValid = _validateTime(_finishTimeController.text) == null;
+    
     setState(() {
       _employeeHasError = _selectedEmployee == null;
       _hoursHasError = _hoursController.text.trim().isEmpty;
+      _startTimeHasError = _startTimeController.text.isNotEmpty && !startTimeValid;
+      _finishTimeHasError = _finishTimeController.text.isNotEmpty && !finishTimeValid;
     });
     
     if (_formKey.currentState?.validate() ?? false) {
-      if (_employeeHasError || _hoursHasError) {
+      if (_employeeHasError || _hoursHasError || _startTimeHasError || _finishTimeHasError) {
         return;
       }
       
@@ -197,6 +258,8 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
       _selectedEmployee = null; // Clear only the employee selection
       _employeeError = null;
       _employeeHasError = false;
+      _startTimeHasError = false;
+      _finishTimeHasError = false;
       // Keep the showOptionalFields state as is
     });
     // Don't clear time and hour fields - keep them for the next employee
@@ -205,9 +268,10 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
   String? _validateTime(String? value) {
     if (value == null || value.isEmpty) return null;
     
-    final regex = RegExp(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$');
+    // Validate 12-hour format (1-12:00-59)
+    final regex = RegExp(r'^(0?[1-9]|1[0-2]):[0-5][0-9]$');
     if (!regex.hasMatch(value)) {
-      return 'Invalid time format (HH:MM)';
+      return 'Invalid time (use 1-12 format)';
     }
     return null;
   }
@@ -248,25 +312,52 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
     required String label,
     required TextEditingController controller,
     String? Function(String?)? validator,
+    FocusNode? focusNode,
+    bool hasError = false,
+    VoidCallback? onClearError,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        TimeTextInputFormatter(),
-      ],
-      validator: validator,
-      style: context.textStyles.input,
-      textAlign: TextAlign.center,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: context.textStyles.inputLabel,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        floatingLabelAlignment: FloatingLabelAlignment.center,
-        floatingLabelStyle: context.textStyles.inputFloatingLabel.copyWith(
-          color: context.colors.primary,
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: Container(
+        decoration: hasError
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.colors.error.withOpacity(0.5),
+                    blurRadius: 6,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              )
+            : null,
+        child: TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            TimeTextInputFormatter(),
+          ],
+          validator: (value) => null, // Don't show error text
+          style: context.textStyles.input,
+          textAlign: TextAlign.center,
+          onChanged: (_) {
+            if (hasError && onClearError != null) {
+              onClearError();
+            }
+          },
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: context.textStyles.inputLabel.copyWith(
+              color: hasError ? context.colors.error : null,
+            ),
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            floatingLabelAlignment: FloatingLabelAlignment.center,
+            floatingLabelStyle: context.textStyles.inputFloatingLabel.copyWith(
+              color: hasError ? context.colors.error : context.colors.primary,
+            ),
         hintText: 'HH:MM',
         hintStyle: context.textStyles.inputHint.copyWith(
           color: context.colors.onSurfaceVariant.withOpacity(0.6),
@@ -280,20 +371,20 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
             width: 1,
           ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-          borderSide: BorderSide(
-            color: context.colors.outline,
-            width: 1,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
-          borderSide: BorderSide(
-            color: context.colors.primary,
-            width: 2,
-          ),
-        ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+              borderSide: BorderSide(
+                color: hasError ? context.colors.error : context.colors.outline,
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
+              borderSide: BorderSide(
+                color: hasError ? context.colors.error : context.colors.primary,
+                width: 2,
+              ),
+            ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(context.dimensions.borderRadiusM),
           borderSide: BorderSide(
@@ -320,7 +411,9 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
             md: context.dimensions.spacingS,
           ),
         ),
-        isDense: true,
+            isDense: true,
+          ),
+        ),
       ),
     );
   }
@@ -449,13 +542,10 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
         md: EdgeInsets.symmetric(horizontal: context.dimensions.spacingM, vertical: context.dimensions.spacingM),
       ),
       child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Form Content
-              Column(
-                  children: [
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
                     // Employee Dropdown
                     employeesAsync.when(
                       data: (employees) {
@@ -556,45 +646,59 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
 
                     // Main Fields - Always in Row
                     Row(
-                      children: [
-                        Expanded(
-                          child: _buildTimeField(
-                            label: 'Start',
-                            controller: _startTimeController,
-                            validator: _validateTime,
+                        children: [
+                          Expanded(
+                            child: _buildTimeField(
+                              label: 'Start',
+                              controller: _startTimeController,
+                              validator: _validateTime,
+                              focusNode: _startTimeFocusNode,
+                              hasError: _startTimeHasError,
+                              onClearError: () {
+                                setState(() {
+                                  _startTimeHasError = false;
+                                });
+                              },
+                            ),
                           ),
-                        ),
-                        SizedBox(width: context.responsive<double>(
-                          xs: math.max(0, context.dimensions.spacingXS - 8),
-                          sm: math.max(0, context.dimensions.spacingXS - 8),
-                          md: math.max(0, context.dimensions.spacingS - 8),
-                        )),
-                        Expanded(
-                          child: _buildTimeField(
-                            label: 'Finish',
-                            controller: _finishTimeController,
-                            validator: _validateTime,
+                          SizedBox(width: context.responsive<double>(
+                            xs: context.dimensions.spacingXS,
+                            sm: context.dimensions.spacingXS,
+                            md: context.dimensions.spacingS,
+                          )),
+                          Expanded(
+                            child: _buildTimeField(
+                              label: 'Finish',
+                              controller: _finishTimeController,
+                              validator: _validateTime,
+                              focusNode: _finishTimeFocusNode,
+                              hasError: _finishTimeHasError,
+                              onClearError: () {
+                                setState(() {
+                                  _finishTimeHasError = false;
+                                });
+                              },
+                            ),
                           ),
-                        ),
-                        SizedBox(width: context.responsive<double>(
-                          xs: math.max(0, context.dimensions.spacingXS - 8),
-                          sm: math.max(0, context.dimensions.spacingXS - 8),
-                          md: math.max(0, context.dimensions.spacingS - 8),
-                        )),
-                        Expanded(
-                          child: _buildDecimalField(
-                            label: 'Hours',
-                            controller: _hoursController,
-                            validator: _validateHours,
-                            hasError: _hoursHasError,
-                            onClearError: () {
-                              setState(() {
-                                _hoursHasError = false;
-                              });
-                            },
+                          SizedBox(width: context.responsive<double>(
+                            xs: context.dimensions.spacingXS,
+                            sm: context.dimensions.spacingXS,
+                            md: context.dimensions.spacingS,
+                          )),
+                          Expanded(
+                            child: _buildDecimalField(
+                              label: 'Hours',
+                              controller: _hoursController,
+                              validator: _validateHours,
+                              hasError: _hoursHasError,
+                              onClearError: () {
+                                setState(() {
+                                  _hoursHasError = false;
+                                });
+                              },
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
                     ),
 
                     SizedBox(height: context.responsive<double>(
@@ -758,10 +862,8 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
                         ),
                       ],
                     ),
-                  ],
-                ),
-            ],
-          ),
+          ],
+        ),
       ),
     );
   }
