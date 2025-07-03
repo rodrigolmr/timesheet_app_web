@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import 'dart:ui' as ui;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:ui_web' as ui_web;
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:convert';
@@ -47,7 +49,7 @@ class _WebCameraViewState extends State<WebCameraView> {
       
       // Register the video element as a platform view
       // ignore: undefined_prefixed_name
-      ui.platformViewRegistry.registerViewFactory(
+      ui_web.platformViewRegistry.registerViewFactory(
         _viewType,
         (int viewId) => _videoElement!,
       );

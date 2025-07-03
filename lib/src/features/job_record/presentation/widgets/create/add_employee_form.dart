@@ -19,40 +19,32 @@ class TimeTextInputFormatter extends TextInputFormatter {
     final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     final buffer = StringBuffer();
     
-    // Handle intelligent formatting for 12-hour format
-    if (newText.length == 3) {
-      // For 3 digits like "700", interpret as "7:00"
-      final firstDigit = int.parse(newText[0]);
+    // For 4 digits, format as HH:MM
+    if (newText.length >= 4) {
+      buffer.write(newText.substring(0, 2));
+      buffer.write(':');
+      buffer.write(newText.substring(2, 4));
+    }
+    // For 3 digits
+    else if (newText.length == 3) {
+      final firstTwoDigits = int.parse(newText.substring(0, 2));
       
-      // If first digit is 3-9, assume it's single digit hour (e.g., 7 for 7:00)
-      if (firstDigit >= 3 && firstDigit <= 9) {
-        buffer.write(newText[0]);
+      // If first two digits make a valid hour (10-12), format as HH:M (no zero padding)
+      if (firstTwoDigits >= 10 && firstTwoDigits <= 12) {
+        buffer.write(newText.substring(0, 2));
         buffer.write(':');
-        buffer.write(newText.substring(1, 3));
-      } else if (firstDigit == 1) {
-        // Check if it's 10, 11, or 12
-        final twoDigitHour = int.parse(newText.substring(0, 2));
-        if (twoDigitHour >= 10 && twoDigitHour <= 12) {
-          // Format as 10:X, 11:X, or 12:X
-          buffer.write(newText.substring(0, 2));
-          buffer.write(':');
-          buffer.write('0');
-          buffer.write(newText[2]);
-        } else {
-          // Format as 1:XX
-          buffer.write(newText[0]);
-          buffer.write(':');
-          buffer.write(newText.substring(1, 3));
-        }
-      } else {
-        // Otherwise handle normally
+        buffer.write(newText[2]);
+      }
+      // Otherwise format as H:MM
+      else {
         buffer.write(newText[0]);
         buffer.write(':');
         buffer.write(newText.substring(1, 3));
       }
-    } else {
-      // For other length inputs, format normally
-      for (int i = 0; i < newText.length && i < 4; i++) {
+    }
+    // For 1-2 digits
+    else {
+      for (int i = 0; i < newText.length; i++) {
         if (i == 2) {
           buffer.write(':');
         }

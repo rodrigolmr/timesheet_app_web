@@ -114,32 +114,42 @@ class _ExpenseFiltersState extends ConsumerState<ExpenseFilters> {
       height: 24,
       child: Row(
         children: [
-          Icon(
-            Icons.filter_list,
-            size: 14,
-            color: context.colors.primary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Filters',
-            style: context.textStyles.body.copyWith(
-              fontSize: 12,
-              color: context.colors.textSecondary,
-            ),
-          ),
-          // Indicadores dos filtros ativos
-          if (widget.selectedCard != null || widget.selectedCreator != null || widget.selectedDateRange != null) ...[
-            const SizedBox(width: 6),
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: context.colors.primary,
-                shape: BoxShape.circle,
+          // Área clicável para expandir
+          Expanded(
+            child: InkWell(
+              onTap: () => widget.onExpandedChanged(true),
+              borderRadius: BorderRadius.circular(4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.filter_list,
+                    size: 14,
+                    color: context.colors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Filters',
+                    style: context.textStyles.body.copyWith(
+                      fontSize: 12,
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                  // Indicadores dos filtros ativos
+                  if (widget.selectedCard != null || widget.selectedCreator != null || widget.selectedDateRange != null) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: context.colors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-          ],
-          const Spacer(),
+          ),
           // Botão para expandir usando IconButton padrão do Flutter
           IconButton(
             onPressed: () => widget.onExpandedChanged(true),

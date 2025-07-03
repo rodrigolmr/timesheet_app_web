@@ -82,31 +82,42 @@ class _CompanyCardFiltersState extends ConsumerState<CompanyCardFilters> {
       height: 24,
       child: Row(
         children: [
-          Icon(
-            Icons.filter_list,
-            size: 14,
-            color: context.colors.primary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Filters',
-            style: context.textStyles.body.copyWith(
-              fontSize: 12,
-              color: context.colors.textSecondary,
-            ),
-          ),
-          if (widget.searchQuery.isNotEmpty || widget.selectedStatus != 'all') ...[
-            const SizedBox(width: 6),
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: context.colors.primary,
-                shape: BoxShape.circle,
+          // Área clicável para expandir
+          Expanded(
+            child: InkWell(
+              onTap: () => widget.onExpandedChanged(true),
+              borderRadius: BorderRadius.circular(4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.filter_list,
+                    size: 14,
+                    color: context.colors.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Filters',
+                    style: context.textStyles.body.copyWith(
+                      fontSize: 12,
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                  if (widget.searchQuery.isNotEmpty || widget.selectedStatus != 'all') ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: context.colors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-          ],
-          const Spacer(),
+          ),
+          // Botão para expandir
           IconButton(
             onPressed: () => widget.onExpandedChanged(true),
             icon: const Icon(Icons.expand_more),

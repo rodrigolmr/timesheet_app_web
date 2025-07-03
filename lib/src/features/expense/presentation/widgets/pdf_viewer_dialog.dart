@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:timesheet_app_web/src/core/widgets/fullscreen_viewer_base.dart';
 import 'dart:html' as html;
 import 'dart:ui' as ui;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:ui_web' as ui_web;
 
 class PdfViewerDialog extends StatefulWidget {
   final String pdfUrl;
@@ -41,7 +43,7 @@ class _PdfViewerDialogState extends State<PdfViewerDialog> {
 
     // Register the iframe with Flutter
     // ignore: undefined_prefixed_name
-    ui.platformViewRegistry.registerViewFactory(
+    ui_web.platformViewRegistry.registerViewFactory(
       _iframeId,
       (int viewId) => _iframe!,
     );

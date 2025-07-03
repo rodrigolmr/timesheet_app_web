@@ -139,57 +139,67 @@ class _JobRecordFiltersState extends ConsumerState<JobRecordFilters> {
 
   Widget _buildMinimizedFilters() {
     return SizedBox(
-      height: 32,
+      height: 24,
       child: Row(
         children: [
-          Icon(
-            Icons.filter_list,
-            size: 16,
-            color: context.colors.primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Filters',
-            style: context.textStyles.body.copyWith(
-              fontSize: 14,
-              color: context.colors.textSecondary,
+          // Área clicável para expandir
+          Expanded(
+            child: InkWell(
+              onTap: () => widget.onExpandedChanged(true),
+              borderRadius: BorderRadius.circular(4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.filter_list,
+                    size: 14,
+                    color: context.colors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Filters',
+                    style: context.textStyles.body.copyWith(
+                      fontSize: 12,
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                  // Indicadores dos filtros ativos
+                  if (widget.searchQuery.isNotEmpty || 
+                      widget.selectedCreator != null || 
+                      widget.selectedStatus != null ||
+                      widget.selectedDateRange != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: context.colors.primary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _getActiveFiltersCount().toString(),
+                        style: context.textStyles.caption.copyWith(
+                          fontSize: 12,
+                          color: context.colors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
-          // Indicadores dos filtros ativos
-          if (widget.searchQuery.isNotEmpty || 
-              widget.selectedCreator != null || 
-              widget.selectedStatus != null ||
-              widget.selectedDateRange != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: context.colors.primary.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                _getActiveFiltersCount().toString(),
-                style: context.textStyles.caption.copyWith(
-                  fontSize: 12,
-                  color: context.colors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-          const Spacer(),
           // Botão para expandir
           IconButton(
             onPressed: () => widget.onExpandedChanged(true),
             icon: const Icon(Icons.expand_more),
-            iconSize: 18,
+            iconSize: 14,
             tooltip: 'Expand filters',
             color: context.colors.primary,
             style: IconButton.styleFrom(
               backgroundColor: context.colors.surface,
-              padding: const EdgeInsets.all(6),
-              minimumSize: const Size(32, 32),
-              maximumSize: const Size(32, 32),
+              padding: const EdgeInsets.all(4),
+              minimumSize: const Size(28, 28),
+              maximumSize: const Size(28, 28),
               side: BorderSide(
                 color: context.colors.primary.withOpacity(0.2),
                 width: 1,
