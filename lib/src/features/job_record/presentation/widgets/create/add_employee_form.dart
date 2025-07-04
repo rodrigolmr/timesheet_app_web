@@ -175,26 +175,6 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
     if (employee.travelHours > 0 || employee.meal > 0) {
       _showOptionalFields = true;
     }
-    
-    // Set selected employee
-    Future.microtask(() {
-      ref.read(employeesStreamProvider).whenData((employees) {
-        final emp = employees.firstWhere(
-          (e) => e.id == employee.employeeId,
-          orElse: () => EmployeeModel(
-            id: employee.employeeId,
-            firstName: employee.employeeName.split(' ').first,
-            lastName: employee.employeeName.split(' ').last,
-            isActive: true,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
-        );
-        setState(() {
-          _selectedEmployee = emp;
-        });
-      });
-    });
   }
   
   @override
@@ -581,6 +561,22 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
                         final activeEmployees = employees.isEmpty 
                             ? mockEmployees 
                             : employees.where((e) => e.isActive).toList();
+                        
+                        // Find the employee to edit if we're in edit mode and haven't selected one yet
+                        if (widget.employeeToEdit != null && _selectedEmployee == null) {
+                          final employee = widget.employeeToEdit!;
+                          _selectedEmployee = activeEmployees.firstWhere(
+                            (e) => e.id == employee.employeeId,
+                            orElse: () => EmployeeModel(
+                              id: employee.employeeId,
+                              firstName: employee.employeeName.split(' ').first,
+                              lastName: employee.employeeName.split(' ').skip(1).join(' '),
+                              isActive: true,
+                              createdAt: DateTime.now(),
+                              updatedAt: DateTime.now(),
+                            ),
+                          );
+                        }
                         
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
