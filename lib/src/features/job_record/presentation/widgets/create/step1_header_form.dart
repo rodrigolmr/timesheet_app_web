@@ -236,11 +236,15 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                         });
                       },
                       onDateSelected: (date) {
+                        // Ensure we store the date with noon time for timezone safety
+                        final safeDate = date != null 
+                            ? DateTime(date.year, date.month, date.day, 12, 0, 0)
+                            : null;
                         setState(() {
-                          _selectedDate = date;
+                          _selectedDate = safeDate;
                           _dateWasModified = true;
                         });
-                        _updateFormData('date', date);
+                        _updateFormData('date', safeDate);
                       },
                     ),
                     

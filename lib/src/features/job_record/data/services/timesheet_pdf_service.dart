@@ -159,7 +159,7 @@ class TimeSheetPdfService {
           (timeData.totalHours % 1 == 0 ? timeData.totalHours.toInt().toString() : timeData.totalHours.toStringAsFixed(1)),
         timeData.totalTravel == 0 ? '-' : 
           (timeData.totalTravel % 1 == 0 ? timeData.totalTravel.toInt().toString() : timeData.totalTravel.toStringAsFixed(1)),
-        timeData.totalMeal == 0 ? '-' : '\$${timeData.totalMeal.toStringAsFixed(2)}',
+        timeData.totalMeal == 0 ? '-' : timeData.totalMeal.toStringAsFixed(0),
       ];
     }).toList();
     
@@ -291,7 +291,7 @@ class TimeSheetPdfService {
       (totalHours % 1 == 0 ? totalHours.toInt().toString() : totalHours.toStringAsFixed(1)));
     row.add(totalTravel == 0 ? '-' : 
       (totalTravel % 1 == 0 ? totalTravel.toInt().toString() : totalTravel.toStringAsFixed(1)));
-    row.add(totalMeal == 0 ? '-' : '\$${totalMeal.toStringAsFixed(2)}');
+    row.add(totalMeal == 0 ? '-' : totalMeal.toStringAsFixed(0));
     
     return row;
   }

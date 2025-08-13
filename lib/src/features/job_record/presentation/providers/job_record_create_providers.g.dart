@@ -43,7 +43,7 @@ final currentStepNotifierProvider =
 
 typedef _$CurrentStepNotifier = Notifier<int>;
 String _$jobRecordFormStateHash() =>
-    r'c4bbe4be02b64b85c0f5943dccae6936c582f55e';
+    r'1f03b44c1443be3eeb5671730171fb19e8668bd5';
 
 /// Provider para gerenciar o estado do job record em criação
 ///

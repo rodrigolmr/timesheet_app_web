@@ -26,7 +26,7 @@ final expensePdfServiceProvider =
 // ignore: unused_element
 typedef ExpensePdfServiceRef = AutoDisposeProviderRef<ExpensePdfService>;
 String _$expenseBulkPdfGeneratorHash() =>
-    r'd1a78789ab6b8d8e486e8f43833f6f4719683f29';
+    r'c350be6e595f5c30fa7aeb11f09acaf0fcfacbe0';
 
 /// Copied from Dart SDK
 class _SystemHash {

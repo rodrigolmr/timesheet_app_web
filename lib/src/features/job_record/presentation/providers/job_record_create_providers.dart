@@ -63,11 +63,12 @@ class JobRecordFormState extends _$JobRecordFormState {
       name: 'JobRecordFormState');
     
     // Return empty job record data
+    final now = DateTime.now();
     final model = JobRecordModel(
       id: '',
       userId: userId,
       jobName: '',
-      date: DateTime.now(),
+      date: DateTime(now.year, now.month, now.day, 12, 0, 0), // Use noon for timezone safety
       territorialManager: '',
       jobSize: '',
       material: '',
@@ -122,9 +123,10 @@ class JobRecordFormState extends _$JobRecordFormState {
     final authState = ref.read(authStateProvider);
     final userId = authState.valueOrNull?.uid ?? '';
     
+    final now = DateTime.now();
     state = state.copyWith(
       jobName: '',
-      date: DateTime.now(), // Reset date to current date (will be cleared in the form)
+      date: DateTime(now.year, now.month, now.day, 12, 0, 0), // Reset date with noon for timezone safety
       territorialManager: '',
       jobSize: '',
       material: '',

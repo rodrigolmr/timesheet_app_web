@@ -264,8 +264,10 @@ class _ExpenseInfoScreenState extends ConsumerState<ExpenseInfoScreen> {
                     initialDate: _selectedDate,
                     onDateSelected: (date) {
                       if (date != null) {
+                        // Ensure we store the date with noon time for timezone safety
+                        final safeDate = DateTime(date.year, date.month, date.day, 12, 0, 0);
                         setState(() {
-                          _selectedDate = date;
+                          _selectedDate = safeDate;
                           _dateError = null;
                         });
                       }

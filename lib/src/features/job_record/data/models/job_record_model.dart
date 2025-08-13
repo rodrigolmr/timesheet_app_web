@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:timesheet_app_web/src/core/interfaces/base_repository.dart';
+import 'package:timesheet_app_web/src/core/utils/timezone_safe_date.dart';
 import 'package:timesheet_app_web/src/features/job_record/domain/enums/job_record_status.dart';
 import 'job_employee_model.dart';
 
@@ -52,7 +53,9 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
       id: doc.id,
       userId: data['user_id'] as String? ?? '',
       jobName: data['job_name'] as String? ?? 'Untitled Job',
-      date: data['date'] != null ? (data['date'] as Timestamp).toDate() : DateTime.now(),
+      date: data['date'] != null 
+          ? TimezoneSafeDate.fromTimestamp(data['date'] as Timestamp)
+          : DateTime.now(),
       territorialManager: data['territorial_manager'] as String? ?? '',
       jobSize: data['job_size'] as String? ?? '',
       material: data['material'] as String? ?? '',
@@ -68,7 +71,7 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
           : JobRecordStatus.pending,
       approverNote: data['approver_note'] as String?,
       approvedAt: data['approved_at'] != null 
-          ? (data['approved_at'] as Timestamp).toDate()
+          ? TimezoneSafeDate.fromTimestamp(data['approved_at'] as Timestamp)
           : null,
       approverId: data['approver_id'] as String?,
       createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : DateTime.now(),
@@ -80,7 +83,7 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
     return {
       'user_id': userId,
       'job_name': jobName,
-      'date': Timestamp.fromDate(date),
+      'date': TimezoneSafeDate.toTimestamp(date),
       'territorial_manager': territorialManager,
       'job_size': jobSize,
       'material': material,
@@ -91,7 +94,7 @@ class JobRecordModel with _$JobRecordModel implements CleanableModel {
       'notes': notes,
       'status': status.name,
       if (approverNote != null) 'approver_note': approverNote,
-      if (approvedAt != null) 'approved_at': Timestamp.fromDate(approvedAt!),
+      if (approvedAt != null) 'approved_at': TimezoneSafeDate.toTimestamp(approvedAt!),
       if (approverId != null) 'approver_id': approverId,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
