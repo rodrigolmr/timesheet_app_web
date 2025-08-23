@@ -27,17 +27,21 @@ class DateRangeSelection extends _$DateRangeSelection {
     final now = DateTime.now();
     final dayOfWeek = now.weekday;
     
-    DateTime friday;
-    if (dayOfWeek == 5) {
-      friday = now;
-    } else if (dayOfWeek < 5) {
-      friday = now.subtract(Duration(days: dayOfWeek + 2));
-    } else {
-      friday = now.subtract(Duration(days: dayOfWeek - 5));
+    // Calculate days to go back to get to the most recent Friday
+    int daysToFriday;
+    if (dayOfWeek == 5) { // Friday
+      daysToFriday = 0;
+    } else if (dayOfWeek > 5) { // Saturday (6) or Sunday (7)
+      daysToFriday = dayOfWeek - 5;
+    } else { // Monday (1) to Thursday (4)
+      daysToFriday = dayOfWeek + 2; // Go back to previous Friday
     }
     
+    final friday = now.subtract(Duration(days: daysToFriday));
+    final thursday = friday.add(const Duration(days: 6));
+    
     final fridayDate = DateTime(friday.year, friday.month, friday.day);
-    final thursdayDate = fridayDate.add(const Duration(days: 6));
+    final thursdayDate = DateTime(thursday.year, thursday.month, thursday.day);
     
     return (startDate: fridayDate, endDate: thursdayDate);
   }

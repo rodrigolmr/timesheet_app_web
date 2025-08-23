@@ -4,11 +4,11 @@ class BuildConfig {
   static const String version = '1.0.3';
   
   /// Build number
-  static const String buildNumber = '27';
+  static const String buildNumber = '28';
   
   /// Build timestamp - UPDATE THIS BEFORE EACH DEPLOYMENT
   /// Format: yyyy-MM-dd HH:mm:ss
-  static const String buildTimestamp = '2025-08-11 13:25:35';
+  static const String buildTimestamp = '2025-08-22 21:00:12';
   
   /// Build environment
   static const String environment = 'production';

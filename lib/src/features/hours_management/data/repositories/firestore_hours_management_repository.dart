@@ -19,9 +19,20 @@ class FirestoreHoursManagementRepository implements HoursManagementRepository {
     String? userId,
   }) async {
     try {
+      // Adjust endDate to include the entire last day (23:59:59.999)
+      final adjustedEndDate = DateTime(
+        endDate.year,
+        endDate.month,
+        endDate.day,
+        23,
+        59,
+        59,
+        999,
+      );
+      
       Query<Map<String, dynamic>> query = _firestore.collection('job_records')
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(adjustedEndDate));
 
       if (userId != null) {
         query = query.where('user_id', isEqualTo: userId);
@@ -140,9 +151,20 @@ class FirestoreHoursManagementRepository implements HoursManagementRepository {
     String? userName,
   }) async {
     try {
+      // Adjust endDate to include the entire last day (23:59:59.999)
+      final adjustedEndDate = DateTime(
+        endDate.year,
+        endDate.month,
+        endDate.day,
+        23,
+        59,
+        59,
+        999,
+      );
+      
       Query<Map<String, dynamic>> query = _firestore.collection('job_records')
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(adjustedEndDate));
 
       final querySnapshot = await query.get();
       final jobRecords = querySnapshot.docs

@@ -566,24 +566,24 @@ class HoursManagementScreen extends ConsumerWidget {
   
   void _selectThisWeek(WidgetRef ref) {
     final now = DateTime.now();
-    
-    // Calculate the Friday of current week
-    DateTime friday;
     final dayOfWeek = now.weekday;
     
-    if (dayOfWeek == 5) { // Is Friday
-      friday = now;
-    } else if (dayOfWeek < 5) { // Monday to Thursday
-      // Go back to the previous Friday
-      friday = now.subtract(Duration(days: dayOfWeek + 2));
-    } else { // Saturday or Sunday
-      // Go back to the most recent Friday
-      friday = now.subtract(Duration(days: dayOfWeek - 5));
+    // Calculate days to go back to get to the most recent Friday
+    int daysToFriday;
+    if (dayOfWeek == 5) { // Friday
+      daysToFriday = 0;
+    } else if (dayOfWeek > 5) { // Saturday (6) or Sunday (7)
+      daysToFriday = dayOfWeek - 5;
+    } else { // Monday (1) to Thursday (4)
+      daysToFriday = dayOfWeek + 2; // Go back to previous Friday
     }
+    
+    final friday = now.subtract(Duration(days: daysToFriday));
+    final thursday = friday.add(const Duration(days: 6));
     
     // Create dates with only year, month, day (no time)
     final fridayDate = DateTime(friday.year, friday.month, friday.day);
-    final thursdayDate = fridayDate.add(const Duration(days: 6));
+    final thursdayDate = DateTime(thursday.year, thursday.month, thursday.day);
     
     ref.read(dateRangeSelectionProvider.notifier)
         .updateDateRange(fridayDate, thursdayDate);
@@ -591,27 +591,25 @@ class HoursManagementScreen extends ConsumerWidget {
   
   void _selectLastWeek(WidgetRef ref) {
     final now = DateTime.now();
-    
-    // Calculate the Friday of current week first
-    DateTime currentFriday;
     final dayOfWeek = now.weekday;
     
-    if (dayOfWeek == 5) { // Is Friday
-      currentFriday = now;
-    } else if (dayOfWeek < 5) { // Monday to Thursday
-      // Go back to the previous Friday
-      currentFriday = now.subtract(Duration(days: dayOfWeek + 2));
-    } else { // Saturday or Sunday
-      // Go back to the most recent Friday
-      currentFriday = now.subtract(Duration(days: dayOfWeek - 5));
+    // Calculate days to go back to get to the most recent Friday
+    int daysToFriday;
+    if (dayOfWeek == 5) { // Friday
+      daysToFriday = 0;
+    } else if (dayOfWeek > 5) { // Saturday (6) or Sunday (7)
+      daysToFriday = dayOfWeek - 5;
+    } else { // Monday (1) to Thursday (4)
+      daysToFriday = dayOfWeek + 2; // Go back to previous Friday
     }
     
-    // Last week's Friday is 7 days before current week's Friday
-    final lastFriday = currentFriday.subtract(const Duration(days: 7));
+    // Get last week's Friday (7 days before this week's Friday)
+    final lastFriday = now.subtract(Duration(days: daysToFriday + 7));
+    final lastThursday = lastFriday.add(const Duration(days: 6));
     
     // Create dates with only year, month, day (no time)
     final lastFridayDate = DateTime(lastFriday.year, lastFriday.month, lastFriday.day);
-    final lastThursdayDate = lastFridayDate.add(const Duration(days: 6));
+    final lastThursdayDate = DateTime(lastThursday.year, lastThursday.month, lastThursday.day);
     
     ref.read(dateRangeSelectionProvider.notifier)
         .updateDateRange(lastFridayDate, lastThursdayDate);

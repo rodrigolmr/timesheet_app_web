@@ -408,7 +408,7 @@ final viewingEmployeeHoursSummaryProvider =
 typedef ViewingEmployeeHoursSummaryRef =
     AutoDisposeFutureProviderRef<Map<String, double>>;
 String _$dateRangeSelectionHash() =>
-    r'e938bb8e2388b7eb276e1e5a73865414ee910233';
+    r'362d45360a8f7fd2478dc53f4845378164966942';
 
 /// See also [DateRangeSelection].
 @ProviderFor(DateRangeSelection)

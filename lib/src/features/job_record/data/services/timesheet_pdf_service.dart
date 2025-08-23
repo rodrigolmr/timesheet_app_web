@@ -320,10 +320,8 @@ class TimeSheetPdfService {
     for (final record in jobRecords) {
       final recordDate = record.date;
       
-      // Skip if outside date range
-      if (recordDate.isBefore(startDate) || recordDate.isAfter(endDate)) {
-        continue;
-      }
+      // Note: Date filtering is already done in the provider before calling this service
+      // No need to filter again here - all records passed are within the date range
       
       // Process each employee in the record
       for (final jobEmployee in record.employees) {
