@@ -44,6 +44,19 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
     ref.read(jobRecordFormStateProvider.notifier).updateHeader(headerData);
   }
 
+  String _expandSeparators(String text) {
+    // Replace 12-character separators with 20-character ones for display
+    final lines = text.split('\n');
+    final expandedLines = lines.map((line) {
+      // Check if line is a separator (only contains ━ characters)
+      if (line.isNotEmpty && line.replaceAll('━', '').isEmpty) {
+        return '━' * 20;
+      }
+      return line;
+    }).toList();
+    return expandedLines.join('\n');
+  }
+
   String _getDateDisplay(DateTime date) {
     // Always show the date, regardless of whether it's today or not
     return intl.DateFormat("M/d/yy, EEEE").format(date);
@@ -133,15 +146,15 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
                   const Text(
                     "Note: ",
                     style: TextStyle(
-                      fontSize: 11, 
+                      fontSize: 11,
                       fontWeight: FontWeight.normal
                     ),
                   ),
                   Expanded(
                     child: Text(
-                      formState.notes,
+                      _expandSeparators(formState.notes),
                       style: const TextStyle(
-                        fontSize: 11, 
+                        fontSize: 11,
                         fontWeight: FontWeight.normal
                       ),
                     ),
@@ -167,6 +180,7 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
                       maxLines: 5,
                       autoGrow: true,
                     ),
+                    SizedBox(height: context.dimensions.spacingXS),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -185,6 +199,52 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
                           ),
                           style: TextButton.styleFrom(
                             foregroundColor: context.colors.error,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: context.dimensions.spacingS,
+                              vertical: context.dimensions.spacingXS,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            final currentText = _notesController.text;
+                            final selection = _notesController.selection;
+
+                            // 12 characters for editing field (compact)
+                            // Will be displayed as 20 characters when saved
+                            final separator = '\n${'━' * 12}\n';
+
+                            String newText;
+                            int newCursorPosition;
+
+                            if (selection.isValid && selection.start == selection.end) {
+                              // Insert at cursor position
+                              newText = currentText.substring(0, selection.start) +
+                                  separator +
+                                  currentText.substring(selection.start);
+                              newCursorPosition = selection.start + separator.length;
+                            } else {
+                              // Add at the end
+                              newText = currentText + separator;
+                              newCursorPosition = newText.length;
+                            }
+
+                            setState(() {
+                              _notesController.value = TextEditingValue(
+                                text: newText,
+                                selection: TextSelection.collapsed(offset: newCursorPosition),
+                              );
+                              _updateNotes(newText);
+                            });
+                          },
+                          child: Text(
+                            'Add Separator',
+                            style: TextStyle(
+                              fontSize: 13,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: context.colors.textSecondary,
                             padding: EdgeInsets.symmetric(
                               horizontal: context.dimensions.spacingS,
                               vertical: context.dimensions.spacingXS,
@@ -219,11 +279,13 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
                   child: TextButton.icon(
                     onPressed: () {
                       setState(() {
+                        // Load current notes into controller when showing the field
+                        _notesController.text = formState.notes;
                         _showNotesField = true;
                       });
                     },
                     icon: Icon(
-                      formState.notes.isNotEmpty ? Icons.edit_note : Icons.note_add, 
+                      formState.notes.isNotEmpty ? Icons.edit_note : Icons.note_add,
                       size: 20
                     ),
                     label: Text(
