@@ -26,7 +26,9 @@
       "Bash(./generate_icons.sh:*)",
       "Bash(flutter:*)",
       "Bash(chmod:*)",
-      "Bash(diff:*)"
+      "Bash(diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   },

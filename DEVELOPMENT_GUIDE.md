@@ -2,6 +2,9 @@
 
 Este documento unifica todas as diretrizes essenciais para o desenvolvimento do Timesheet App. Uma IA ou desenvolvedor deve ser capaz de implementar qualquer funcionalidade seguindo estas instruções.
 
+**Última atualização**: 2025-10-24
+**Versão do app**: 1.0.3+27
+
 ## Índice
 
 1. [Visão Geral do Projeto](#visão-geral-do-projeto)
@@ -18,9 +21,10 @@ Este documento unifica todas as diretrizes essenciais para o desenvolvimento do 
 12. [Fluxo de Autenticação](#fluxo-de-autenticação)
 13. [Sistema de Permissões e Roles](#sistema-de-permissões-e-roles)
 14. [Features Implementadas](#features-implementadas)
-15. [Exemplos Práticos](#exemplos-práticos)
-16. [Decisões Arquiteturais](#decisões-arquiteturais)
-17. [Troubleshooting](#troubleshooting)
+15. [Componentes Especializados](#componentes-especializados)
+16. [Exemplos Práticos](#exemplos-práticos)
+17. [Decisões Arquiteturais](#decisões-arquiteturais)
+18. [Troubleshooting](#troubleshooting)
 
 ## Visão Geral do Projeto
 
@@ -117,7 +121,8 @@ lib/
     │       ├── dialogs/        # Diálogos padronizados
     │       ├── input/          # Campos de entrada
     │       ├── logo/           # Logos
-    │       └── navigation/     # Componentes de navegação
+    │       ├── navigation/     # Componentes de navegação
+    │       └── tables/         # Tabelas especializadas (ex: JobRecordTable)
     └── features/               # Funcionalidades por domínio
         ├── auth/               # Autenticação
         ├── company_card/       # Cartões corporativos
@@ -129,7 +134,9 @@ lib/
         ├── job_record/         # Registros de trabalho
         ├── pigtail/            # Instalações elétricas
         ├── settings/           # Configurações
-        └── user/               # Usuários
+        ├── user/               # Usuários
+        ├── hours_management/   # Gerenciamento de horas
+        └── games/              # Feature experimental (não em produção)
             ├── data/
             │   ├── models/     # Modelos Freezed
             │   └── repositories/ # Implementações
@@ -326,6 +333,7 @@ ResponsiveGrid(
   is_active: boolean         // Status ativo
   theme_preference?: string  // Tema preferido
   forced_theme?: boolean     // Se tema é forçado
+  employee_id?: string       // Referência ao funcionário (opcional)
   created_at: timestamp
   updated_at: timestamp
 }
@@ -773,24 +781,39 @@ List<UserModel> userSearchResults(UserSearchResultsRef ref) {
 enum AppRoute {
   login('/login'),
   home('/'),
+  accessDenied('/access-denied'),
+
+  // Rotas de gerenciamento
   employees('/employees'),
-  employeeDetails('/employees/:id'),
   users('/users'),
-  userDetails('/users/:id'),
   companyCards('/company-cards'),
-  jobRecords('/job-records'),
-  jobRecordDetails('/job-records/:id'),
-  jobRecordCreate('/job-records/create'),
-  expenses('/expenses'),
-  expenseDetails('/expenses/:id'),
-  expenseCreate('/expenses/create'),
-  pigtails('/pigtails'),
-  pigtailDetails('/pigtails/:id'),
+
+  // Rotas de configurações
   settings('/settings'),
   themeSettings('/settings/theme'),
-  database('/database'),
-  dataImport('/database/import'),
-  accessDenied('/access-denied'),
+  themeSelector('/settings/theme-selector'),
+  database('/settings/database'),
+  dataImport('/settings/database/import'),
+
+  // Rotas de trabalho
+  jobRecordCreate('/job-record-create'),
+  jobRecordEdit('/job-records/edit/:id'),
+  jobRecords('/job-records'),
+  timesheetList('/timesheets'),
+  hoursManagement('/hours-management'),
+
+  // Rotas de despesas
+  expenses('/expenses'),
+  expenseDetails('/expenses/:id'),
+
+  // Rotas de scanner
+  documentScanner('/document-scanner'),
+  documentCrop('/document-scanner/crop'),
+  documentFilter('/document-scanner/filter'),
+  expenseInfo('/document-scanner/expense-info'),
+
+  // Outras rotas
+  pigtails('/pigtails'),
   ;
 
   const AppRoute(this.path);
@@ -1747,6 +1770,80 @@ class JobRecordsScreen extends ConsumerWidget {
 - Acesso restrito apenas para admin
 - Preview de documentos antes de importar
 
+### 12. Gerenciamento de Horas (Hours Management)
+- Visualização e análise de horas trabalhadas por funcionário
+- Navegação por períodos:
+  - Seleção de semana (anterior/próxima)
+  - Seleção de mês
+  - Período customizado (date range)
+- Cálculos automáticos:
+  - Horas regulares (regular hours)
+  - Horas de viagem (travel hours)
+  - Total de horas
+- Sumário diário (`DailyHoursModel`):
+  - Agregação por dia
+  - Lista de job records do dia
+  - Totais por tipo de hora
+- Sumário por período:
+  - Total de horas regulares no período
+  - Total de horas de viagem no período
+  - Total geral
+- Permissões baseadas em role:
+  - **User**: Visualiza apenas suas próprias horas
+  - **Manager/Admin**: Visualiza horas de todos os funcionários
+  - Seletor de funcionário disponível para managers/admins
+- Navegação intuitiva:
+  - Botões anterior/próximo para navegar entre semanas
+  - Date range picker para períodos customizados
+- Dados calculados a partir de `job_records`:
+  - Não armazenados diretamente no banco
+  - Calculados em tempo real via providers
+  - Cache automático para performance
+
+## Componentes Especializados
+
+### JobRecordTable
+Widget especializado para exibir job records em formato de tabela, utilizado tanto na interface web quanto na geração de PDFs.
+
+```dart
+JobRecordTable(
+  record: jobRecordModel,
+  width: 400,  // Opcional, se não fornecido usa valores responsivos
+)
+```
+
+**Características**:
+- Layout responsivo automático
+- Estrutura idêntica ao timesheet impresso
+- Suporta renderização para PDF
+- Calcula e exibe totais de horas
+- Formata datas e valores automaticamente
+- Lista detalhada de funcionários com:
+  - Horários de início e fim
+  - Horas regulares e de viagem
+  - Valores de refeição (meal)
+
+**Breakpoints de largura**:
+- XS (mobile pequeno): 280px
+- SM (mobile): 292px
+- MD (tablet): 340px
+- LG (desktop pequeno): 400px
+- XL (desktop grande): 450px
+
+**Uso típico**:
+```dart
+// Na interface web
+SingleChildScrollView(
+  scrollDirection: Axis.horizontal,
+  child: JobRecordTable(record: record),
+)
+
+// Na geração de PDF
+pw.Widget buildPdfTable() {
+  // Lógica de conversão para PDF usando mesma estrutura
+}
+```
+
 ## Exemplos Práticos
 
 ### Criar Formulário Completo
@@ -2045,6 +2142,16 @@ class UserListScreen extends ConsumerWidget {
   }
 }
 ```
+
+## Notas sobre Features Experimentais
+
+### Games
+A pasta `/lib/src/features/games/` contém uma feature experimental que não está documentada ou em produção. Esta feature não faz parte do fluxo principal da aplicação e pode ser considerada para:
+- Remoção futura se não for utilizada
+- Documentação completa se for integrada ao sistema
+- Manutenção como feature de desenvolvimento/teste
+
+**Status atual**: Não integrada ao sistema de rotas principal, sem impacto na funcionalidade de produção.
 
 ## Decisões Arquiteturais
 

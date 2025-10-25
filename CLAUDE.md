@@ -17,7 +17,7 @@ Este arquivo contém instruções e preferências para o Claude ao trabalhar nes
 
 ## Desenvolvimento
 
-- MUITO IMPORTANTE!!!! sempre siga o DEVELOPMENT_GUIDE.md que tem as diretrizes de desenvolvimento do app.
+- MUITO IMPORTANTE!!!! sempre siga o [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) que tem as diretrizes de desenvolvimento do app.
 - Priorizar a criação de código testável e manutenível
 - Implementar tratamento de erros adequado em todas as operações com Firebase
 
