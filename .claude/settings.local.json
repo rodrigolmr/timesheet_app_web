@@ -28,7 +28,8 @@
       "Bash(chmod:*)",
       "Bash(diff:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   },
