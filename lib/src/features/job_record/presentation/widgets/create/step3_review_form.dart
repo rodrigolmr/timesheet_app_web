@@ -568,25 +568,33 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
       xl: 24,
     );
 
-    // Parse material|quantity format
+    // Parse material|quantity format (with backward compatibility)
     List<String> materialLines = [];
     if (value.isNotEmpty) {
       final lines = value.split('\n');
       for (var line in lines) {
-        final parts = line.split('|');
-        if (parts.length >= 2) {
-          final material = parts[0].trim();
-          final quantity = parts[1].trim();
-          if (material.isNotEmpty && quantity.isNotEmpty) {
-            materialLines.add('$material - $quantity');
-          } else if (material.isNotEmpty) {
-            materialLines.add(material);
+        if (line.trim().isEmpty) continue;
+
+        // Check if line has the new format (Material|Quantity)
+        if (line.contains('|')) {
+          final parts = line.split('|');
+          if (parts.length >= 2) {
+            final material = parts[0].trim();
+            final quantity = parts[1].trim();
+            if (material.isNotEmpty && quantity.isNotEmpty) {
+              materialLines.add('$material - $quantity');
+            } else if (material.isNotEmpty) {
+              materialLines.add(material);
+            }
           }
+        } else {
+          // Old format: just the text as-is
+          materialLines.add(line.trim());
         }
       }
     }
 
-    final displayText = materialLines.isEmpty ? '' : materialLines.join('\n');
+    final displayText = materialLines.isEmpty ? value : materialLines.join('\n');
     final verticalPadding = materialLines.length > 1 ? 4.0 : 0.0;
 
     return Container(

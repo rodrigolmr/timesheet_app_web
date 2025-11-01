@@ -5,6 +5,37 @@ import 'package:intl/intl.dart';
 import '../models/job_record_model.dart';
 
 class JobRecordPrintService {
+  /// Parse material text to support both old and new formats
+  static String _parseMaterialText(String value) {
+    if (value.isEmpty) return '';
+
+    List<String> materialLines = [];
+    final lines = value.split('\n');
+
+    for (var line in lines) {
+      if (line.trim().isEmpty) continue;
+
+      // Check if line has the new format (Material|Quantity)
+      if (line.contains('|')) {
+        final parts = line.split('|');
+        if (parts.length >= 2) {
+          final material = parts[0].trim();
+          final quantity = parts[1].trim();
+          if (material.isNotEmpty && quantity.isNotEmpty) {
+            materialLines.add('$material - $quantity');
+          } else if (material.isNotEmpty) {
+            materialLines.add(material);
+          }
+        }
+      } else {
+        // Old format: just the text as-is
+        materialLines.add(line.trim());
+      }
+    }
+
+    return materialLines.isEmpty ? value : materialLines.join('\n');
+  }
+
   static Future<void> printJobRecords(List<JobRecordModel> jobRecords) async {
     if (jobRecords.isEmpty) {
       throw Exception("No job records selected for printing!");
@@ -44,7 +75,7 @@ class JobRecordPrintService {
                       dateStr,
                       jobRecord.territorialManager,
                       jobRecord.jobSize,
-                      jobRecord.material,
+                      _parseMaterialText(jobRecord.material),
                       jobRecord.jobDescription,
                       jobRecord.foreman,
                       jobRecord.vehicle,
