@@ -8,6 +8,7 @@ import 'package:timesheet_app_web/src/core/theme/theme_extensions.dart';
 import 'package:timesheet_app_web/src/core/widgets/input/input.dart';
 import 'package:timesheet_app_web/src/features/job_record/presentation/providers/job_record_create_providers.dart';
 import 'package:timesheet_app_web/src/features/job_record/data/models/job_record_model.dart';
+import 'material_quantity_field.dart';
 
 class Step1HeaderForm extends ConsumerStatefulWidget {
   const Step1HeaderForm({super.key});
@@ -26,6 +27,9 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   late TextEditingController _jobDescriptionController;
   late TextEditingController _foremanController;
   late TextEditingController _vehicleController;
+
+  // Material/Quantity rows
+  late List<MaterialQuantityRow> _materialQuantityRows;
   
   DateTime? _selectedDate;
   bool _dateWasModified = false; // Track if user selected a date
@@ -49,6 +53,13 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController = TextEditingController();
     _foremanController = TextEditingController();
     _vehicleController = TextEditingController();
+
+    // Inicializa com 3 linhas de Material/Quantity
+    _materialQuantityRows = [
+      MaterialQuantityRow(),
+      MaterialQuantityRow(),
+      MaterialQuantityRow(),
+    ];
   }
   
   bool validateForm() {
@@ -111,7 +122,12 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobDescriptionController.dispose();
     _foremanController.dispose();
     _vehicleController.dispose();
-    
+
+    // Dispose material/quantity rows
+    for (var row in _materialQuantityRows) {
+      row.dispose();
+    }
+
     super.dispose();
   }
 
@@ -294,19 +310,18 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                 ),
                 
                 SizedBox(height: context.dimensions.spacingS),
-                
-                // Material - Full width multiline
-                AppMultilineTextField(
-                  label: 'Material',
-                  hintText: 'Enter material type and details',
-                  controller: _materialController,
-                  minLines: 3,
-                  maxLines: 5,
-                  onChanged: (value) {
-                    _updateFormData('material', value);
+
+                // Material and Quantity - Multiple rows
+                MaterialQuantityField(
+                  rows: _materialQuantityRows,
+                  onMaterialChanged: (index) {
+                    // TODO: Save material for row index
+                  },
+                  onQuantityChanged: (index) {
+                    // TODO: Save quantity for row index
                   },
                 ),
-                
+
                 SizedBox(height: context.dimensions.spacingS),
                 
                 // Job Description (required) - Full width multiline
