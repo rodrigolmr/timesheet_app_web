@@ -23,7 +23,6 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   late TextEditingController _jobNameController;
   late TextEditingController _territorialManagerController;
   late TextEditingController _jobSizeController;
-  late TextEditingController _materialController;
   late TextEditingController _jobDescriptionController;
   late TextEditingController _foremanController;
   late TextEditingController _vehicleController;
@@ -49,7 +48,6 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobNameController = TextEditingController();
     _territorialManagerController = TextEditingController();
     _jobSizeController = TextEditingController();
-    _materialController = TextEditingController();
     _jobDescriptionController = TextEditingController();
     _foremanController = TextEditingController();
     _vehicleController = TextEditingController();
@@ -88,16 +86,27 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobNameController.text = formState.jobName;
     _territorialManagerController.text = formState.territorialManager;
     _jobSizeController.text = formState.jobSize;
-    _materialController.text = formState.material;
+    _loadMaterialQuantityData(formState.material);
     _jobDescriptionController.text = formState.jobDescription;
     _foremanController.text = formState.foreman;
     _vehicleController.text = formState.vehicle;
-    // Only load date if we're in edit mode or if user already selected a date
+    // Load date: check if user has modified it (date is different from today at noon)
     final isEditMode = ref.read(isEditModeProvider);
-    if (isEditMode || _dateWasModified) {
+    final now = DateTime.now();
+    final defaultDate = DateTime(now.year, now.month, now.day, 12, 0, 0);
+    final hasUserSelectedDate = formState.date != null &&
+                                 formState.date!.difference(defaultDate).abs().inSeconds > 60;
+
+    if (isEditMode) {
+      // In edit mode, always load the date
+      _selectedDate = formState.date;
+      _dateWasModified = true;
+    } else if (hasUserSelectedDate) {
+      // User has selected a different date, load it
       _selectedDate = formState.date;
       _dateWasModified = true;
     } else {
+      // Fresh form or default date, keep date field empty
       _selectedDate = null;
       _dateWasModified = false;
     }
@@ -118,7 +127,6 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     _jobNameController.dispose();
     _territorialManagerController.dispose();
     _jobSizeController.dispose();
-    _materialController.dispose();
     _jobDescriptionController.dispose();
     _foremanController.dispose();
     _vehicleController.dispose();
@@ -129,6 +137,50 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
     }
 
     super.dispose();
+  }
+
+  void _loadMaterialQuantityData(String materialText) {
+    if (materialText.isEmpty) return;
+
+    final lines = materialText.split('\n').where((line) => line.isNotEmpty).toList();
+
+    // Create rows based on saved data, minimum 3 rows
+    final rowCount = lines.length < 3 ? 3 : lines.length;
+
+    // If we need more rows than we have, add new ones
+    while (_materialQuantityRows.length < rowCount) {
+      final newRow = MaterialQuantityRow();
+      newRow.materialFocusNode.addListener(() => setState(() {}));
+      newRow.quantityFocusNode.addListener(() => setState(() {}));
+      _materialQuantityRows.add(newRow);
+    }
+
+    // Load data into existing rows
+    for (int i = 0; i < lines.length; i++) {
+      if (i < _materialQuantityRows.length) {
+        final parts = lines[i].split('|');
+        if (parts.length >= 2) {
+          _materialQuantityRows[i].materialController.text = parts[0];
+          _materialQuantityRows[i].quantityController.text = parts[1];
+        }
+      }
+    }
+  }
+
+  void _saveMaterialQuantityData() {
+    // Convert Material/Quantity rows to text format
+    final nonEmptyRows = _materialQuantityRows.where((row) {
+      final material = row.materialController.text.trim();
+      final quantity = row.quantityController.text.trim();
+      return material.isNotEmpty || quantity.isNotEmpty;
+    }).map((row) {
+      final material = row.materialController.text.trim();
+      final quantity = row.quantityController.text.trim();
+      return '$material|$quantity';
+    }).toList();
+
+    final materialText = nonEmptyRows.join('\n');
+    _updateFormData('material', materialText);
   }
 
   void _updateFormData(String field, dynamic value) {
@@ -150,12 +202,12 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
         'date': _selectedDate ?? currentFormState.date, // Keep existing date if none selected
         'territorialManager': _territorialManagerController.text,
         'jobSize': _jobSizeController.text,
-        'material': _materialController.text,
+        'material': currentFormState.material,
         'jobDescription': _jobDescriptionController.text,
         'foreman': _foremanController.text,
         'vehicle': _vehicleController.text,
       };
-      
+
       headerData[field] = value;
       ref.read(jobRecordFormStateProvider.notifier).updateHeader(headerData);
       
@@ -315,10 +367,10 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
                 MaterialQuantityField(
                   rows: _materialQuantityRows,
                   onMaterialChanged: (index) {
-                    // TODO: Save material for row index
+                    _saveMaterialQuantityData();
                   },
                   onQuantityChanged: (index) {
-                    // TODO: Save quantity for row index
+                    _saveMaterialQuantityData();
                   },
                 ),
 

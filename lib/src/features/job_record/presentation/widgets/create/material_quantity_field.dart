@@ -149,14 +149,27 @@ class _MaterialQuantityFieldState extends State<MaterialQuantityField> {
     final materialHasFocus = row.materialFocusNode.hasFocus;
     final quantityHasFocus = row.quantityFocusNode.hasFocus;
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Material field (2/3 width)
-          Expanded(
-            flex: 2,
-            child: TextField(
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: isFirst ? BorderSide(color: colors.secondary, width: 1) : BorderSide.none,
+          bottom: BorderSide(color: colors.secondary, width: 1),
+          left: BorderSide(color: colors.secondary, width: 1),
+          right: BorderSide(color: colors.secondary, width: 1),
+        ),
+        borderRadius: BorderRadius.vertical(
+          top: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
+          bottom: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
+        ),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Material field (2/3 width)
+            Expanded(
+              flex: 2,
+              child: TextField(
               controller: row.materialController,
               focusNode: row.materialFocusNode,
               onChanged: (value) => widget.onMaterialChanged?.call(index),
@@ -182,30 +195,21 @@ class _MaterialQuantityFieldState extends State<MaterialQuantityField> {
                 fillColor: colors.surfaceAccent.withOpacity(0.85),
                 contentPadding: contentPadding,
                 border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: anyHasFocus ? colors.primary : colors.secondary,
-                    width: anyHasFocus ? 2 : 1,
-                  ),
+                  borderSide: BorderSide.none,
                   borderRadius: BorderRadius.only(
                     topLeft: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                     bottomLeft: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: colors.secondary,
-                    width: 1,
-                  ),
+                  borderSide: BorderSide.none,
                   borderRadius: BorderRadius.only(
                     topLeft: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                     bottomLeft: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: anyHasFocus ? colors.primary : colors.secondary,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide.none,
                   borderRadius: BorderRadius.only(
                     topLeft: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                     bottomLeft: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
@@ -213,6 +217,12 @@ class _MaterialQuantityFieldState extends State<MaterialQuantityField> {
                 ),
               ),
             ),
+          ),
+
+          // Vertical divider
+          Container(
+            width: 1,
+            color: colors.secondary,
           ),
 
           // Quantity field (1/3 width)
@@ -234,30 +244,21 @@ class _MaterialQuantityFieldState extends State<MaterialQuantityField> {
                 fillColor: colors.surfaceAccent.withOpacity(0.85),
                 contentPadding: contentPadding,
                 border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: anyHasFocus ? colors.primary : colors.secondary,
-                    width: anyHasFocus ? 2 : 1,
-                  ),
+                  borderSide: BorderSide.none,
                   borderRadius: BorderRadius.only(
                     topRight: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                     bottomRight: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: colors.secondary,
-                    width: 1,
-                  ),
+                  borderSide: BorderSide.none,
                   borderRadius: BorderRadius.only(
                     topRight: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                     bottomRight: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: anyHasFocus ? colors.primary : colors.secondary,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide.none,
                   borderRadius: BorderRadius.only(
                     topRight: isFirst ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
                     bottomRight: isLast ? Radius.circular(dimensions.borderRadiusMedium) : Radius.zero,
@@ -268,6 +269,7 @@ class _MaterialQuantityFieldState extends State<MaterialQuantityField> {
           ),
         ],
       ),
+    ),
     );
   }
 }

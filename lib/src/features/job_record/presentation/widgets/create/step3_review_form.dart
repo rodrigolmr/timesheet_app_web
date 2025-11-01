@@ -559,7 +559,7 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
       lg: 13,
       xl: 14,
     );
-    
+
     final lineHeight = context.responsive<double>(
       xs: 16,
       sm: 18,
@@ -567,10 +567,28 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
       lg: 22,
       xl: 24,
     );
-    
-    // Adiciona padding vertical quando tem múltiplas linhas
-    final verticalPadding = value.contains('\n') ? 4.0 : 0.0;
-    
+
+    // Parse material|quantity format
+    List<String> materialLines = [];
+    if (value.isNotEmpty) {
+      final lines = value.split('\n');
+      for (var line in lines) {
+        final parts = line.split('|');
+        if (parts.length >= 2) {
+          final material = parts[0].trim();
+          final quantity = parts[1].trim();
+          if (material.isNotEmpty && quantity.isNotEmpty) {
+            materialLines.add('$material - $quantity');
+          } else if (material.isNotEmpty) {
+            materialLines.add(material);
+          }
+        }
+      }
+    }
+
+    final displayText = materialLines.isEmpty ? '' : materialLines.join('\n');
+    final verticalPadding = materialLines.length > 1 ? 4.0 : 0.0;
+
     return Container(
       constraints: BoxConstraints(minHeight: lineHeight),
       padding: EdgeInsets.symmetric(vertical: verticalPadding),
@@ -597,7 +615,7 @@ class _Step3ReviewFormState extends ConsumerState<Step3ReviewForm> {
           ),
           Expanded(
             child: Text(
-              value,
+              displayText,
               style: TextStyle(
                 fontSize: fontSize,
               ),
