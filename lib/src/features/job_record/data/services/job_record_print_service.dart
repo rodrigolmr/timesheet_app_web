@@ -13,8 +13,6 @@ class JobRecordPrintService {
     final lines = value.split('\n');
 
     for (var line in lines) {
-      if (line.trim().isEmpty) continue;
-
       // Check if line has the new format (Material|Quantity)
       if (line.contains('|')) {
         final parts = line.split('|');
@@ -25,15 +23,20 @@ class JobRecordPrintService {
             materialLines.add('$material - $quantity');
           } else if (material.isNotEmpty) {
             materialLines.add(material);
+          } else if (quantity.isNotEmpty) {
+            materialLines.add(quantity);
+          } else {
+            // Both empty, add empty line
+            materialLines.add('');
           }
         }
       } else {
-        // Old format: just the text as-is
-        materialLines.add(line.trim());
+        // Old format: just the text as-is (including empty lines)
+        materialLines.add(line);
       }
     }
 
-    return materialLines.isEmpty ? value : materialLines.join('\n');
+    return materialLines.join('\n');
   }
 
   static Future<void> printJobRecords(List<JobRecordModel> jobRecords) async {

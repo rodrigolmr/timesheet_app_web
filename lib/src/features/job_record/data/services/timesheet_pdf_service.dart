@@ -334,9 +334,9 @@ class TimeSheetPdfService {
         }
         
         if (data != null) {
-          // Add hours for this date - normalize to just the date part
-          final normalizedDate = DateTime(recordDate.year, recordDate.month, recordDate.day);
-          data.dailyHours[normalizedDate] = 
+          // Add hours for this date - use UTC to avoid DST issues
+          final normalizedDate = DateTime.utc(recordDate.year, recordDate.month, recordDate.day);
+          data.dailyHours[normalizedDate] =
               (data.dailyHours[normalizedDate] ?? 0) + jobEmployee.hours;
           
           // Add to totals
@@ -357,14 +357,14 @@ class TimeSheetPdfService {
   
   static List<DateTime> _generateDateList(DateTime start, DateTime end) {
     final dates = <DateTime>[];
-    var current = DateTime(start.year, start.month, start.day);
-    final endDate = DateTime(end.year, end.month, end.day);
-    
+    var current = DateTime.utc(start.year, start.month, start.day);
+    final endDate = DateTime.utc(end.year, end.month, end.day);
+
     while (current.isBefore(endDate) || current.isAtSameMomentAs(endDate)) {
       dates.add(current);
       current = current.add(const Duration(days: 1));
     }
-    
+
     return dates;
   }
 }

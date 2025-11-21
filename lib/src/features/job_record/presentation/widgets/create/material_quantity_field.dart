@@ -45,32 +45,53 @@ class MaterialQuantityField extends StatefulWidget {
 
 class _MaterialQuantityFieldState extends State<MaterialQuantityField> {
   late List<MaterialQuantityRow> _rows;
+  int? _lastFocusedRowIndex;
 
   @override
   void initState() {
     super.initState();
     _rows = widget.rows;
     for (var row in _rows) {
-      row.materialFocusNode.addListener(() => setState(() {}));
-      row.quantityFocusNode.addListener(() => setState(() {}));
+      row.materialFocusNode.addListener(_updateFocusedRow);
+      row.quantityFocusNode.addListener(_updateFocusedRow);
     }
   }
 
   @override
   void dispose() {
     for (var row in _rows) {
-      row.materialFocusNode.removeListener(() => setState(() {}));
-      row.quantityFocusNode.removeListener(() => setState(() {}));
+      row.materialFocusNode.removeListener(_updateFocusedRow);
+      row.quantityFocusNode.removeListener(_updateFocusedRow);
     }
     super.dispose();
+  }
+
+  void _updateFocusedRow() {
+    setState(() {
+      // Update which row currently has focus
+      for (int i = 0; i < _rows.length; i++) {
+        if (_rows[i].materialFocusNode.hasFocus || _rows[i].quantityFocusNode.hasFocus) {
+          _lastFocusedRowIndex = i;
+          break;
+        }
+      }
+    });
   }
 
   void _addRow() {
     setState(() {
       final newRow = MaterialQuantityRow();
-      newRow.materialFocusNode.addListener(() => setState(() {}));
-      newRow.quantityFocusNode.addListener(() => setState(() {}));
-      _rows.add(newRow);
+      newRow.materialFocusNode.addListener(_updateFocusedRow);
+      newRow.quantityFocusNode.addListener(_updateFocusedRow);
+
+      // If we know which row had focus last, insert after it; otherwise add at the end
+      if (_lastFocusedRowIndex != null && _lastFocusedRowIndex! < _rows.length) {
+        _rows.insert(_lastFocusedRowIndex! + 1, newRow);
+        // Update the last focused index to the new row
+        _lastFocusedRowIndex = _lastFocusedRowIndex! + 1;
+      } else {
+        _rows.add(newRow);
+      }
     });
   }
 

@@ -7,7 +7,7 @@ part of 'timesheet_providers.dart';
 // **************************************************************************
 
 String _$timeSheetGeneratorHash() =>
-    r'401db8e64cabf0b266a66666b93c2ba354175148';
+    r'b50cd2689430f88eab3834517a701cc187c2f1e6';
 
 /// See also [TimeSheetGenerator].
 @ProviderFor(TimeSheetGenerator)

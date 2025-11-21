@@ -307,8 +307,6 @@ class JobRecordTable extends StatelessWidget {
     if (value.isNotEmpty) {
       final lines = value.split('\n');
       for (var line in lines) {
-        if (line.trim().isEmpty) continue;
-
         // Check if line has the new format (Material|Quantity)
         if (line.contains('|')) {
           final parts = line.split('|');
@@ -319,11 +317,16 @@ class JobRecordTable extends StatelessWidget {
               materialLines.add('$material - $quantity');
             } else if (material.isNotEmpty) {
               materialLines.add(material);
+            } else if (quantity.isNotEmpty) {
+              materialLines.add(quantity);
+            } else {
+              // Both empty, add empty line
+              materialLines.add('');
             }
           }
         } else {
-          // Old format: just the text as-is
-          materialLines.add(line.trim());
+          // Old format: just the text as-is (including empty lines)
+          materialLines.add(line);
         }
       }
     }

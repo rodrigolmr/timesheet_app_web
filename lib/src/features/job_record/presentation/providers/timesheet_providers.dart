@@ -36,13 +36,13 @@ class TimeSheetGenerator extends _$TimeSheetGenerator {
       final jobRecords = await ref.read(jobRecordsProvider.future);
       
       // Filter by date range
-      // Normalize dates to compare only the date part, ignoring time
-      final startDateNormalized = DateTime(startDate.year, startDate.month, startDate.day);
-      final endDateNormalized = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-      
+      // Use UTC to avoid DST issues when comparing dates
+      final startDateNormalized = DateTime.utc(startDate.year, startDate.month, startDate.day);
+      final endDateNormalized = DateTime.utc(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+
       final filteredRecords = jobRecords.where((record) {
-        final recordDateNormalized = DateTime(record.date.year, record.date.month, record.date.day, 12, 0, 0);
-        return !recordDateNormalized.isBefore(startDateNormalized) && 
+        final recordDateNormalized = DateTime.utc(record.date.year, record.date.month, record.date.day);
+        return !recordDateNormalized.isBefore(startDateNormalized) &&
                !recordDateNormalized.isAfter(endDateNormalized);
       }).toList();
       

@@ -29,7 +29,9 @@
       "Bash(diff:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git push:*)",
+      "Read(//Users/rodrigorocha/Projects/**)"
     ],
     "deny": []
   },

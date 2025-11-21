@@ -168,18 +168,14 @@ class Step1HeaderFormState extends ConsumerState<Step1HeaderForm> {
   }
 
   void _saveMaterialQuantityData() {
-    // Convert Material/Quantity rows to text format
-    final nonEmptyRows = _materialQuantityRows.where((row) {
-      final material = row.materialController.text.trim();
-      final quantity = row.quantityController.text.trim();
-      return material.isNotEmpty || quantity.isNotEmpty;
-    }).map((row) {
+    // Convert Material/Quantity rows to text format (including empty lines)
+    final rows = _materialQuantityRows.map((row) {
       final material = row.materialController.text.trim();
       final quantity = row.quantityController.text.trim();
       return '$material|$quantity';
     }).toList();
 
-    final materialText = nonEmptyRows.join('\n');
+    final materialText = rows.join('\n');
     _updateFormData('material', materialText);
   }
 
